@@ -1,0 +1,147 @@
+# Architecture Overview
+
+Kembali ke indeks dokumentasi: `docs/README.md`
+
+## Stack
+
+- **Backend:** Laravel 13 (PHP 8.3+)
+- **Frontend:** Inertia.js 3 + React 19, Vite 5
+- **Styling:** Tailwind CSS 3 (custom theme in `tailwind.config.js`)
+- **Auth/RBAC:** Spatie Laravel Permission + Laravel Breeze
+- **DB:** MySQL (default); SQLite in-memory untuk testing
+- **Payment Gateways:** Midtrans, Xendit
+
+## Struktur Area Penting
+
+- `routes/web.php` — ~190+ route dashboard, public share, portal
+- `routes/api.php` — webhook Midtrans & Xendit (tanpa auth), REST `/api/v1/*` master-data + POS
+- `app/Http/Controllers/Apps/` — controller per modul dashboard (~36 file)
+- `app/Http/Controllers/Reports/` — controller laporan (sales, profit, insights)
+- `app/Http/Controllers/DocumentController.php` — PDF documents
+- `app/Http/Controllers/PublicPortalController.php` — customer self-service
+- `app/Http/Middleware/` — 9 custom middleware
+- `app/Http/Middleware/HandleInertiaRequests.php` — shared props global (auth, permissions, notifications, shift, store profile, active outlet, security, printer settings)
+- `app/Models/` — 59 model
+- `app/Services/` — business logic layer (26 service: PaymentGatewayManager, TransactionTenderService, PricingService, OutletAccessService, CashierShiftService, dll)
+- `app/Services/Payments/` — MidtransGateway, XenditGateway
+- `resources/js/Pages/Dashboard/` — Inertia page components (~115 file di 39 direktori)
+- `resources/js/Pages/Public/` — public Inertia pages (customer portal)
+- `resources/js/Layouts/` — 5 layout: POSLayout, DashboardLayout, AuthenticatedLayout, GuestLayout, PublicLayout
+- `resources/js/Utils/` — escpos (WebUSB), offlineDb (IndexedDB), tours (driver.js), authorization
+- `database/migrations/` — 97 migration
+- `database/seeders/` — seeder inti (PermissionSeeder, RoleSeeder, PaymentSettingSeeder, DineInSettingsSeeder) dan seeder demo/coverage (DemoOutletSeeder, UserSeeder, SampleDataSeeder, OperationalCoreSeeder, FeatureCoverageSeeder, FeatureDemoSeeder) yang dijalankan secara eksplisit
+
+### Seeder
+
+`DatabaseSeeder` menjalankan `PermissionSeeder`, `RoleSeeder`, `PaymentSettingSeeder`,
+dan `DineInSettingsSeeder`, lalu memastikan warehouse utama `PUSAT` tersedia. Seeder
+`DemoOutletSeeder`, `UserSeeder`, `SampleDataSeeder`, `OperationalCoreSeeder`,
+`FeatureCoverageSeeder`, dan `FeatureDemoSeeder` bersifat opt-in untuk demo atau pengujian,
+dan diorkestrasi oleh `DemoSeeder` (dijalankan lewat `php artisan seed:demo` atau
+`php artisan db:seed --class=DemoSeeder --force`).
+
+## Alur Request Umum
+
+1. Route dashboard diproteksi `auth` + `permission` (email verification dinonaktifkan)
+2. Controller menyiapkan data dari Model/Service
+3. Inertia merender page React di `resources/js/Pages/Dashboard/**/*.jsx`
+4. Permission user dishare ke frontend via `HandleInertiaRequests.php`
+5. Frontend menggunakan permission untuk visibility tombol/menu
+
+## Middleware
+
+| Alias | Class | Fungsi |
+|-------|-------|--------|
+| `permission` | Spatie PermissionMiddleware | Proteksi route berbasis permission string |
+| `role` | Spatie RoleMiddleware | Proteksi route berbasis role |
+| `role_or_permission` | Spatie RoleOrPermissionMiddleware | Proteksi route role ATAU permission |
+| `active_shift` | EnsureActiveCashierShift | Wajibkan shift aktif untuk operasi POS (cart, hold, checkout) |
+| `step_up` | EnsureRecentPasswordConfirmation | Minta konfirmasi password untuk aksi sensitif (role/user CRUD, payment settings, bank accounts, payment confirmation) |
+| `bot.guard` | EnsureBotGuard | Honeypot + timer anti-bot di form login/register/forgot-password |
+| `registration.enabled` | EnsurePublicRegistrationEnabled | Matikan registrasi publik (default: off) |
+| `setup.notinstalled` | EnsureNotInstalled | Redirect ke `/setup` saat app_setup_completed=false |
+| `abilities` | CheckAbilities (Sanctum) | Cek token abilities untuk endpoint API master-data |
+| `SetLocale` | (web group) | Prioritas locale: user column → session → cookie → Accept-Language (default `id`) |
+| `SecureHeaders` | (web group) | Set X-Content-Type-Options, Referrer-Policy, X-Frame-Options, Permissions-Policy |
+| `EnforceAbsoluteSessionLifetime` | (web group) | Paksa logout setelah session lifetime habis (`SECURITY_SESSION_ABSOLUTE_LIFETIME_SECONDS`, default 12 jam) |
+| `HandleInertiaRequests` | (web group) | Inject shared props ke semua Inertia page |
+
+## Service Layer
+
+| Service | Fungsi |
+|---------|--------|
+| `AuditLogService` | Catat perubahan penting dengan before/after snapshot |
+| `CashierShiftService` | Lifecycle shift: open, close, force-close, summary |
+| `StockMutationService` | Catat semua perubahan stok dengan audit trail |
+| `PricingService` | Engine promo: qty break, bundle, buy-x-get-y |
+| `LoyaltyService` | Poin, tier, voucher — earn/redeem |
+| `TaxService` | Hitung PPN exclusive/inclusive per item |
+| `UnitConversionService` | Konversi antar satuan (pcs ↔ box ↔ kg) |
+| `BatchService` | Alokasi FEFO batch, expiring alerts |
+| `ReorderService` | Produk perlu restock, buat draft PO |
+| `PriceListService` | Harga khusus per kelompok pelanggan |
+| `StockTransferService` | Lifecycle transfer stok antar gudang |
+| `ThermalPrintService` | Generate teks receipt ESC/POS |
+| `CrmAutomationService` | Campaign, reminder, automation |
+| `CustomerSegmentationService` | Auto/manual segmentasi pelanggan |
+| `PurchaseOrderService` | Lifecycle PO: draft, place, cancel |
+| `GoodsReceivingService` | Terima barang, update stok, buat payable |
+| `SupplierReturnService` | Retur ke supplier, koreksi stok + payable |
+| `ReceivableService` | Aging, statement, collection stats |
+| `PayableAgingService` | Aging hutang supplier |
+| `PaymentGatewayManager` | Dispatch ke Midtrans/Xendit |
+| `WhatsAppService` | HTTP wrapper ke Node.js whatsapp-web.js service |
+
+## Pola Integrasi Modul
+
+- **Transaction** adalah pusat: details, profits, receivable, sales returns, campaign logs, discount approvals
+- **Product** adalah pusat inventory: stock opname, stock mutation, batch, composite, pricing rules, price list items, units
+- **Warehouse** adalah dimensi baru: hampir semua tabel stok & transaksi punya `warehouse_id`
+- **Audit Log** lintas modul: setiap perubahan penting dicatat via `AuditLogService`
+
+## Alur Data Multi-Warehouse
+
+```
+Cashier buka shift → pilih warehouse
+    ↓
+POS cek stok di product_warehouse (product_id + warehouse_id)
+    ↓
+Checkout → decrement stok di product_warehouse
+         → transaction.warehouse_id = shift.warehouse_id
+    ↓
+PO → warehouse_id
+GR → inherit warehouse dari PO, increment stok di pivot
+Stock Transfer → source → send → receive → destination
+Stock Opname → pilih warehouse, baca stok dari pivot
+```
+
+## WhatsApp Gateway Architecture
+
+```
+┌─────────────────────────┐     HTTP      ┌──────────────────────┐
+│  Laravel App            │  ──────────→  │  whatsapp-service    │
+│                         │  ←──────────  │  (Node.js :3001)     │
+│  WhatsAppService.php    │               │                      │
+│  CrmAutomationService   │               │  whatsapp-web.js     │
+│  SettingController      │               │  Puppeteer/Chrome    │
+└─────────────────────────┘               └──────────┬───────────┘
+                                                     │
+                                              WhatsApp Web
+```
+
+- `whatsapp-service/` adalah Node.js Express server yang menjalankan `whatsapp-web.js`
+- Laravel komunikasi via HTTP ke service tersebut
+- Session WhatsApp disimpan di `whatsapp-service/session/` (persistent)
+- Butuh Node.js + Chrome di server (Puppeteer internal)
+
+## Pola Dokumentasi Fitur
+
+Setiap dokumen fitur di `docs/features/` mencakup:
+
+- tujuan modul
+- fitur yang tersedia
+- halaman dan route
+- permission yang dibutuhkan
+- alur user
+- integrasi data
+- catatan teknis/batasan

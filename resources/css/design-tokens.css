@@ -1,0 +1,320 @@
+/* =====================================================
+   POINT OF SALES - DESIGN TOKENS
+   Modern POS-optimized design system
+   ===================================================== */
+
+/* === Color Palette === */
+:root {
+  /* Primary - Deep Blue/Indigo */
+  --color-primary-50: 238 242 255;
+  --color-primary-100: 224 231 255;
+  --color-primary-200: 199 210 254;
+  --color-primary-300: 165 180 252;
+  --color-primary-400: 129 140 248;
+  --color-primary-500: 99 102 241;
+  --color-primary-600: 79 70 229;
+  --color-primary-700: 67 56 202;
+  --color-primary-800: 55 48 163;
+  --color-primary-900: 49 46 129;
+
+  /* Accent - Teal/Cyan */
+  --color-accent-50: 236 254 255;
+  --color-accent-100: 207 250 254;
+  --color-accent-200: 165 243 252;
+  --color-accent-300: 103 232 249;
+  --color-accent-400: 34 211 238;
+  --color-accent-500: 6 182 212;
+  --color-accent-600: 8 145 178;
+  --color-accent-700: 14 116 144;
+  --color-accent-800: 21 94 117;
+  --color-accent-900: 22 78 99;
+
+  /* Success - Emerald */
+  --color-success-50: 236 253 245;
+  --color-success-100: 209 250 229;
+  --color-success-200: 167 243 208;
+  --color-success-300: 110 231 183;
+  --color-success-400: 52 211 153;
+  --color-success-500: 16 185 129;
+  --color-success-600: 5 150 105;
+  --color-success-700: 4 120 87;
+  --color-success-800: 6 95 70;
+  --color-success-900: 6 78 59;
+
+  /* Warning - Amber */
+  --color-warning-50: 255 251 235;
+  --color-warning-100: 254 243 199;
+  --color-warning-200: 253 230 138;
+  --color-warning-300: 252 211 77;
+  --color-warning-400: 251 191 36;
+  --color-warning-500: 245 158 11;
+  --color-warning-600: 217 119 6;
+  --color-warning-700: 180 83 9;
+  --color-warning-800: 146 64 14;
+  --color-warning-900: 120 53 15;
+
+  /* Danger - Rose */
+  --color-danger-50: 255 241 242;
+  --color-danger-100: 255 228 230;
+  --color-danger-200: 254 205 211;
+  --color-danger-300: 253 164 175;
+  --color-danger-400: 251 113 133;
+  --color-danger-500: 244 63 94;
+  --color-danger-600: 225 29 72;
+  --color-danger-700: 190 18 60;
+  --color-danger-800: 159 18 57;
+  --color-danger-900: 136 19 55;
+
+  /* Neutral - Slate */
+  --color-slate-50: 248 250 252;
+  --color-slate-100: 241 245 249;
+  --color-slate-200: 226 232 240;
+  --color-slate-300: 203 213 225;
+  --color-slate-400: 148 163 184;
+  --color-slate-500: 100 116 139;
+  --color-slate-600: 71 85 105;
+  --color-slate-700: 51 65 85;
+  --color-slate-800: 30 41 59;
+  --color-slate-900: 15 23 42;
+  --color-slate-950: 2 6 23;
+
+  /* === Typography === */
+  --font-family-sans: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
+  /* === Spacing (Touch-friendly for tablet) === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* Touch targets (minimum 44px for tablet) */
+  --touch-target-min: 2.75rem;
+  --touch-target-comfortable: 3rem;
+
+  /* === Border Radius === */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* === Shadows === */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px rgb(99 102 241 / 0.3);
+
+  /* === Transitions === */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* === Z-Index Scale === */
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+
+  /* === Light Theme Semantic Colors === */
+  --bg-primary: var(--color-slate-50);
+  --bg-secondary: 255 255 255;
+  --bg-tertiary: var(--color-slate-100);
+  --text-primary: var(--color-slate-900);
+  --text-secondary: var(--color-slate-600);
+  --text-muted: var(--color-slate-400);
+  --border-default: var(--color-slate-200);
+  --border-subtle: var(--color-slate-100);
+}
+
+/* === Dark Theme === */
+.dark {
+  --bg-primary: var(--color-slate-950);
+  --bg-secondary: var(--color-slate-900);
+  --bg-tertiary: var(--color-slate-800);
+  --text-primary: var(--color-slate-50);
+  --text-secondary: var(--color-slate-300);
+  --text-muted: var(--color-slate-500);
+  --border-default: var(--color-slate-800);
+  --border-subtle: var(--color-slate-900);
+}
+
+/* === Base Styles === */
+html {
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: rgb(var(--bg-primary));
+  color: rgb(var(--text-primary));
+}
+
+/* === POS-specific utilities === */
+
+/* Touch-friendly buttons */
+.touch-target {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+/* Smooth scrollbar */
+.scrollbar-thin,
+.dashboard-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--scrollbar-thumb)) rgb(var(--scrollbar-track));
+}
+
+.scrollbar-thin::-webkit-scrollbar,
+.dashboard-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track,
+.dashboard-scrollbar::-webkit-scrollbar-track {
+  background: rgb(var(--scrollbar-track));
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb,
+.dashboard-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--scrollbar-thumb));
+  border-radius: var(--radius-full);
+  border: 1px solid rgb(var(--scrollbar-track));
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover,
+.dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--scrollbar-thumb-hover));
+}
+
+.dashboard-scrollbar {
+  scrollbar-gutter: stable;
+}
+
+:root {
+  --scrollbar-track: var(--color-slate-100);
+  --scrollbar-thumb: var(--color-slate-300);
+  --scrollbar-thumb-hover: var(--color-slate-400);
+}
+
+.dark {
+  --scrollbar-track: var(--color-slate-900);
+  --scrollbar-thumb: var(--color-slate-700);
+  --scrollbar-thumb-hover: var(--color-slate-600);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Product card hover effect */
+.product-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.product-card:active {
+  transform: scale(0.98);
+}
+
+/* Quick amount button */
+.quick-amount-btn {
+  transition: all var(--transition-fast);
+}
+
+.quick-amount-btn:hover {
+  background-color: rgb(var(--color-primary-100));
+  border-color: rgb(var(--color-primary-400));
+}
+
+.dark .quick-amount-btn:hover {
+  background-color: rgb(var(--color-primary-900) / 0.5);
+  border-color: rgb(var(--color-primary-600));
+}
+
+/* Pulse animation for cart */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Slide in animation */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-right var(--transition-base);
+}
+
+/* Number counter animation */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count {
+  animation: count-up var(--transition-fast);
+}
