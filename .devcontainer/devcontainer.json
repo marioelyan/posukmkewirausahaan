@@ -1,0 +1,59 @@
+{
+  "name": "Dikasir POS - Laravel 13 + React 19",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    }
+  },
+  "forwardPorts": [8000, 5173, 13714, 3001, 3306],
+  "portsAttributes": {
+    "8000": { "label": "Laravel (artisan serve)", "onAutoForward": "openBrowser" },
+    "5173": { "label": "Vite dev server", "onAutoForward": "silent" },
+    "13714": { "label": "Inertia SSR", "onAutoForward": "silent" },
+    "3001": { "label": "WhatsApp service (opsional)", "onAutoForward": "silent" },
+    "3306": { "label": "MySQL", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "php artisan storage:link >/dev/null 2>&1 || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "onecentlin.laravel-blade",
+        "amiralizadeh9480.laravel-extra-intellisense",
+        "ryannaddy.laravel-artisan",
+        "EditorConfig.EditorConfig",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql"
+      ],
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php",
+        "intelephense.environment.phpVersion": "8.3.0",
+        "editor.formatOnSave": false,
+        "files.eol": "\n",
+        "emmet.includeLanguages": { "javascript": "javascriptreact" },
+        "sqltools.connections": [
+          {
+            "name": "POS MySQL (devcontainer)",
+            "driver": "MySQL",
+            "server": "db",
+            "port": 3306,
+            "database": "point_of_sales",
+            "username": "pos",
+            "password": "secret"
+          }
+        ]
+      }
+    }
+  }
+}
