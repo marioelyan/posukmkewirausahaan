@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\Schema;
  * as distinct (MySQL), so the swap only happens while zero rows are unscoped —
  * exactly what `business:backfill` guarantees. Unbackfilled installs keep the
  * legacy global index untouched. `customer_campaigns.context_key` stays a
- * global unique (UNIQUE-11: candidate waits for separate evidence/approval);
+ * global unique (UNIQUE-11 closed as global, register §13.22 — the key is
+ * namespaced per business so it never collides across tenants);
  * the campaign only gains business ownership.
  */
 return new class extends Migration
