@@ -3,6 +3,7 @@
 use App\Http\Controllers\Apps\AgingController;
 use App\Http\Controllers\Apps\AuditLogController;
 use App\Http\Controllers\Apps\BankAccountController;
+use App\Http\Controllers\Apps\BusinessAdminController;
 use App\Http\Controllers\Apps\CashierShiftController;
 use App\Http\Controllers\Apps\CategoryController;
 use App\Http\Controllers\Apps\CrmCampaignController;
@@ -412,6 +413,18 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'business', 'bus
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Q6-A — platform business management (super-admin only). Kept OUTSIDE the
+// `business.required` group: managing businesses must work without an active
+// business context (e.g. before the first business is activated, or to restore
+// a suspended install). Writes require a fresh password confirmation (step_up).
+Route::middleware(['auth', 'platform.admin'])->prefix('dashboard')->group(function () {
+    Route::get('/businesses', [BusinessAdminController::class, 'index'])->name('businesses.index');
+    Route::get('/businesses/create', [BusinessAdminController::class, 'create'])->name('businesses.create');
+    Route::post('/businesses', [BusinessAdminController::class, 'store'])->middleware('step_up')->name('businesses.store');
+    Route::patch('/businesses/{business}', [BusinessAdminController::class, 'update'])->middleware('step_up')->name('businesses.update');
+    Route::patch('/businesses/{business}/status', [BusinessAdminController::class, 'updateStatus'])->middleware('step_up')->name('businesses.updateStatus');
 });
 
 require __DIR__.'/auth.php';

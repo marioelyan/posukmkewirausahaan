@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureActiveBusiness;
 use App\Http\Middleware\EnsureActiveCashierShift;
 use App\Http\Middleware\EnsureBotGuard;
 use App\Http\Middleware\EnsureNotInstalled;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsurePublicRegistrationEnabled;
 use App\Http\Middleware\EnsureRecentPasswordConfirmation;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -59,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'business' => ResolveBusinessContext::class,
             'business.required' => EnsureActiveBusiness::class,
             'business.role' => EnforceBusinessRoleCapability::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
         ]);
 
         // Resolve the verified business context BEFORE implicit route-model binding

@@ -46,7 +46,9 @@ import React from "react";
 
 export default function Menu() {
     const { t } = useTranslation();
-    const { url } = usePage();
+    const { url, props } = usePage();
+    const isPlatformAdmin = props.auth?.super === true;
+    const multiBusinessEnabled = props.multiBusinessEnabled === true;
 
     // define menu navigations
     const menuNavigation = [
@@ -314,6 +316,18 @@ export default function Menu() {
                     active: url === "/dashboard/roles" ? true : false,
                     icon: <IconUserShield size={20} strokeWidth={1.5} />,
                     permissions: hasAnyPermission(["roles-access"]),
+                },
+                {
+                    title: t("sidebar.items.businesses"),
+                    href: route("businesses.index"),
+                    active: url === "/dashboard/businesses" ? true : false,
+                    icon: <IconBuildingStore size={20} strokeWidth={1.5} />,
+                    // Q6-A: paltform administration — visible only when tenancy
+                    // is enabled AND the user is the platform super-admin.
+                    permissions:
+                        multiBusinessEnabled && isPlatformAdmin
+                            ? true
+                            : false,
                 },
                 {
                     title: t("sidebar.items.users"),

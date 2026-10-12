@@ -289,6 +289,7 @@ class HandleInertiaRequests extends Middleware
             'printerSettings' => $printerSettings,
             'pendingApprovalCount' => $pendingApprovalCount,
             'appVersion' => config('app.version'),
+            'multiBusinessEnabled' => (bool) config('multi_business.enabled'),
             'security' => [
                 'warnings' => $securityWarnings,
                 'publicRegistrationEnabled' => config('security.auth.public_registration'),
