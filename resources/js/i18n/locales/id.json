@@ -290,6 +290,7 @@
             "permissions": "Hak Akses",
             "roles": "Akses Group",
             "users": "Pengguna",
+            "businesses": "Business",
             "usersList": "Data Pengguna",
             "usersCreate": "Tambah Data Pengguna",
             "paymentGateway": "Payment Gateway",

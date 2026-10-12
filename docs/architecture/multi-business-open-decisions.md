@@ -18,7 +18,7 @@
 | Q3 | Role berbeda per business | Ya, role di membership | Fase 1 | PERLU KEPUTUSAN |
 | Q4 | Master data terpisah penuh | Ya, terpisah penuh | Fase 4 | PERLU KEPUTUSAN |
 | Q5 | Setting global vs per business | Hybrid key-based | Fase 1-3 | PERLU KEPUTUSAN |
-| Q6 | Pembuatan business | Admin platform + self-service owner (fase lanjut) | Fase 8 | PERLU KEPUTUSAN |
+| Q6 | Pembuatan business | Admin platform + self-service owner (fase lanjut) | Fase 8 | SELESAI (bagian admin platform; self-service deferred) |
 | Q7 | Outlet existing = satu business | Satu business default | Fase 3 | PERLU KEPUTUSAN |
 | Q8 | Background job di shared hosting | Sinkron + scheduler per menit | Fase 7 | PERLU KEPUTUSAN |
 | Q9 | Data existing tanpa ownership jelas | Ke business default, ditandai | Fase 3 | PERLU KEPUTUSAN |
@@ -72,6 +72,7 @@
 - **Alternatif.** Self-service langsung (risiko spam/penyalahgunaan).
 - **Dampak.** Route onboarding, `registration.enabled`, `EnsureNotInstalled`.
 - **Status (2026-10-12):** bootstrap first-install SELESAI — setup wizard membuat business default + scope saat `multi_business.enabled=true`, admin setup (super-admin) memakai jalur platform (AUTH-01). Yang masih menunggu keputusan: pembuatan business **tambahan** (UI/rollout) dan self-service owner signup.
+- **KEPUTUSAN (2026-10-13):** **A. Admin platform only** — §13.19 register. Super-admin membuat business tambahan via dashboard (`dashboard/businesses*`, middleware `platform.admin`, `step_up`); provisioning via `BusinessProvisioner` (skeleton PUSAT + owner opsional, tanpa `assignUnscoped`); UI `Businesses/{Index,Create}` + item sidebar (tampil saat flag ON + super-admin). Self-service owner signup tetap fase lanjut. UNIQUE-10/11 tetap deferred.
 - **Blocking:** Fase 8 (sisa UI/rollout pembuatan business tambahan).
 
 ### Q7 — Outlet existing = satu atau banyak business

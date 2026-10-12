@@ -290,6 +290,7 @@
             "permissions": "Permissions",
             "roles": "Access Groups",
             "users": "Users",
+            "businesses": "Business",
             "usersList": "User Data",
             "usersCreate": "Add User",
             "paymentGateway": "Payment Gateway",
