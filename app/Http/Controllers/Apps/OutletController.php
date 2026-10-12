@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateOutletRequest;
 use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\BusinessContext;
+use App\Services\BusinessHierarchyService;
 use App\Services\OutletAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +35,7 @@ class OutletController extends Controller
 
         DB::transaction(function () use ($request, $data): void {
             $outlet = Outlet::create([
+                'business_id' => $this->activeBusinessId(),
                 'code' => strtoupper($data['code']),
                 'name' => $data['name'],
                 'is_active' => true,
@@ -107,6 +110,29 @@ class OutletController extends Controller
     private function ensureAccess(User $user, Outlet $outlet): void
     {
         abort_unless($user->isSuperAdmin() || $user->outlets()->whereKey($outlet->id)->exists(), 404);
+
+        if (! config('multi_business.enabled')) {
+            return;
+        }
+
+        $businessId = $this->activeBusinessId();
+        if ($businessId === null) {
+            return;
+        }
+
+        abort_unless(
+            app(BusinessHierarchyService::class)->outletBelongsToBusiness($outlet, $businessId),
+            404,
+        );
+    }
+
+    private function activeBusinessId(): ?int
+    {
+        if (! config('multi_business.enabled')) {
+            return null;
+        }
+
+        return app(BusinessContext::class)->businessId();
     }
 
     private function hasOperationalHistory(Outlet $outlet): bool

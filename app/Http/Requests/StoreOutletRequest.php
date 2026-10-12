@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreOutletRequest extends FormRequest
@@ -15,13 +16,13 @@ class StoreOutletRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100'],
-            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:outlets,code'],
+            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', TenantUnique::for('outlets', 'code')],
             'address' => ['nullable', 'string', 'max:500'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'is_sales_enabled' => ['boolean'],
             'warehouse_name' => ['required', 'string', 'max:100'],
-            'warehouse_code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:warehouses,code'],
+            'warehouse_code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', TenantUnique::for('warehouses', 'code')],
         ];
     }
 }

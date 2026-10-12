@@ -7,17 +7,17 @@ import {
     IconDatabaseOff,
     IconPencilCog,
     IconTrash,
-    IconLayoutGrid,
-    IconList,
-    IconUser,
     IconPhone,
     IconMapPin,
+    IconSearch,
+    IconArrowLeft,
     IconUpload,
     IconDownload,
 } from "@tabler/icons-react";
 import Search from "@/Components/Dashboard/Search";
 import Table from "@/Components/Dashboard/Table";
 import Pagination from "@/Components/Dashboard/Pagination";
+import ViewToggle from "@/Components/Dashboard/ViewToggle";
 import { useAuthorization } from "@/Utils/authorization";
 import toast from "react-hot-toast";
 
@@ -87,7 +87,8 @@ function CustomerCard({ customer, canUpdate, canDelete }) {
                     {canUpdate && (
                         <Link
                             href={route("customers.edit", customer.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-warning-100 text-warning-600 hover:bg-warning-200 dark:bg-warning-900/50 dark:text-warning-400 text-sm font-medium transition-colors"
+                            aria-label={`Ubah ${customer.name}`}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-warning-100 text-warning-600 hover:bg-warning-200 dark:bg-warning-900/50 dark:text-warning-400 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                         >
                             <IconPencilCog size={16} />
                             <span>Edit</span>
@@ -112,6 +113,10 @@ function CustomerCard({ customer, canUpdate, canDelete }) {
 
 export default function Index({ customers }) {
     const { can } = useAuthorization();
+    const { url } = usePage();
+    const activeSearch =
+        new URLSearchParams(url.split("?")[1] || "").get("search") || "";
+    const isSearching = activeSearch.trim() !== "";
     const [viewMode, setViewMode] = useState("grid");
     const canCreateCustomers = can("customers-create");
     const canEditCustomers = can("customers-edit");
@@ -134,10 +139,10 @@ export default function Index({ customers }) {
                         </p>
                     </div>
                     {canCreateCustomers && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                             <a
                                 href={route("export.customers")}
-                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                             >
                                 <IconDownload size={18} />
                                 Export
@@ -145,7 +150,7 @@ export default function Index({ customers }) {
                             <button
                                 type="button"
                                 onClick={() => document.getElementById("import-customers-input")?.click()}
-                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                             >
                                 <IconUpload size={18} />
                                 Import
@@ -165,7 +170,7 @@ export default function Index({ customers }) {
                                 />
                             }
                             className={
-                                "bg-primary-500 hover:bg-primary-600 text-white shadow-lg shadow-primary-500/30"
+                                "bg-primary-500 hover:bg-primary-600 text-white shadow-lg shadow-primary-500/30 w-full sm:w-auto justify-center"
                             }
                             label={"Tambah Pelanggan"}
                             href={route("customers.create")}
@@ -184,28 +189,7 @@ export default function Index({ customers }) {
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setViewMode("grid")}
-                        className={`p-2.5 rounded-lg transition-colors ${
-                            viewMode === "grid"
-                                ? "bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400"
-                                : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                        title="Grid View"
-                    >
-                        <IconLayoutGrid size={20} />
-                    </button>
-                    <button
-                        onClick={() => setViewMode("list")}
-                        className={`p-2.5 rounded-lg transition-colors ${
-                            viewMode === "list"
-                                ? "bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400"
-                                : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                        title="List View"
-                    >
-                        <IconList size={20} />
-                    </button>
+                    <ViewToggle value={viewMode} onChange={setViewMode} />
                 </div>
             </div>
 
@@ -316,6 +300,7 @@ export default function Index({ customers }) {
                                                         className={
                                                             "border bg-warning-100 border-warning-200 text-warning-600 hover:bg-warning-200 dark:bg-warning-900/50 dark:border-warning-800 dark:text-warning-400"
                                                         }
+                                                        aria-label={`Ubah ${customer.name}`}
                                                         href={route(
                                                             "customers.edit",
                                                             customer.id
@@ -336,6 +321,7 @@ export default function Index({ customers }) {
                                                         className={
                                                             "border bg-danger-100 border-danger-200 text-danger-600 hover:bg-danger-200 dark:bg-danger-900/50 dark:border-danger-800 dark:text-danger-400"
                                                         }
+                                                        aria-label={`Hapus ${customer.name}`}
                                                         url={route(
                                                             "customers.destroy",
                                                             customer.id
@@ -354,27 +340,49 @@ export default function Index({ customers }) {
                 /* Empty State */
                 <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                        <IconDatabaseOff
-                            size={32}
-                            className="text-slate-400"
-                            strokeWidth={1.5}
-                        />
+                        {isSearching ? (
+                            <IconSearch
+                                size={32}
+                                className="text-slate-400"
+                                strokeWidth={1.5}
+                            />
+                        ) : (
+                            <IconDatabaseOff
+                                size={32}
+                                className="text-slate-400"
+                                strokeWidth={1.5}
+                            />
+                        )}
                     </div>
                     <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-1">
-                        Belum Ada Pelanggan
+                        {isSearching ? "Pelanggan Tidak Ditemukan" : "Belum Ada Pelanggan"}
                     </h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        Tambahkan pelanggan pertama Anda.
+                        {isSearching
+                            ? `Tidak ada pelanggan yang cocok dengan "${activeSearch}".`
+                            : "Tambahkan pelanggan pertama Anda."}
                     </p>
-                    <Button
-                        type={"link"}
-                        icon={<IconCirclePlus size={18} />}
-                        className={
-                            "bg-primary-500 hover:bg-primary-600 text-white"
-                        }
-                        label={"Tambah Pelanggan"}
-                        href={route("customers.create")}
-                    />
+                    {isSearching ? (
+                        <Button
+                            type={"link"}
+                            icon={<IconArrowLeft size={18} />}
+                            className={
+                                "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                            }
+                            label={"Reset Pencarian"}
+                            href={route("customers.index")}
+                        />
+                    ) : (
+                        <Button
+                            type={"link"}
+                            icon={<IconCirclePlus size={18} />}
+                            className={
+                                "bg-primary-500 hover:bg-primary-600 text-white"
+                            }
+                            label={"Tambah Pelanggan"}
+                            href={route("customers.create")}
+                        />
+                    )}
                 </div>
             )}
 

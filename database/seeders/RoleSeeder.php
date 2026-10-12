@@ -58,9 +58,6 @@ class RoleSeeder extends Seeder
         $this->createRoleWithPermissions('warehouses-access', '%warehouses%');
         $this->createRoleWithPermissions('units-access', '%units%');
 
-        $this->createRoleWithPermissions('dine-tables-access', '%dine-tables%');
-        $this->createRoleWithPermissions('dine-orders-access', '%dine-orders%');
-
         $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
         $superAdminRole->syncPermissions(Permission::all());
 
@@ -80,8 +77,6 @@ class RoleSeeder extends Seeder
             'payables-access',
             'payables-pay',
             'suppliers-access',
-            'dine-orders-access',
-            'dine-orders-process',
         ])->get();
         $cashierRole->syncPermissions($cashierPermissions);
 
@@ -99,7 +94,7 @@ class RoleSeeder extends Seeder
         $managerRole = Role::firstOrCreate(['name' => 'manager']);
 
         $excluded = Permission::where(function ($query) {
-            foreach (['users-%', 'roles-%', 'permissions-%', 'outlets-%', 'whatsapp-settings-%', 'payment-settings-update'] as $pattern) {
+            foreach (['users-%', 'roles-%', 'permissions-%', 'outlets-%', 'whatsapp-settings-%', 'financial-ownership-%', 'payment-settings-update'] as $pattern) {
                 $query->orWhere('name', 'like', $pattern);
             }
         })->pluck('id');

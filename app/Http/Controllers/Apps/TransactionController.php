@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
 use App\Models\Warehouse;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
 use App\Services\BatchService;
 use App\Services\CashierShiftService;
@@ -215,11 +216,11 @@ class TransactionController extends Controller
     public function previewPricing(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            'customer_id' => ['nullable', 'exists:customers,id', new BelongsToActiveBusiness('customers')],
             'discount' => ['nullable', 'integer', 'min:0'],
             'shipping_cost' => ['nullable', 'integer', 'min:0'],
             'redeem_points' => ['nullable', 'integer', 'min:0'],
-            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id'],
+            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id', new BelongsToActiveBusiness('customer_vouchers')],
         ]);
 
         $customer = isset($validated['customer_id'])
@@ -259,9 +260,9 @@ class TransactionController extends Controller
     public function addToCart(Request $request)
     {
         $validated = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'product_id' => ['required', 'integer', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'qty' => ['required', 'numeric', 'min:0.01'],
-            'unit_id' => ['nullable', 'integer'],
+            'unit_id' => ['nullable', 'integer', new BelongsToActiveBusiness('units')],
         ]);
 
         $activeShift = $this->cashierShiftService->getActiveShiftForUser(auth()->user()->id);
@@ -600,6 +601,16 @@ class TransactionController extends Controller
      */
     public function store(Request $request, PaymentGatewayManager $paymentGatewayManager)
     {
+        // Close cross-business foreign-key gaps: ids accepted here must belong to
+        // the active business (no-op while multi_business.enabled is false).
+        $request->validate([
+            'customer_id' => ['nullable', 'exists:customers,id', new BelongsToActiveBusiness('customers')],
+            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id', new BelongsToActiveBusiness('customer_vouchers')],
+            'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
+            'tenders' => ['nullable', 'array'],
+            'tenders.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
+        ]);
+
         $isPayLater = $request->boolean('pay_later');
         $paymentGateway = $isPayLater ? null : $request->input('payment_gateway');
         if ($paymentGateway) {

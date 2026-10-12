@@ -262,7 +262,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                         disabled={
                                             data.units.length >= units.length
                                         }
-                                        className="text-sm text-primary-600 hover:text-primary-700 font-medium disabled:opacity-40"
+                                        className="text-sm text-primary-600 hover:text-primary-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded-lg px-1"
                                     >
                                         + Tambah Satuan
                                     </button>
@@ -283,7 +283,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                     {data.units.map((row, index) => (
                                         <div
                                             key={index}
-                                            className="flex items-end gap-3"
+                                            className="flex flex-wrap items-end gap-3"
                                         >
                                             <div className="flex-1">
                                                 <InputSelect
@@ -395,7 +395,8 @@ export default function Edit({ categories, product, products = [], units = [] })
                                                 onClick={() =>
                                                     removeUnitRow(index)
                                                 }
-                                                className="p-2.5 rounded-xl text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30 transition-colors"
+                                                aria-label="Hapus satuan ini"
+                                                className="p-2.5 rounded-xl text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40"
                                             >
                                                 <IconTrash size={18} />
                                             </button>
@@ -502,10 +503,10 @@ export default function Edit({ categories, product, products = [], units = [] })
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <fieldset>
+                                    <legend className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Tipe Pajak
-                                    </label>
+                                    </legend>
                                     <div className="flex gap-4">
                                         <label className="flex items-center gap-2 text-sm">
                                             <input
@@ -549,7 +550,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                             {errors.tax_type}
                                         </p>
                                     )}
-                                </div>
+                                </fieldset>
                                 <Input
                                     type="number"
                                     label="Persentase Pajak (%)"
@@ -609,7 +610,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                         <button
                                             type="button"
                                             onClick={addComponent}
-                                            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                                            className="text-sm text-primary-600 hover:text-primary-700 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded-lg px-1"
                                         >
                                             + Tambah Komponen
                                         </button>
@@ -630,7 +631,7 @@ export default function Edit({ categories, product, products = [], units = [] })
                                             (component, index) => (
                                                 <div
                                                     key={index}
-                                                    className="flex items-end gap-3"
+                                                    className="flex flex-wrap items-end gap-3"
                                                 >
                                                     <div className="flex-1">
                                                         <InputSelect
@@ -694,7 +695,8 @@ export default function Edit({ categories, product, products = [], units = [] })
                                                                 index
                                                             )
                                                         }
-                                                        className="p-2.5 rounded-xl text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30 transition-colors"
+                                                        aria-label="Hapus komponen ini"
+                                                        className="p-2.5 rounded-xl text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40"
                                                     >
                                                         <IconTrash size={18} />
                                                     </button>
@@ -721,14 +723,14 @@ export default function Edit({ categories, product, products = [], units = [] })
                         <div className="flex justify-end gap-3">
                             <Link
                                 href={route("products.index")}
-                                className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                                className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                             >
                                 Batal
                             </Link>
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                             >
                                 <IconDeviceFloppy size={18} />
                                 {processing

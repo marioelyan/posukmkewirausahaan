@@ -49,7 +49,7 @@ export default function BankAccountForm({ bankAccount = null }) {
         <>
             <Head title={isEdit ? "Edit Rekening Bank" : "Tambah Rekening Bank"} />
             <div className="max-w-3xl space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <IconBuildingBank size={28} className="text-primary-500" />
@@ -61,7 +61,7 @@ export default function BankAccountForm({ bankAccount = null }) {
                     </div>
                     <Link
                         href={route("settings.bank-accounts.index")}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                     >
                         <IconArrowLeft size={18} />
                         Kembali
@@ -101,17 +101,18 @@ export default function BankAccountForm({ bankAccount = null }) {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            <label htmlFor="bank_logo" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                 Logo Bank (opsional)
                             </label>
                             <input
+                                id="bank_logo"
                                 type="file"
                                 accept="image/*"
                                 onChange={(e) =>
                                     setData("logo", e.target.files?.[0] || null)
                                 }
                                 disabled={!canUpdatePaymentSettings}
-                                className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                             />
                             {errors.logo && (
                                 <p className="text-xs text-danger-500 mt-1">
@@ -126,7 +127,7 @@ export default function BankAccountForm({ bankAccount = null }) {
                                     checked={data.is_active}
                                     onChange={(e) => setData("is_active", e.target.checked)}
                                     disabled={!canUpdatePaymentSettings}
-                                    className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500"
+                                    className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 />
                                 Aktif
                             </label>
@@ -137,14 +138,14 @@ export default function BankAccountForm({ bankAccount = null }) {
                         <button
                             type="submit"
                             disabled={processing || !canUpdatePaymentSettings}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                         >
                             <IconCheck size={18} />
                             {isEdit ? "Update" : "Simpan"}
                         </button>
                         <Link
                             href={route("settings.bank-accounts.index")}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                         >
                             Batal
                         </Link>

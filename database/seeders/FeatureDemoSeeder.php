@@ -8,9 +8,6 @@ use App\Models\CustomerCampaign;
 use App\Models\CustomerCampaignLog;
 use App\Models\CustomerSegment;
 use App\Models\CustomerSegmentMembership;
-use App\Models\DineArea;
-use App\Models\DineOrder;
-use App\Models\DiningTable;
 use App\Models\DiscountApprovalLog;
 use App\Models\LoyaltyPointHistory;
 use App\Models\PriceList;
@@ -24,7 +21,6 @@ use App\Models\TransactionTender;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Services\DineOrderService;
 use App\Services\StockTransferService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -76,7 +72,6 @@ class FeatureDemoSeeder extends Seeder
             $this->seedCustomerSegments($customers);
             $this->seedCustomerCampaigns($customers);
             $this->seedStockTransfers($products, $warehouses, $admin);
-            $this->seedDineIn($products, $customers, $cashier);
             $this->seedDiscountApprovalLogs($cashier, $admin);
             $this->seedLoyaltyPointHistory($customers);
             $this->seedSplitPayment();
@@ -162,10 +157,6 @@ class FeatureDemoSeeder extends Seeder
             'customer_campaign_logs',
             'stock_transfers',
             'stock_transfer_items',
-            'dine_areas',
-            'dine_tables',
-            'dine_orders',
-            'dine_order_items',
             'discount_approval_logs',
             'loyalty_point_histories',
         ])->every(fn (string $table) => Schema::hasTable($table));
@@ -176,10 +167,6 @@ class FeatureDemoSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
 
         foreach ([
-            'dine_order_items',
-            'dine_orders',
-            'dine_tables',
-            'dine_areas',
             'stock_transfer_items',
             'stock_transfers',
             'customer_campaign_logs',
@@ -580,75 +567,6 @@ class FeatureDemoSeeder extends Seeder
         $service->receive($transfer, $admin->id);
 
         $this->command?->info('  - Stock transfer completed (PUSAT → WH-TKB).');
-    }
-
-    private function seedDineIn(Collection $products, Collection $customers, User $cashier): void
-    {
-        $outletId = Warehouse::where('code', 'WH-MAL')->value('outlet_id');
-        $area = DineArea::create(['outlet_id' => $outletId, 'name' => 'Area Utama', 'sort_order' => 1, 'is_active' => true]);
-        $area2 = DineArea::create(['outlet_id' => $outletId, 'name' => 'Area Teras', 'sort_order' => 2, 'is_active' => true]);
-
-        $table1 = DiningTable::create(['dine_area_id' => $area->id, 'name' => 'Meja 1', 'capacity' => 4, 'pos_x' => 10, 'pos_y' => 10, 'shape' => 'circle', 'sort_order' => 1, 'is_active' => true]);
-        $table2 = DiningTable::create(['dine_area_id' => $area->id, 'name' => 'Meja 2', 'capacity' => 6, 'pos_x' => 30, 'pos_y' => 10, 'shape' => 'rectangle', 'sort_order' => 2, 'is_active' => true]);
-        $table3 = DiningTable::create(['dine_area_id' => $area2->id, 'name' => 'Meja 3', 'capacity' => 2, 'pos_x' => 10, 'pos_y' => 30, 'shape' => 'circle', 'sort_order' => 1, 'is_active' => true]);
-
-        $customer = $customers->get('Andi Nugraha');
-        $product1 = $products->get('MNM-0001');
-        $product2 = $products->get('SNK-0001');
-
-        $order = DineOrder::create([
-            'dine_table_id' => $table1->id,
-            'customer_id' => $customer?->id,
-            'status' => DineOrder::STATUS_SUBMITTED,
-            'notes' => 'Demo: pesanan dine-in.',
-            'payment_option' => DineOrder::PAY_AT_COUNTER,
-            'payment_method' => 'cash',
-            'payment_status' => 'unpaid',
-            'cashier_id' => $cashier->id,
-            'subtotal' => 0,
-            'item_count' => 0,
-        ]);
-
-        $subtotal = 0;
-        $count = 0;
-
-        if ($product1) {
-            $order->items()->create([
-                'product_id' => $product1->id,
-                'unit_id' => null,
-                'conversion_factor' => 1,
-                'qty' => 2,
-                'price' => $product1->sell_price,
-                'note' => null,
-            ]);
-            $subtotal += $product1->sell_price * 2;
-            $count += 2;
-        }
-
-        if ($product2) {
-            $order->items()->create([
-                'product_id' => $product2->id,
-                'unit_id' => null,
-                'conversion_factor' => 1,
-                'qty' => 1,
-                'price' => $product2->sell_price,
-                'note' => null,
-            ]);
-            $subtotal += $product2->sell_price;
-            $count += 1;
-        }
-
-        $order->update(['subtotal' => $subtotal, 'item_count' => $count]);
-
-        $service = app(DineOrderService::class);
-
-        try {
-            $service->accept($order);
-        } catch (\Throwable $e) {
-            $this->command?->warn('  - Dine-in accept skipped: '.$e->getMessage());
-        }
-
-        $this->command?->info('  - Dine-in areas, tables, and orders seeded.');
     }
 
     private function seedDiscountApprovalLogs(User $cashier, User $admin): void

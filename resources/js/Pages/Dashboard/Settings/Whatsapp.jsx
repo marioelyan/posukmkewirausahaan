@@ -80,7 +80,7 @@ export default function Whatsapp({ settings, waStatus }) {
             <div className="space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <IconBrandWhatsapp size={28} className="text-emerald-500" />
+                        <IconBrandWhatsapp size={28} className="text-success-500" />
                         WhatsApp Gateway
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -91,7 +91,7 @@ export default function Whatsapp({ settings, waStatus }) {
                 {/* Status Card */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 max-w-lg">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className={`w-3 h-3 rounded-full ${status.connected ? "bg-emerald-500" : status.starting ? "bg-amber-400 animate-pulse" : "bg-slate-300"}`} />
+                        <div className={`w-3 h-3 rounded-full ${status.connected ? "bg-success-500" : status.starting ? "bg-warning-400 animate-pulse" : "bg-slate-300"}`} />
                         <span className="font-medium text-slate-800 dark:text-white">
                             {status.connected
                                 ? `Terhubung (${status.phone})`
@@ -112,14 +112,14 @@ export default function Whatsapp({ settings, waStatus }) {
 
                     {!status.connected && (
                         <button onClick={handleConnect} disabled={processing || status.starting}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors disabled:opacity-50">
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-success-500 hover:bg-success-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500/40">
                             <IconPlugConnected size={18} />
                             {status.starting ? "Menghubungkan..." : "Hubungkan WhatsApp"}
                         </button>
                     )}
                     {status.connected && (
                         <button onClick={handleDisconnect} disabled={processing}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium transition-colors disabled:opacity-50">
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-danger-500 hover:bg-danger-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40">
                             <IconPlugConnectedX size={18} />
                             Putuskan Koneksi
                         </button>
@@ -129,16 +129,16 @@ export default function Whatsapp({ settings, waStatus }) {
                 {/* Settings Form */}
                 <form onSubmit={handleSave} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 max-w-lg">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">URL Service WhatsApp</label>
-                        <input type="text" value={data.wa_service_url} onChange={(e) => setData("wa_service_url", e.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm"
+                        <label htmlFor="wa_service_url" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">URL Service WhatsApp</label>
+                        <input id="wa_service_url" type="text" value={data.wa_service_url} onChange={(e) => setData("wa_service_url", e.target.value)}
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             placeholder="http://localhost:3001" />
                         <p className="text-xs text-slate-400 mt-1">Alamat Node.js service whatsapp-web.js</p>
                     </div>
 
                     <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
                         <input type="checkbox" checked={data.wa_enabled} onChange={(e) => setData("wa_enabled", e.target.checked)}
-                            className="rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
+                            className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40" />
                         Aktifkan WhatsApp Gateway
                     </label>
 
@@ -146,19 +146,19 @@ export default function Whatsapp({ settings, waStatus }) {
                         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Kirim Otomatis</h3>
                         <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 cursor-pointer mb-2">
                             <input type="checkbox" checked={data.wa_auto_reminder} onChange={(e) => setData("wa_auto_reminder", e.target.checked)}
-                                className="rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
+                                className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40" />
                             Kirim reminder piutang otomatis
                         </label>
                         <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
                             <input type="checkbox" checked={data.wa_auto_invoice} onChange={(e) => setData("wa_auto_invoice", e.target.checked)}
-                                className="rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
+                                className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40" />
                             Kirim invoice setelah transaksi
                         </label>
                     </div>
 
                     <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button type="submit" disabled={processing}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50">
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
                             Simpan Pengaturan
                         </button>
                     </div>
@@ -170,10 +170,11 @@ export default function Whatsapp({ settings, waStatus }) {
                         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Test Kirim Pesan</h3>
                         <div className="flex gap-2">
                             <input type="text" value={testNumber} onChange={(e) => setTestNumber(e.target.value)}
+                                aria-label="Nomor tujuan"
                                 placeholder="0812xxxxxxx"
-                                className="flex-1 h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm" />
+                                className="flex-1 h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
                             <button onClick={handleTest} disabled={processing}
-                                className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors disabled:opacity-50">
+                                className="px-4 py-2.5 rounded-xl bg-success-500 hover:bg-success-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500/40">
                                 Kirim
                             </button>
                         </div>

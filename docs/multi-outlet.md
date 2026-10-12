@@ -15,7 +15,7 @@ The POS supports multiple branches (outlets) from a single shared database. Each
 ## Scope Policy
 
 - Customers, loyalty, suppliers, receivables, and payables remain global.
-- Transactions, stock, shifts, purchasing, returns, reports, settings, pricing, and dine-in data use outlet context.
+- Transactions, stock, shifts, purchasing, returns, reports, settings, and pricing data use outlet context.
 - `PUSAT` is the central warehouse and is not sales-enabled.
 - A cashier uses one active shift and one outlet warehouse at a time.
 - Global configuration remains a fallback for legacy single-outlet installations.
@@ -27,7 +27,7 @@ After the first install the active outlet is set in the navbar selector (`Outlet
 - **Opening a shift** — pick the branch warehouse from the cashiers' assigned active warehouses only.
 - **Switching outlets** — close all open shifts first; the selector allows switching between assigned active outlets.
 - **Stock transfers** — `PUSAT → branch` is the typical replenishment path; cross-outlet transfers require both endpoints to be assigned to the operator.
-- **Per-outlet settings** — store profile, printer, payment settings, bank accounts, pricing, vouchers, dine-in, WhatsApp, and sales target each have an outlet override and a global fallback.
+- **Per-outlet settings** — store profile, printer, payment settings, bank accounts, pricing, vouchers, WhatsApp, and sales target each have an outlet override and a global fallback.
 - **Reports** — sales, profit, and dashboard reflect the operator's accessible outlets. Use the warehouse filter for finer selection.
 - **Receivables and payables** — remain in a global ledger; visibility and payment authorization derive from the source transaction/purchase-order outlet.
 
@@ -61,7 +61,7 @@ For every sales outlet:
 - Link one active branch warehouse.
 - Attach product stock rows and load opening stock through approved transfers or opname.
 - Assign cashiers and managers through user outlet assignments.
-- Configure store profile, printer, payment settings, bank accounts, pricing, vouchers, dine-in tables, WhatsApp, and sales target as required.
+- Configure store profile, printer, payment settings, bank accounts, pricing, vouchers, WhatsApp, and sales target as required.
 
 ## Pilot Checklist
 
@@ -75,7 +75,6 @@ Run the following with a test user assigned to one outlet:
 - Confirm transaction, stock, receipt, and payment webhook outlet context.
 - Test offline sync and confirm it cannot post without the correct active shift.
 - Test return, stock opname, transfer, purchase order, goods receiving, and supplier return.
-- Test dine-in QR ordering at the correct outlet table.
 - Verify sales, profit, insights, receivable, payable, and dashboard totals for the active outlet.
 - Verify an Outlet A user cannot read or mutate Outlet B records.
 - Run `php artisan outlet:audit --strict` and require success.

@@ -25,33 +25,33 @@ export default {
                 ],
             },
             colors: {
-                // Primary - Indigo
+                // Primary - Blue
                 primary: {
-                    50: "#eef2ff",
-                    100: "#e0e7ff",
-                    200: "#c7d2fe",
-                    300: "#a5b4fc",
-                    400: "#818cf8",
-                    500: "#6366f1",
-                    600: "#4f46e5",
-                    700: "#4338ca",
-                    800: "#3730a3",
-                    900: "#312e81",
-                    950: "#1e1b4b",
+                    50: "#eef6ff",
+                    100: "#dfeeff",
+                    200: "#c7defd",
+                    300: "#a5c6fd",
+                    400: "#78a8ff",
+                    500: "#3c7ae7",
+                    600: "#2859d6",
+                    700: "#2149b2",
+                    800: "#1a3d8a",
+                    900: "#142c5a",
+                    950: "#0d1b3d",
                 },
-                // Accent - Cyan
+                // Accent - Sky (harmonized with primary)
                 accent: {
-                    50: "#ecfeff",
-                    100: "#cffafe",
-                    200: "#a5f3fc",
-                    300: "#67e8f9",
-                    400: "#22d3ee",
-                    500: "#06b6d4",
-                    600: "#0891b2",
-                    700: "#0e7490",
-                    800: "#155e75",
-                    900: "#164e63",
-                    950: "#083344",
+                    50: "#f0f9ff",
+                    100: "#e0f2fe",
+                    200: "#bae6fd",
+                    300: "#7dd3fc",
+                    400: "#38bdf8",
+                    500: "#0ea5e9",
+                    600: "#0284c7",
+                    700: "#0369a1",
+                    800: "#075985",
+                    900: "#0c4a6e",
+                    950: "#082f49",
                 },
                 // Success - Emerald
                 success: {
@@ -115,8 +115,8 @@ export default {
                 "4xl": "2rem",
             },
             boxShadow: {
-                glow: "0 0 20px rgba(99, 102, 241, 0.3)",
-                "glow-lg": "0 0 40px rgba(99, 102, 241, 0.4)",
+                glow: "0 0 20px rgba(60, 122, 231, 0.3)",
+                "glow-lg": "0 0 40px rgba(60, 122, 231, 0.4)",
                 "inner-lg": "inset 0 4px 6px -1px rgb(0 0 0 / 0.1)",
             },
             animation: {

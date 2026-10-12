@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\Warehouse;
+use App\Services\BusinessContext;
+use App\Services\BusinessHierarchyService;
 use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -27,7 +30,7 @@ class WarehouseController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'unique:warehouses,code'],
+            'code' => ['required', 'string', 'max:20', TenantUnique::for('warehouses', 'code')],
             'name' => ['required', 'string', 'max:100'],
             'type' => ['required', Rule::in(['main', 'branch', 'warehouse'])],
             'address' => ['nullable', 'string', 'max:500'],
@@ -41,6 +44,7 @@ class WarehouseController extends Controller
             : $this->outletAccessService->activeOutlet($request);
         if ($outlet) {
             abort_unless($request->user()->isSuperAdmin() || $request->user()->outlets()->whereKey($outlet->id)->exists(), 403);
+            $this->assertOutletInActiveBusiness($outlet);
             $validated['outlet_id'] = $outlet->id;
         }
 
@@ -59,8 +63,9 @@ class WarehouseController extends Controller
     public function update(Request $request, Warehouse $warehouse)
     {
         abort_unless($this->outletAccessService->canUseWarehouse($request->user(), $warehouse), 404);
+        $this->assertWarehouseInActiveBusiness($warehouse);
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', Rule::unique('warehouses', 'code')->ignore($warehouse->id)],
+            'code' => ['required', 'string', 'max:20', TenantUnique::for('warehouses', 'code', $warehouse->id)],
             'name' => ['required', 'string', 'max:100'],
             'type' => ['required', Rule::in(['main', 'branch', 'warehouse'])],
             'address' => ['nullable', 'string', 'max:500'],
@@ -83,6 +88,7 @@ class WarehouseController extends Controller
     public function destroy(Warehouse $warehouse)
     {
         abort_unless($this->outletAccessService->canUseWarehouse(request()->user(), $warehouse), 404);
+        $this->assertWarehouseInActiveBusiness($warehouse);
         if ($warehouse->type === 'main') {
             return back()->with('error', 'Gudang utama tidak bisa dihapus.');
         }
@@ -99,5 +105,39 @@ class WarehouseController extends Controller
         $warehouse->delete();
 
         return back()->with('success', 'Gudang berhasil dihapus.');
+    }
+
+    private function assertOutletInActiveBusiness(Outlet $outlet): void
+    {
+        if (! config('multi_business.enabled')) {
+            return;
+        }
+
+        $businessId = app(BusinessContext::class)->businessId();
+        if ($businessId === null) {
+            return;
+        }
+
+        abort_unless(
+            app(BusinessHierarchyService::class)->outletBelongsToBusiness($outlet, $businessId),
+            404,
+        );
+    }
+
+    private function assertWarehouseInActiveBusiness(Warehouse $warehouse): void
+    {
+        if (! config('multi_business.enabled')) {
+            return;
+        }
+
+        $businessId = app(BusinessContext::class)->businessId();
+        if ($businessId === null) {
+            return;
+        }
+
+        abort_unless(
+            app(BusinessHierarchyService::class)->warehouseBelongsToBusiness($warehouse, $businessId),
+            404,
+        );
     }
 }

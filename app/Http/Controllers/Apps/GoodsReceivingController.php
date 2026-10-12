@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\GoodsReceiving;
 use App\Models\PurchaseOrder;
 use App\Models\Warehouse;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\GoodsReceivingService;
 use App\Services\OutletAccessService;
 use Illuminate\Http\Request;
@@ -70,7 +71,7 @@ class GoodsReceivingController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'purchase_order_id' => ['required', 'exists:purchase_orders,id'],
+            'purchase_order_id' => ['required', 'exists:purchase_orders,id', new BelongsToActiveBusiness('purchase_orders')],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.purchase_order_item_id' => ['required', 'exists:purchase_order_items,id'],

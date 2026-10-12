@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,10 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $casts = [
         'id' => 'integer',
+        'business_id' => 'integer',
         'category_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -40,6 +43,7 @@ class Product extends Model
         'min_stock',
         'max_stock',
         'is_composite',
+        'business_id',
     ];
 
     public function category()

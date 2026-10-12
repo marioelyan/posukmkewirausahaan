@@ -38,8 +38,7 @@ Setiap modul memakai permission sendiri, contohnya:
 - **`manager`** — akses operasional penuh lintas outlet yang ditugaskan (produk, stok, purchasing,
   transaksi, laporan, CRM, diskon), **tanpa** administrasi `users`/`roles`/`permissions`/`outlets`
   dan tanpa update kredensial payment gateway. Dibuat oleh `RoleSeeder::createManagerRole()`.
-- **`cashier`** — transaksi POS, buka/tutup shift, tambah pelanggan, bayar piutang/hutang, dan
-  memproses pesanan dine-in.
+- **`cashier`** — transaksi POS, buka/tutup shift, tambah pelanggan, dan bayar piutang/hutang.
 - Role per modul lain (mis. `products-access`, `transactions-access`) dibuat otomatis dari pola
   permission.
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
 use App\Services\PurchaseOrderService;
 use Illuminate\Http\Request;
@@ -66,12 +67,12 @@ class PurchaseOrderController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'supplier_id' => ['nullable', 'exists:suppliers,id'],
-            'warehouse_id' => ['nullable', 'exists:warehouses,id'],
+            'supplier_id' => ['nullable', 'exists:suppliers,id', new BelongsToActiveBusiness('suppliers')],
+            'warehouse_id' => ['nullable', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
             'document_number' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => ['required', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'items.*.qty_ordered' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);

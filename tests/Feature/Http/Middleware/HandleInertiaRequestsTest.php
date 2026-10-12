@@ -2,10 +2,8 @@
 
 namespace Tests\Feature\Http\Middleware;
 
+use App\Models\Category;
 use App\Models\Customer;
-use App\Models\DineArea;
-use App\Models\DineOrder;
-use App\Models\DiningTable;
 use App\Models\Outlet;
 use App\Models\Payable;
 use App\Models\Product;
@@ -19,6 +17,7 @@ use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class HandleInertiaRequestsTest extends TestCase
@@ -31,7 +30,6 @@ class HandleInertiaRequestsTest extends TestCase
 
         foreach ([
             'discounts-approve',
-            'dine-orders-access',
         ] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
@@ -107,34 +105,12 @@ class HandleInertiaRequestsTest extends TestCase
             ->where('pendingApprovalCount', 1));
     }
 
-    public function test_pending_dine_orders_count_is_scoped_to_accessible_outlets(): void
-    {
-        [$outletA] = $this->makeOutletWithWarehouse('DIN');
-        [$outletB] = $this->makeOutletWithWarehouse('DJN');
-
-        $areaA = DineArea::create(['outlet_id' => $outletA->id, 'name' => 'Area A']);
-        $areaB = DineArea::create(['outlet_id' => $outletB->id, 'name' => 'Area B']);
-        $tableA = DiningTable::create(['dine_area_id' => $areaA->id, 'name' => 'T-A1']);
-        $tableB = DiningTable::create(['dine_area_id' => $areaB->id, 'name' => 'T-B1']);
-
-        DineOrder::create(['dine_table_id' => $tableA->id, 'status' => 'submitted']);
-        DineOrder::create(['dine_table_id' => $tableB->id, 'status' => 'submitted']);
-
-        $user = $this->makeUserForOutlet($outletA, ['dine-orders-access']);
-
-        $response = $this->actingAs($user)->get('/dashboard/access');
-        $response->assertOk();
-
-        $response->assertInertia(fn ($page) => $page
-            ->where('pendingDineOrdersCount', 1));
-    }
-
     public function test_expiring_batch_notifications_are_scoped_to_accessible_warehouses(): void
     {
         [$outletA, $warehouseA] = $this->makeOutletWithWarehouse('BAT');
         [, $warehouseB] = $this->makeOutletWithWarehouse('BBT');
 
-        $category = \App\Models\Category::create(['name' => 'Kat', 'image' => '', 'description' => '']);
+        $category = Category::create(['name' => 'Kat', 'image' => '', 'description' => '']);
         $product = Product::create([
             'title' => 'Produk Batch',
             'barcode' => 'BATCH-1',
@@ -293,7 +269,7 @@ class HandleInertiaRequestsTest extends TestCase
 
         $user = User::factory()->create();
         $user->markEmailAsVerified();
-        $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
         $user->assignRole($role);
 
         $response = $this->actingAs($user)->get('/dashboard/access');

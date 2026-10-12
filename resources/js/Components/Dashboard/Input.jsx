@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useId } from "react";
 
-export default function Input({ label, type, className, errors, icon, ...props }) {
+export default function Input({ label, type, className, errors, icon, id, ...props }) {
+    const generatedId = useId();
+    const inputId = id || generatedId;
+
     return (
         <div className="flex flex-col gap-2">
             {label && (
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor={inputId} className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     {label}
                 </label>
             )}
@@ -15,6 +18,7 @@ export default function Input({ label, type, className, errors, icon, ...props }
                     </span>
                 )}
                 <input
+                    id={inputId}
                     type={type}
                     className={`
                         w-full h-11 ${icon ? "pl-10 pr-4" : "px-4"} text-sm rounded-xl

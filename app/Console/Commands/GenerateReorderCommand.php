@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Business;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\ReorderService;
+use App\Support\Tenancy\BusinessTaskRunner;
 use Illuminate\Console\Command;
 
 class GenerateReorderCommand extends Command
@@ -13,40 +15,53 @@ class GenerateReorderCommand extends Command
 
     protected $description = 'Create draft purchase orders from low-stock reorder points';
 
-    public function handle(ReorderService $reorderService): int
+    public function handle(ReorderService $reorderService, BusinessTaskRunner $runner): int
     {
-        // ponytail: first admin is the PO author; add per-warehouse assignment if needed
+        // The PO author is a platform super-admin; per-warehouse assignment can
+        // be refined later if the business model needs it.
         $userId = User::role('super-admin')->orderBy('id')->value('id')
             ?? User::orderBy('id')->value('id');
 
-        $warehouses = Warehouse::where('is_active', true)->orderBy('id')->get();
-
-        if ($warehouses->isEmpty()) {
-            $this->info('No active warehouses.');
-
-            return self::SUCCESS;
-        }
-
+        $ran = false;
         $created = 0;
         $hadLowStock = false;
 
-        foreach ($warehouses as $warehouse) {
-            $products = $reorderService->getLowStockProducts($warehouse->id);
+        // SCHED-01/02: iterate each active business with an explicit context so
+        // the tenant-scoped warehouse queries never collapse to a global (or
+        // fail-closed) run. Flag off = one legacy pass over everything.
+        $runner->runForEachActiveBusiness(function (?Business $business) use ($reorderService, $userId, &$ran, &$created, &$hadLowStock) {
+            $ran = true;
 
-            if ($products->isEmpty()) {
-                continue;
+            $warehouses = Warehouse::where('is_active', true)->orderBy('id')->get();
+
+            if ($warehouses->isEmpty()) {
+                return;
             }
 
-            $hadLowStock = true;
+            foreach ($warehouses as $warehouse) {
+                $products = $reorderService->getLowStockProducts($warehouse->id);
 
-            $order = $reorderService->createDraftPurchaseOrder($products, $userId, $warehouse->id);
+                if ($products->isEmpty()) {
+                    continue;
+                }
 
-            if (! $order) {
-                continue;
+                $hadLowStock = true;
+
+                $order = $reorderService->createDraftPurchaseOrder($products, $userId, $warehouse->id);
+
+                if (! $order) {
+                    continue;
+                }
+
+                $created++;
+                $this->info("Draft purchase order #{$order->id} created for {$warehouse->name} with {$order->items->count()} item(s).");
             }
+        });
 
-            $created++;
-            $this->info("Draft purchase order #{$order->id} created for {$warehouse->name} with {$order->items->count()} item(s).");
+        if (! $ran) {
+            $this->info('No active warehouses.');
+
+            return self::SUCCESS;
         }
 
         if ($created === 0) {

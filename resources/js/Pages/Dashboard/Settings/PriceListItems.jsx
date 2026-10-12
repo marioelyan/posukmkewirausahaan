@@ -30,18 +30,18 @@ export default function PriceListItems({ priceList, products }) {
             <Head title={`Price List: ${priceList.name}`} />
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link href={route("price-lists.index")} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100"><IconArrowLeft size={20} /></Link>
+                    <Link href={route("price-lists.index")} aria-label="Kembali ke daftar price list" className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"><IconArrowLeft size={20} /></Link>
                     <div>
-                        <h1 className="text-2xl font-bold">{priceList.name}</h1>
-                        <p className="text-sm text-slate-500">{priceList.items.length} produk</p>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{priceList.name}</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{priceList.items.length} produk</p>
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                     <h3 className="font-semibold mb-3">Tambah Harga</h3>
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari produk..." className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm mb-3" />
+                    <input value={search} onChange={e => setSearch(e.target.value)} aria-label="Cari produk" placeholder="Cari produk..." className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 mb-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
                     {search && filtered.filter(p => !existingProductIds.includes(p.id)).slice(0, 10).map(p => (
-                        <button key={p.id} type="button" onClick={() => addPrice(p)} className="flex w-full items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-50 text-sm transition">
+                        <button key={p.id} type="button" onClick={() => addPrice(p)} className="flex w-full items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40">
                             <span>{p.title} <span className="text-slate-400">({p.sku || "-"})</span></span>
                             <span className="text-primary-500 font-medium">{formatPrice(p.sell_price)}</span>
                         </button>
@@ -52,13 +52,13 @@ export default function PriceListItems({ priceList, products }) {
                     {priceList.items.length > 0 ? (
                         <div className="divide-y">
                             {priceList.items.map(item => (
-                                <div key={item.id} className="p-4 flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <p className="font-semibold">{item.product?.title || "-"}</p>
-                                        <p className="text-sm text-slate-500">{item.product?.sku || "-"} • Harga normal: {formatPrice(item.product?.sell_price)}</p>
+                                <div key={item.id} className="p-4 flex flex-wrap items-center gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-slate-800 dark:text-white">{item.product?.title || "-"}</p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">{item.product?.sku || "-"} • Harga normal: {formatPrice(item.product?.sell_price)}</p>
                                     </div>
                                     <span className="font-bold text-primary-600">{formatPrice(item.price)}</span>
-                                    <button onClick={() => removeItem(item)} className="p-2 rounded-lg text-danger-500 hover:bg-danger-50"><IconTrash size={18} /></button>
+                                    <button onClick={() => removeItem(item)} aria-label={`Hapus ${item.product?.title || "item"}`} className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40"><IconTrash size={18} /></button>
                                 </div>
                             ))}
                         </div>

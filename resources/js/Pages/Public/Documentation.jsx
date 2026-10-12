@@ -26,7 +26,6 @@ const categories = [
             { file: "features/mobile-pos.md", title: "Mobile POS (PWA)", desc: "Gunakan kasir dari HP — installable dan offline-ready." },
             { file: "features/offline-mode.md", title: "Offline Mode", desc: "Batasan, antrean transaksi, dan sinkronisasi offline." },
             { file: "features/thermal-printer.md", title: "Printer Thermal", desc: "Cetak struk 58/80mm via WebUSB." },
-            { file: "features/dine-in.md", title: "Dine-in QR Menu", desc: "QR menu, self-order, floor plan, dan status pesanan." },
             { file: "features/api-integration.md", title: "API & Integrasi", desc: "Auth, endpoint POS, master data, dan API documentation." },
         ],
     },

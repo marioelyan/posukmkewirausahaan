@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             PaymentSettingSeeder::class,
-            DineInSettingsSeeder::class,
+            IndonesiaRegionSeeder::class,
         ]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

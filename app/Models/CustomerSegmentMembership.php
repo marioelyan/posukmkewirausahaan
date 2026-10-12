@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,6 +26,25 @@ class CustomerSegmentMembership extends Model
         'customer_segment_id' => 'integer',
         'matched_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        // Memberships carry no `business_id`; ownership is inherited from the
+        // parent customer. With tenancy enabled this keeps every read/aggregate
+        // (segment member counts, `memberships` relation, stats) scoped to the
+        // active business, and fails closed when there is no context because the
+        // Customer global scope already does so.
+        static::addGlobalScope('business_via_customer', function (Builder $builder) {
+            if (! config('multi_business.enabled')) {
+                return;
+            }
+
+            $builder->whereIn(
+                $builder->getModel()->getTable().'.customer_id',
+                Customer::query()->select('customers.id')
+            );
+        });
+    }
 
     public function customer()
     {

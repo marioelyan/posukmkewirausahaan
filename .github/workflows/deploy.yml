@@ -1,0 +1,111 @@
+name: CI / Deploy
+
+# Validates, builds, and tests the application on every push and pull request,
+# then deploys to production (dikasir.web.id) when `main` is pushed.
+#
+# CI follows AGENTS.md: Composer validation, `npm run build`, and
+# `php artisan test --compact` on PHP 8.4 + Node 22 + SQLite (in-memory).
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Validate, build & test (PHP 8.4 / Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          coverage: none
+          extensions: bcmath, ctype, curl, dom, exif, fileinfo, gd, intl, mbstring, pdo, pdo_sqlite, sqlite3, xml, zip
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-php-
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validate composer.json / composer.lock
+        run: composer validate --strict --no-check-publish
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: PUPPETEER_SKIP_DOWNLOAD=true npm run build
+
+      - name: Prepare application key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run test suite (SQLite in-memory)
+        run: php artisan test --compact
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+
+  deploy:
+    name: Deploy to production (dikasir.web.id)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+
+            # VPS runs PHP 8.4 and Node 24.15 (see AGENTS.md).
+            php8.4 artisan down --retry=30 2>/dev/null || true
+
+            git fetch origin
+            git checkout main
+            git pull --ff-only origin main
+
+            composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+            PUPPETEER_SKIP_DOWNLOAD=true npm ci
+            PUPPETEER_SKIP_DOWNLOAD=true npm run build
+
+            php8.4 artisan migrate --force
+            php8.4 artisan storage:link 2>/dev/null || true
+            php8.4 artisan config:cache
+            php8.4 artisan view:cache
+            php8.4 artisan scramble:cache
+            php8.4 artisan queue:restart 2>/dev/null || true
+
+            php8.4 artisan up

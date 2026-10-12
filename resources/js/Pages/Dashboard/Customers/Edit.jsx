@@ -162,7 +162,7 @@ export default function Edit({ customer }) {
                             />
                             <Input
                                 type="text"
-                                label="No. Handphone"
+                                label="No. Handphone (Opsional)"
                                 placeholder="08xxxxxxxxxx"
                                 errors={errors.no_telp}
                                 onChange={(e) => setData("no_telp", e.target.value)}
@@ -190,7 +190,7 @@ export default function Edit({ customer }) {
                                                 e.target.checked
                                             )
                                         }
-                                        className="h-4 w-4 rounded border-slate-300 text-primary-500"
+                                        className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-2 focus:ring-primary-500/40"
                                     />
                                     Member
                                 </label>
@@ -198,10 +198,11 @@ export default function Edit({ customer }) {
 
                             {data.is_loyalty_member && (
                                 <div className="mt-4">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    <label htmlFor="loyalty_tier" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                         Tier Member
                                     </label>
                                     <select
+                                        id="loyalty_tier"
                                         value={data.loyalty_tier}
                                         onChange={(e) =>
                                             setData(
@@ -209,7 +210,7 @@ export default function Edit({ customer }) {
                                                 e.target.value
                                             )
                                         }
-                                        className="mt-2 w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+                                        className="mt-2 w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                                     >
                                         {tierOptions.map((tier) => (
                                             <option
@@ -226,15 +227,16 @@ export default function Edit({ customer }) {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <label htmlFor="province_id" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                     Provinsi
                                 </label>
                                 <select
+                                    id="province_id"
                                     value={data.province_id}
                                     onChange={(e) =>
                                         setData("province_id", e.target.value)
                                     }
-                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm"
+                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                                 >
                                     <option value="">Pilih Provinsi</option>
                                     {provinces.map((prov) => (
@@ -250,15 +252,16 @@ export default function Edit({ customer }) {
                                 )}
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <label htmlFor="regency_id" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                     Kota/Kabupaten
                                 </label>
                                 <select
+                                    id="regency_id"
                                     value={data.regency_id}
                                     onChange={(e) =>
                                         setData("regency_id", e.target.value)
                                     }
-                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm"
+                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                     disabled={!data.province_id}
                                 >
                                     <option value="">Pilih Kota/Kabupaten</option>
@@ -278,15 +281,16 @@ export default function Edit({ customer }) {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <label htmlFor="district_id" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                     Kecamatan
                                 </label>
                                 <select
+                                    id="district_id"
                                     value={data.district_id}
                                     onChange={(e) =>
                                         setData("district_id", e.target.value)
                                     }
-                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm"
+                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                     disabled={!data.regency_id}
                                 >
                                     <option value="">Pilih Kecamatan</option>
@@ -303,16 +307,17 @@ export default function Edit({ customer }) {
                                 )}
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <label htmlFor="village_id" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                     Kelurahan
                                 </label>
                                 <select
+                                    id="village_id"
                                     value={data.village_id}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         setData("village_id", val);
                                     }}
-                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm"
+                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                     disabled={!data.district_id}
                                 >
                                     <option value="">Pilih Kelurahan</option>
@@ -330,7 +335,7 @@ export default function Edit({ customer }) {
                             </div>
                         </div>
                         <Textarea
-                            label="Alamat Detail"
+                            label="Alamat Detail (Opsional)"
                             placeholder="Alamat lengkap"
                             errors={errors.address}
                             onChange={(e) => setData("address", e.target.value)}
@@ -342,14 +347,14 @@ export default function Edit({ customer }) {
                     <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                         <Link
                             href={route("customers.index")}
-                            className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                            className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                         >
                             Batal
                         </Link>
                         <button
                             type="submit"
                             disabled={processing}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                             <IconDeviceFloppy size={18} />
                             {processing ? "Menyimpan..." : "Simpan Perubahan"}

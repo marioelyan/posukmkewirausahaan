@@ -5,12 +5,14 @@ namespace App\Imports;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductWarehouse;
+use App\Services\BusinessContext;
 use App\Services\StockMutationService;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use RuntimeException;
 
 /**
  * Persists each row itself (updateOrCreate + warehouse pivot) inside model(),
@@ -30,6 +32,19 @@ class ProductsImport implements ToModel, WithChunkReading, WithHeadingRow, WithV
     public function model(array $row)
     {
         $this->rowCount++;
+
+        // Server-side ownership is authoritative: never read a business id from
+        // the uploaded file, and fail closed rather than create an unowned
+        // product when tenancy is enabled without a verified context.
+        $businessId = null;
+        if (config('multi_business.enabled')) {
+            $businessId = app(BusinessContext::class)->businessId();
+
+            if ($businessId === null) {
+                throw new RuntimeException('Active business context is required to import products.');
+            }
+        }
+
         $categoryName = trim($row['kategori'] ?? 'Umum');
         $category = Category::firstOrCreate(
             ['name' => $categoryName],
@@ -38,22 +53,30 @@ class ProductsImport implements ToModel, WithChunkReading, WithHeadingRow, WithV
 
         $barcode = (string) ($row['barcode'] ?? '');
 
-        return DB::transaction(function () use ($row, $barcode, $category) {
+        return DB::transaction(function () use ($row, $barcode, $category, $businessId) {
+            $values = [
+                'sku' => $row['sku'] ?? $barcode,
+                'title' => $row['nama'] ?? '',
+                'description' => $row['deskripsi'] ?? '',
+                'category_id' => $category->id,
+                'buy_price' => (int) ($row['harga_beli'] ?? 0),
+                'sell_price' => (int) ($row['harga_jual'] ?? 0),
+                'stock' => (int) ($row['stok'] ?? 0),
+                'min_stock' => (int) ($row['min_stok'] ?? 0),
+                'max_stock' => (int) ($row['max_stok'] ?? 0),
+                'tax_type' => $row['tipe_pajak'] ?? 'exclusive',
+                'tax_rate' => (float) ($row['tarif_pajak'] ?? 11.00),
+            ];
+
+            if ($businessId !== null) {
+                // `updateOrCreate` is business-scoped, so this can only ever
+                // match/update a record already owned by the active business.
+                $values['business_id'] = $businessId;
+            }
+
             $product = Product::updateOrCreate(
                 ['barcode' => $barcode],
-                [
-                    'sku' => $row['sku'] ?? $barcode,
-                    'title' => $row['nama'] ?? '',
-                    'description' => $row['deskripsi'] ?? '',
-                    'category_id' => $category->id,
-                    'buy_price' => (int) ($row['harga_beli'] ?? 0),
-                    'sell_price' => (int) ($row['harga_jual'] ?? 0),
-                    'stock' => (int) ($row['stok'] ?? 0),
-                    'min_stock' => (int) ($row['min_stok'] ?? 0),
-                    'max_stock' => (int) ($row['max_stok'] ?? 0),
-                    'tax_type' => $row['tipe_pajak'] ?? 'exclusive',
-                    'tax_rate' => (float) ($row['tarif_pajak'] ?? 11.00),
-                ]
+                $values
             );
 
             if ($this->warehouseId) {

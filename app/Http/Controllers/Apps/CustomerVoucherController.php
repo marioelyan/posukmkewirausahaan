@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Apps;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerVoucher;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
 use App\Services\OutletAccessService;
 use Illuminate\Http\Request;
@@ -26,14 +27,7 @@ class CustomerVoucherController extends Controller
             'status' => $request->input('status'),
         ];
 
-        $outlet = $this->outletAccessService->activeOutlet($request);
-        $vouchers = CustomerVoucher::query()
-            ->where(function ($query) use ($outlet) {
-                $query->whereNull('outlet_id');
-                if ($outlet) {
-                    $query->orWhere('outlet_id', $outlet->id);
-                }
-            })
+        $vouchers = $this->scopeVouchersToActiveOutlet($request, CustomerVoucher::query())
             ->with(['customer:id,name,no_telp', 'creator:id,name'])
             ->when($filters['search'], function ($query, $search) {
                 $query->where(function ($builder) use ($search) {
@@ -151,7 +145,7 @@ class CustomerVoucherController extends Controller
     private function validateVoucher(Request $request, ?CustomerVoucher $voucher = null): array
     {
         $validated = $request->validate([
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'customer_id' => ['required', 'integer', 'exists:customers,id', new BelongsToActiveBusiness('customers')],
             'code' => [
                 'nullable',
                 'string',
@@ -216,6 +210,41 @@ class CustomerVoucherController extends Controller
     {
         $outlet = $this->outletAccessService->activeOutlet(request());
 
-        return $voucher->outlet_id === null || ($outlet && (int) $voucher->outlet_id === (int) $outlet->id);
+        if (! config('multi_business.enabled')) {
+            return $voucher->outlet_id === null || ($outlet && (int) $voucher->outlet_id === (int) $outlet->id);
+        }
+
+        // Unowned (null outlet) vouchers cannot be attributed to a business; the
+        // active outlet already resolves inside the verified active business.
+        return $voucher->outlet_id !== null
+            && $outlet !== null
+            && (int) $voucher->outlet_id === (int) $outlet->id;
+    }
+
+    /**
+     * Constrain a voucher query to the outlet rows owned by the active business.
+     *
+     * Vouchers are outlet-scoped. Unowned (null outlet) rows cannot be proven to
+     * belong to the active business and are dropped while tenancy is enabled;
+     * legacy mode keeps the original null-or-active-outlet behaviour.
+     */
+    private function scopeVouchersToActiveOutlet(Request $request, $query)
+    {
+        $outlet = $this->outletAccessService->activeOutlet($request);
+
+        if (! config('multi_business.enabled')) {
+            return $query->where(function ($query) use ($outlet) {
+                $query->whereNull('outlet_id');
+                if ($outlet) {
+                    $query->orWhere('outlet_id', $outlet->id);
+                }
+            });
+        }
+
+        if (! $outlet) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('outlet_id', $outlet->id);
     }
 }

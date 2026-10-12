@@ -40,74 +40,79 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('api.auth.logout');
         });
 
-        // Master data — Sanctum abilities mirror Spatie permission names stamped on the token at login
-        Route::apiResource('products', ProductController::class)
-            ->middlewareFor(['index', 'show'], 'abilities:products-access')
-            ->middlewareFor('store', 'abilities:products-create')
-            ->middlewareFor('update', 'abilities:products-edit')
-            ->middlewareFor('destroy', 'abilities:products-delete')
-            ->names([
-                'index' => 'api.products.index',
-                'store' => 'api.products.store',
-                'show' => 'api.products.show',
-                'update' => 'api.products.update',
-                'destroy' => 'api.products.destroy',
-            ]);
+        // Master data — Sanctum abilities mirror Spatie permission names stamped on the token at login.
+        // `business` resolves the verified business context (session or X-Business-Id header) before
+        // implicit route-model binding; `business.required` fails closed when tenancy is enabled
+        // without a context. Both are no-ops while multi_business.enabled is false.
+        Route::middleware(['business', 'business.required', 'business.role'])->group(function () {
+            Route::apiResource('products', ProductController::class)
+                ->middlewareFor(['index', 'show'], 'abilities:products-access')
+                ->middlewareFor('store', 'abilities:products-create')
+                ->middlewareFor('update', 'abilities:products-edit')
+                ->middlewareFor('destroy', 'abilities:products-delete')
+                ->names([
+                    'index' => 'api.products.index',
+                    'store' => 'api.products.store',
+                    'show' => 'api.products.show',
+                    'update' => 'api.products.update',
+                    'destroy' => 'api.products.destroy',
+                ]);
 
-        Route::apiResource('customers', CustomerController::class)
-            ->middlewareFor(['index', 'show'], 'abilities:customers-access')
-            ->middlewareFor('store', 'abilities:customers-create')
-            ->middlewareFor('update', 'abilities:customers-edit')
-            ->middlewareFor('destroy', 'abilities:customers-delete')
-            ->names([
-                'index' => 'api.customers.index',
-                'store' => 'api.customers.store',
-                'show' => 'api.customers.show',
-                'update' => 'api.customers.update',
-                'destroy' => 'api.customers.destroy',
-            ]);
+            Route::apiResource('customers', CustomerController::class)
+                ->middlewareFor(['index', 'show'], 'abilities:customers-access')
+                ->middlewareFor('store', 'abilities:customers-create')
+                ->middlewareFor('update', 'abilities:customers-edit')
+                ->middlewareFor('destroy', 'abilities:customers-delete')
+                ->names([
+                    'index' => 'api.customers.index',
+                    'store' => 'api.customers.store',
+                    'show' => 'api.customers.show',
+                    'update' => 'api.customers.update',
+                    'destroy' => 'api.customers.destroy',
+                ]);
 
-        Route::apiResource('categories', CategoryController::class)
-            ->middlewareFor(['index', 'show'], 'abilities:categories-access')
-            ->middlewareFor('store', 'abilities:categories-create')
-            ->middlewareFor('update', 'abilities:categories-edit')
-            ->middlewareFor('destroy', 'abilities:categories-delete')
-            ->names([
-                'index' => 'api.categories.index',
-                'store' => 'api.categories.store',
-                'show' => 'api.categories.show',
-                'update' => 'api.categories.update',
-                'destroy' => 'api.categories.destroy',
-            ]);
+            Route::apiResource('categories', CategoryController::class)
+                ->middlewareFor(['index', 'show'], 'abilities:categories-access')
+                ->middlewareFor('store', 'abilities:categories-create')
+                ->middlewareFor('update', 'abilities:categories-edit')
+                ->middlewareFor('destroy', 'abilities:categories-delete')
+                ->names([
+                    'index' => 'api.categories.index',
+                    'store' => 'api.categories.store',
+                    'show' => 'api.categories.show',
+                    'update' => 'api.categories.update',
+                    'destroy' => 'api.categories.destroy',
+                ]);
 
-        Route::apiResource('warehouses', WarehouseController::class)
-            ->middlewareFor(['index', 'show'], 'abilities:warehouses-access')
-            ->middlewareFor('store', 'abilities:warehouses-create')
-            ->middlewareFor('update', 'abilities:warehouses-update')
-            ->middlewareFor('destroy', 'abilities:warehouses-delete')
-            ->names([
-                'index' => 'api.warehouses.index',
-                'store' => 'api.warehouses.store',
-                'show' => 'api.warehouses.show',
-                'update' => 'api.warehouses.update',
-                'destroy' => 'api.warehouses.destroy',
-            ]);
+            Route::apiResource('warehouses', WarehouseController::class)
+                ->middlewareFor(['index', 'show'], 'abilities:warehouses-access')
+                ->middlewareFor('store', 'abilities:warehouses-create')
+                ->middlewareFor('update', 'abilities:warehouses-update')
+                ->middlewareFor('destroy', 'abilities:warehouses-delete')
+                ->names([
+                    'index' => 'api.warehouses.index',
+                    'store' => 'api.warehouses.store',
+                    'show' => 'api.warehouses.show',
+                    'update' => 'api.warehouses.update',
+                    'destroy' => 'api.warehouses.destroy',
+                ]);
 
-        Route::apiResource('suppliers', SupplierController::class)
-            ->middlewareFor(['index', 'show'], 'abilities:suppliers-access')
-            ->middlewareFor('store', 'abilities:suppliers-access')
-            ->middlewareFor('update', 'abilities:suppliers-access')
-            ->middlewareFor('destroy', 'abilities:suppliers-access')
-            ->names([
-                'index' => 'api.suppliers.index',
-                'store' => 'api.suppliers.store',
-                'show' => 'api.suppliers.show',
-                'update' => 'api.suppliers.update',
-                'destroy' => 'api.suppliers.destroy',
-            ]);
+            Route::apiResource('suppliers', SupplierController::class)
+                ->middlewareFor(['index', 'show'], 'abilities:suppliers-access')
+                ->middlewareFor('store', 'abilities:suppliers-access')
+                ->middlewareFor('update', 'abilities:suppliers-access')
+                ->middlewareFor('destroy', 'abilities:suppliers-access')
+                ->names([
+                    'index' => 'api.suppliers.index',
+                    'store' => 'api.suppliers.store',
+                    'show' => 'api.suppliers.show',
+                    'update' => 'api.suppliers.update',
+                    'destroy' => 'api.suppliers.destroy',
+                ]);
+        });
 
         // POS (mobile kasir) — requires the pos-access ability
-        Route::prefix('pos')->middleware('abilities:pos-access')->group(function () {
+        Route::prefix('pos')->middleware(['business', 'business.required', 'abilities:pos-access', 'business.role'])->group(function () {
             // Shift
             Route::get('/shift', [PosApiController::class, 'currentShift'])->name('api.pos.shift');
             Route::post('/shift/open', [PosApiController::class, 'openShift'])->name('api.pos.shift.open');

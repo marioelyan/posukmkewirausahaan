@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Apps;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\StockTransfer;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
 use App\Services\StockTransferService;
 use Illuminate\Http\RedirectResponse;
@@ -54,12 +55,12 @@ class StockTransferController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'source_warehouse_id' => ['required', 'exists:warehouses,id'],
-            'destination_warehouse_id' => ['required', 'exists:warehouses,id', 'different:source_warehouse_id'],
+            'source_warehouse_id' => ['required', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
+            'destination_warehouse_id' => ['required', 'exists:warehouses,id', 'different:source_warehouse_id', new BelongsToActiveBusiness('warehouses')],
             'document_number' => ['nullable', 'string', 'max:30'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => ['required', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'items.*.qty' => ['required', 'integer', 'min:1'],
         ]);
 

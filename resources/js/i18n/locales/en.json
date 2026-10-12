@@ -253,7 +253,6 @@
             "procurement": "Procurement",
             "crmPricing": "CRM & Pricing",
             "reports": "Reports",
-            "dineIn": "Dine-In",
             "operations": "Operations & Control",
             "userManagement": "User Management",
             "settings": "Settings"
@@ -283,9 +282,6 @@
             "customerSegments": "Customer Segments",
             "crmCampaigns": "CRM Campaigns",
             "crmReminders": "CRM Reminders",
-            "dineAreas": "Dine-In Areas",
-            "dineTables": "Dine-In Tables",
-            "dineOrders": "Dine-In Orders",
             "salesReport": "Sales Report",
             "profitReport": "Profit Report",
             "advancedInsights": "Advanced Insights",
@@ -911,7 +907,7 @@
             },
             "widgets": {
                 "title": "Monitoring Widgets",
-                "desc": "Active cashier shifts, receivables, payables, and dine-in orders needing attention."
+                "desc": "Active cashier shifts, receivables, and payables needing attention."
             },
             "recent": {
                 "title": "Recent Transactions",

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Transaction;
+use App\Services\BusinessContext;
 use App\Services\StockMutationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,18 @@ class ExpirePendingTransactionsCommand extends Command
 
     public function handle(StockMutationService $stockMutationService): int
     {
+        // Transactions are warehouse-scoped, but the products they reference are
+        // business-scoped. This command sets no business context, so under
+        // multi-business the product lookup would be filtered out and a
+        // transaction could be marked failed while its stock is never restocked.
+        // Until per-business iteration is designed, fail closed rather than
+        // partially mutate tenant data.
+        if (config('multi_business.enabled') && ! app(BusinessContext::class)->hasActiveBusiness()) {
+            $this->error('Multi-business is enabled without an active business context; refusing to expire transactions.');
+
+            return self::FAILURE;
+        }
+
         $hours = max(1, (int) $this->option('hours'));
         $dryRun = (bool) $this->option('dry-run');
 

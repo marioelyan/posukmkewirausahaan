@@ -23,6 +23,12 @@ return [
     'api_path' => 'api',
 
     /*
+     * Optional shared token protecting the documentation UI and OpenAPI spec
+     * (middleware group uses the `viewApiDocs` Gate). Leave empty for public docs.
+     */
+    'docs_token' => env('SCRAMBLE_DOCS_TOKEN'),
+
+    /*
      * Your API domain. By default, app domain is used. This is also a part of the default API routes
      * matcher, so when implementing your own, make sure you use this config if needed.
      */

@@ -89,8 +89,8 @@ Production must trigger `php artisan schedule:run` every minute for the schedule
 
 - **Controllers**: `app/Http/Controllers/Apps/` — per-module web controllers (~35)
 - **API Controllers**: `app/Http/Controllers/Api/` — REST API (Sanctum token auth)
-- **Services**: `app/Services/` — ~22 services: AuditLog, BatchService, CashierShiftService, DineOrderService, GoodsReceivingService, LoyaltyService, PaymentGatewayManager, PricingService, PriceListService, PurchaseOrderService, ReorderService, StockMutationService, StockTransferService, UnitConversionService, WhatsAppService, etc.
-- **Layouts**: `POSLayout.jsx` (POS), `DashboardLayout.jsx` (admin), `AuthenticatedLayout.jsx` (profile), `GuestLayout.jsx` (auth), `PublicLayout.jsx` (public dine-in)
+- **Services**: `app/Services/` — ~22 services: AuditLog, BatchService, CashierShiftService, GoodsReceivingService, LoyaltyService, PaymentGatewayManager, PricingService, PriceListService, PurchaseOrderService, ReorderService, StockMutationService, StockTransferService, UnitConversionService, WhatsAppService, etc.
+- **Layouts**: `POSLayout.jsx` (POS), `DashboardLayout.jsx` (admin), `AuthenticatedLayout.jsx` (profile), `GuestLayout.jsx` (auth), `PublicLayout.jsx` (public/customer portal)
 - **Routes**: `routes/web.php` (~50+ dashboard routes), `routes/api.php` (webhooks + REST API), `routes/auth.php` (Breeze)
 - **Inertia shared props**: `HandleInertiaRequests.php` — auth, permissions, notifications (low stock, receivables, payables aging), active shift, store profile, appVersion
 
@@ -110,7 +110,7 @@ Production must trigger `php artisan schedule:run` every minute for the schedule
 `DatabaseSeeder` runs only system-essential seeders with permission cache reset before & after:
 
 ```
-PermissionSeeder → RoleSeeder → PaymentSettingSeeder → DineInSettingsSeeder
+PermissionSeeder → RoleSeeder → PaymentSettingSeeder
 ```
 
 After seeding, a default `PUSAT` warehouse is created and existing product stock is migrated to the `product_warehouse` pivot.
@@ -130,14 +130,13 @@ After seeding, a default `PUSAT` warehouse is created and existing product stock
 1. **Permission cache stale after seed** — logout + login again. Seeder resets cache but session still holds old permissions.
 2. **Webhooks need public APP_URL** — Midtrans/Xendit won't work with localhost.
 3. **Product images need storage:link** — `php artisan storage:link` or images won't render.
-4. **Missing migrations cause 500 on new modules** — run `php artisan migrate` for newer modules (purchase orders, goods receiving, supplier returns, stock opname, dine-in, etc.).
+4. **Missing migrations cause 500 on new modules** — run `php artisan migrate` for newer modules (purchase orders, goods receiving, supplier returns, stock opname, etc.).
 5. **Tests force SQLite in-memory** — `phpunit.xml` sets `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`. Don't assume MySQL features. **Set `tax_rate=0` on test Product::create** to avoid PPN changing grand_total.
 6. **Dev servers unified** — `composer run dev` starts server + queue + pail + vite together (`php artisan dev`). WA service stays separate.
 7. **WhatsApp service separate** — `whatsapp-service/` needs `npm start` in another terminal + `WA_SERVICE_URL` in .env.
 8. **CRM campaign auto-send** — requires `wa_enabled=true` + connected device in Settings > WhatsApp.
 9. **Version bump on release** — update `APP_VERSION` in `.env` + `.env.example` when tagging.
 10. **Concurrency patterns** — all stock mutations (checkout, transfer, receiving, payment) are wrapped in `DB::transaction` with `lockForUpdate()` on affected rows. Never skip the transaction or lock.
-11. **Dine-in online payment is disabled** — `payment_option=pay_online` returns 422. Only `pay_at_counter` is accepted.
 
 ## Release Process
 
@@ -160,6 +159,7 @@ After seeding, a default `PUSAT` warehouse is created and existing product stock
 
 ## Docs
 
+- Production deployment: `docs/production-deployment.md`
 - Modules: `docs/features/`
 - Architecture: `docs/architecture-overview.md`
 - Config: `docs/configuration.md`

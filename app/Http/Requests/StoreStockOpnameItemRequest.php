@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\BelongsToActiveBusiness;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreStockOpnameItemRequest extends FormRequest
@@ -14,7 +15,7 @@ class StoreStockOpnameItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => ['required', 'exists:products,id'],
+            'product_id' => ['required', 'exists:products,id', new BelongsToActiveBusiness('products')],
         ];
     }
 }

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\WarehouseResource;
 use App\Http\Traits\ApiResponder;
 use App\Models\Warehouse;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -41,13 +43,13 @@ class WarehouseController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:50', Rule::unique('warehouses', 'code')],
+            'code' => ['required', 'string', 'max:50', TenantUnique::for('warehouses', 'code')],
             'name' => ['required', 'string', 'max:255'],
             'type' => ['nullable', Rule::in(['main', 'branch', 'warehouse'])],
             'address' => ['nullable', 'string'],
             'phone' => ['nullable', 'string', 'max:30'],
             'is_active' => ['nullable', 'boolean'],
-            'outlet_id' => ['nullable', 'integer', 'exists:outlets,id'],
+            'outlet_id' => ['nullable', 'integer', 'exists:outlets,id', new BelongsToActiveBusiness('outlets')],
         ]);
 
         $outlet = $validated['outlet_id'] ?? $request->user()->outlets()->first()?->id;
@@ -81,7 +83,7 @@ class WarehouseController extends Controller
         abort_unless($this->outletAccessService->canUseWarehouse($request->user(), $warehouse), 404);
 
         $validated = $request->validate([
-            'code' => ['sometimes', 'string', 'max:50', Rule::unique('warehouses', 'code')->ignore($warehouse->id)],
+            'code' => ['sometimes', 'string', 'max:50', TenantUnique::for('warehouses', 'code', $warehouse->id)],
             'name' => ['sometimes', 'string', 'max:255'],
             'type' => ['nullable', Rule::in(['main', 'branch', 'warehouse'])],
             'address' => ['nullable', 'string'],

@@ -7,6 +7,7 @@ use App\Http\Resources\CustomerResource;
 use App\Http\Traits\ApiResponder;
 use App\Models\Customer;
 use App\Services\LoyaltyService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -46,7 +47,7 @@ class CustomerController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'no_telp' => ['required', 'string', 'max:30', Rule::unique('customers', 'no_telp')],
+            'no_telp' => ['nullable', 'string', 'max:30', TenantUnique::for('customers', 'no_telp')],
             'address' => ['nullable', 'string'],
             'is_loyalty_member' => ['nullable', 'boolean'],
             'loyalty_tier' => ['nullable', 'string', Rule::in(array_keys($this->loyaltyService->tiers()))],
@@ -58,8 +59,8 @@ class CustomerController extends Controller
 
         $customer = Customer::create([
             'name' => $validated['name'],
-            'no_telp' => $validated['no_telp'],
-            'address' => $validated['address'] ?? '',
+            'no_telp' => $validated['no_telp'] ?? null,
+            'address' => $validated['address'] ?? null,
             'is_loyalty_member' => $validated['is_loyalty_member'] ?? false,
             'loyalty_tier' => $validated['loyalty_tier'] ?? 'regular',
             'province_name' => $validated['province_name'] ?? null,
@@ -90,7 +91,7 @@ class CustomerController extends Controller
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'no_telp' => ['sometimes', 'string', 'max:30', Rule::unique('customers', 'no_telp')->ignore($customer->id)],
+            'no_telp' => ['sometimes', 'string', 'max:30', TenantUnique::for('customers', 'no_telp', $customer->id)],
             'address' => ['nullable', 'string'],
             'is_loyalty_member' => ['nullable', 'boolean'],
             'loyalty_tier' => ['nullable', 'string', Rule::in(array_keys($this->loyaltyService->tiers()))],

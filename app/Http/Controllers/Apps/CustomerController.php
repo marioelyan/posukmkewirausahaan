@@ -9,6 +9,8 @@ use App\Models\CustomerVoucher;
 use App\Models\Transaction;
 use App\Services\CustomerSegmentationService;
 use App\Services\LoyaltyService;
+use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +26,8 @@ class CustomerController extends Controller
 {
     public function __construct(
         private readonly LoyaltyService $loyaltyService,
-        private readonly CustomerSegmentationService $segmentationService
+        private readonly CustomerSegmentationService $segmentationService,
+        private readonly OutletAccessService $outletAccessService
     ) {}
 
     /**
@@ -77,20 +80,20 @@ class CustomerController extends Controller
          */
         $request->validate([
             'name' => 'required',
-            'no_telp' => 'required|unique:customers',
-            'address' => 'required',
+            'no_telp' => ['nullable', TenantUnique::for('customers', 'no_telp')],
+            'address' => 'nullable',
             'is_loyalty_member' => 'nullable|boolean',
             'loyalty_tier' => ['nullable', 'string', Rule::in(array_keys($this->loyaltyService->tiers()))],
-            'province_id' => 'required|string',
-            'regency_id' => 'required|string',
-            'district_id' => 'required|string',
-            'village_id' => 'required|string',
+            'province_id' => 'nullable|string',
+            'regency_id' => 'nullable|string',
+            'district_id' => 'nullable|string',
+            'village_id' => 'nullable|string',
         ]);
 
-        $province = Province::where('code', $request->province_id)->first();
-        $regency = City::where('code', $request->regency_id)->first();
-        $district = District::where('code', $request->district_id)->first();
-        $village = Village::where('code', $request->village_id)->first();
+        $province = $request->province_id ? Province::where('code', $request->province_id)->first() : null;
+        $regency = $request->regency_id ? City::where('code', $request->regency_id)->first() : null;
+        $district = $request->district_id ? District::where('code', $request->district_id)->first() : null;
+        $village = $request->village_id ? Village::where('code', $request->village_id)->first() : null;
 
         // create customer
         Customer::create([
@@ -121,8 +124,8 @@ class CustomerController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'no_telp' => 'required|string|unique:customers,no_telp',
-            'address' => 'required|string',
+            'no_telp' => ['nullable', 'string', TenantUnique::for('customers', 'no_telp')],
+            'address' => 'nullable|string',
             'is_loyalty_member' => 'nullable|boolean',
             'loyalty_tier' => ['nullable', 'string', Rule::in(array_keys($this->loyaltyService->tiers()))],
             'province_id' => 'nullable|string',
@@ -145,8 +148,8 @@ class CustomerController extends Controller
             $customer = Customer::create([
                 ...$this->resolveLoyaltyPayload($request),
                 'name' => $validated['name'],
-                'no_telp' => $validated['no_telp'],
-                'address' => $validated['address'],
+                'no_telp' => $validated['no_telp'] ?? null,
+                'address' => $validated['address'] ?? null,
                 'province_id' => $provinceCode,
                 'province_name' => $province?->name,
                 'regency_id' => $regencyCode,
@@ -222,20 +225,20 @@ class CustomerController extends Controller
          */
         $request->validate([
             'name' => 'required',
-            'no_telp' => 'required|unique:customers,no_telp,'.$customer->id,
-            'address' => 'required',
+            'no_telp' => ['nullable', TenantUnique::for('customers', 'no_telp', $customer->id)],
+            'address' => 'nullable',
             'is_loyalty_member' => 'nullable|boolean',
             'loyalty_tier' => ['nullable', 'string', Rule::in(array_keys($this->loyaltyService->tiers()))],
-            'province_id' => 'required|string',
-            'regency_id' => 'required|string',
-            'district_id' => 'required|string',
-            'village_id' => 'required|string',
+            'province_id' => 'nullable|string',
+            'regency_id' => 'nullable|string',
+            'district_id' => 'nullable|string',
+            'village_id' => 'nullable|string',
         ]);
 
-        $province = Province::where('code', $request->province_id)->first();
-        $regency = City::where('code', $request->regency_id)->first();
-        $district = District::where('code', $request->district_id)->first();
-        $village = Village::where('code', $request->village_id)->first();
+        $province = $request->province_id ? Province::where('code', $request->province_id)->first() : null;
+        $regency = $request->regency_id ? City::where('code', $request->regency_id)->first() : null;
+        $district = $request->district_id ? District::where('code', $request->district_id)->first() : null;
+        $village = $request->village_id ? Village::where('code', $request->village_id)->first() : null;
 
         // update customer
         $customer->update([
@@ -305,6 +308,11 @@ class CustomerController extends Controller
 
     public function syncSegments(Request $request, Customer $customer)
     {
+        // Segment definitions carry no business owner, so manual membership
+        // cannot be proven tenant-safe while multi-business is enabled. Fail
+        // closed, mirroring the segment management surface.
+        abort_if(config('multi_business.enabled'), 404);
+
         $validated = $request->validate([
             'segment_ids' => ['nullable', 'array'],
             'segment_ids.*' => ['integer', 'exists:customer_segments,id'],
@@ -444,9 +452,30 @@ class CustomerController extends Controller
         ];
     }
 
+    /**
+     * Constrain a customer transaction query to the active business.
+     *
+     * Transactions carry no `business_id`; ownership is resolved through their
+     * warehouse. A customer their business A owns may still have stray
+     * transactions recorded against a business B warehouse (data anomaly or
+     * manual repair), so the history/statistics must never surface those.
+     * Returns the query untouched in legacy mode and fails closed under tenancy
+     * without a context (empty warehouse set).
+     */
+    private function scopeTransactionsToBusiness($query)
+    {
+        $warehouseIds = $this->outletAccessService->activeBusinessWarehouseIds();
+
+        if ($warehouseIds === null) {
+            return $query;
+        }
+
+        return $query->whereIn('transactions.warehouse_id', $warehouseIds);
+    }
+
     private function buildStats(Customer $customer)
     {
-        return Transaction::where('customer_id', $customer->id)
+        return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
             ->selectRaw('
                 COUNT(*) as total_transactions,
                 SUM(grand_total) as total_spent,
@@ -457,7 +486,7 @@ class CustomerController extends Controller
 
     private function recentTransactions(Customer $customer)
     {
-        return Transaction::where('customer_id', $customer->id)
+        return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
             ->select('id', 'invoice', 'grand_total', 'payment_method', 'created_at')
             ->orderByDesc('created_at')
             ->limit(5)
@@ -473,7 +502,7 @@ class CustomerController extends Controller
 
     private function frequentProducts(Customer $customer)
     {
-        return Transaction::where('customer_id', $customer->id)
+        return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
             ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
             ->join('products', 'transaction_details.product_id', '=', 'products.id')
             ->selectRaw('products.id, products.title, SUM(transaction_details.qty) as total_qty')

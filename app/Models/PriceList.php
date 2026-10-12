@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Model;
 
 class PriceList extends Model
 {
-    protected $fillable = ['name', 'slug', 'outlet_id', 'customer_scope', 'customer_segment_id', 'is_active', 'priority', 'notes'];
+    use BelongsToBusiness;
+
+    protected $fillable = ['name', 'slug', 'outlet_id', 'business_id', 'customer_scope', 'customer_segment_id', 'is_active', 'priority', 'notes'];
 
     protected function casts(): array
     {
-        return ['outlet_id' => 'integer', 'is_active' => 'boolean', 'priority' => 'integer'];
+        return ['business_id' => 'integer', 'outlet_id' => 'integer', 'is_active' => 'boolean', 'priority' => 'integer'];
     }
 
     public function items()

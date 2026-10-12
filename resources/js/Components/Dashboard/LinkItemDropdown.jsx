@@ -28,66 +28,88 @@ export default function LinkItemDropdown({ icon, title, data, access, sidebarOpe
         return null;
     }
 
-    const buttonClass = sidebarOpen
-        ? "min-w-full flex items-center font-medium gap-x-3.5 px-4 py-3 hover:border-r-2 capitalize hover:cursor-pointer text-sm justify-between text-gray-500 hover:border-r-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:border-r-gray-50 dark:hover:text-gray-100"
-        : "min-w-full flex justify-center py-3 hover:border-r-2 hover:cursor-pointer text-gray-500 hover:border-r-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:border-r-gray-50 dark:hover:text-gray-100";
+    const childActive = visibleItems.some((item) => url === item.href);
+
+    const parentClass = sidebarOpen
+        ? `flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm font-medium transition-colors duration-200 border-l-[3px] ${
+              childActive
+                  ? "text-slate-700 dark:text-slate-200 border-transparent"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 border-transparent"
+          }`
+        : `flex w-full justify-center py-3 transition-colors duration-200 ${
+              childActive
+                  ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/50"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`;
 
     return (
         <>
-            <button className={buttonClass} onClick={() => setIsOpen(!isOpen)}>
+            <button
+                type="button"
+                className={parentClass}
+                onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+                title={sidebarOpen ? undefined : title}
+            >
                 {sidebarOpen ? (
                     <>
-                        <div className="flex items-center gap-x-3.5">
-                            {icon}
-                            {title}
-                        </div>
+                        <span className="flex items-center gap-3 min-w-0">
+                            <span className={childActive ? "text-primary-600 dark:text-primary-400" : ""}>
+                                {icon}
+                            </span>
+                            <span className="truncate">{title}</span>
+                        </span>
                         {isOpen ? (
                             <IconChevronUp size={18} strokeWidth={1.5} />
                         ) : (
                             <IconChevronDown size={18} strokeWidth={1.5} />
                         )}
                     </>
-                ) : !isOpen ? (
-                    icon
                 ) : (
-                    <IconChevronDown size={20} strokeWidth={1.5} />
+                    icon
                 )}
             </button>
 
             {isOpen &&
-                visibleItems.map((item, index) => (
-                    <Link
-                        key={index}
-                        href={item.href}
-                        onClick={() => {
-                            // Collapse submenu after navigating on mobile
-                            if (window.innerWidth < 768) {
-                                setIsOpen(false);
+                visibleItems.map((item, index) => {
+                    const active = url === item.href;
+
+                    return (
+                        <Link
+                            key={index}
+                            href={item.href}
+                            onClick={() => {
+                                // Collapse submenu after navigating on mobile
+                                if (window.innerWidth < 768) {
+                                    setIsOpen(false);
+                                }
+                            }}
+                            className={
+                                sidebarOpen
+                                    ? `flex w-full items-center gap-3 px-4 py-2.5 pl-8 text-sm font-medium transition-colors duration-200 border-l-[3px] ${
+                                          active
+                                              ? "bg-primary-50 text-primary-700 border-primary-500 dark:bg-primary-950/50 dark:text-primary-400"
+                                              : "text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                      }`
+                                    : `flex w-full justify-center py-3 transition-colors duration-200 ${
+                                          active
+                                              ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/50"
+                                              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                      }`
                             }
-                        }}
-                        className={`${
-                            url === item.href &&
-                            "border-r-2 border-r-gray-400 bg-gray-100 text-gray-700 dark:border-r-gray-500 dark:bg-gray-900 dark:text-white"
-                        } ${
-                            sidebarOpen
-                                ? "min-w-full flex items-center font-medium gap-x-3.5 px-5 py-3 hover:border-r-2 capitalize hover:cursor-pointer text-sm line-clamp-1 text-gray-500 hover:border-r-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:border-r-gray-50 dark:hover:text-gray-100"
-                                : "min-w-full flex justify-center py-3 hover:border-r-2 hover:cursor-pointer text-gray-500 hover:border-r-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:border-r-gray-50 dark:hover:text-gray-100"
-                        }`}
-                        {...props}
-                    >
-                        {sidebarOpen ? (
-                            <>
-                                <IconCornerDownRight
-                                    size={18}
-                                    strokeWidth={1.5}
-                                />{" "}
-                                {item.title}
-                            </>
-                        ) : (
-                            item.icon
-                        )}
-                    </Link>
-                ))}
+                            {...props}
+                        >
+                            {sidebarOpen ? (
+                                <>
+                                    <IconCornerDownRight size={16} strokeWidth={1.5} className="shrink-0" />
+                                    <span className="truncate">{item.title}</span>
+                                </>
+                            ) : (
+                                item.icon
+                            )}
+                        </Link>
+                    );
+                })}
         </>
     );
 }

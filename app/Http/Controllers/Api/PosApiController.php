@@ -17,6 +17,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
 use App\Models\Warehouse;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\CashierShiftService;
 use App\Services\CheckoutService;
 use App\Services\LoyaltyService;
@@ -71,7 +72,7 @@ class PosApiController extends Controller
     {
         $validated = $request->validate([
             'opening_cash' => ['required', 'numeric', 'min:0'],
-            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
+            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -269,9 +270,9 @@ class PosApiController extends Controller
     public function addToCart(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'product_id' => ['required', 'integer', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'qty' => ['required', 'numeric', 'min:0.01'],
-            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+            'unit_id' => ['nullable', 'integer', 'exists:units,id', new BelongsToActiveBusiness('units')],
         ]);
 
         $shift = $this->cashierShiftService->getActiveShiftForUser($request->user()->id);
@@ -530,14 +531,15 @@ class PosApiController extends Controller
                 'integer',
                 'exists:customers,id',
                 'required_if:payment_method,pay_later',
+                new BelongsToActiveBusiness('customers'),
             ],
-            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id'],
+            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id', new BelongsToActiveBusiness('customer_vouchers')],
             'discount' => ['nullable', 'integer', 'min:0'],
             'shipping_cost' => ['nullable', 'integer', 'min:0'],
             'redeem_points' => ['nullable', 'integer', 'min:0'],
             'cash' => ['nullable', 'numeric', 'min:0'],
             'payment_method' => ['nullable', 'in:cash,bank_transfer,midtrans,xendit,qris,pay_later'],
-            'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
             'due_date' => ['nullable', 'date', 'required_if:payment_method,pay_later'],
             'customer_npwp' => ['nullable', 'string', 'max:50'],
             'order_type' => ['nullable', 'in:in_store,takeaway,delivery'],
@@ -546,7 +548,7 @@ class PosApiController extends Controller
             'tenders.*.method' => ['required', 'string'],
             'tenders.*.amount' => ['required', 'integer', 'min:1'],
             'tenders.*.cash_received' => ['nullable', 'integer', 'min:0'],
-            'tenders.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'tenders.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
             'client_uuid' => ['nullable', 'uuid'],
             'sync_fingerprint' => ['nullable', 'string', 'max:64'],
         ]);
@@ -715,22 +717,22 @@ class PosApiController extends Controller
         $validated = $request->validate([
             'transactions' => ['required', 'array', 'max:50'],
             'transactions.*.client_uuid' => ['required', 'uuid'],
-            'transactions.*.customer_id' => ['nullable', 'integer', 'exists:customers,id'],
-            'transactions.*.customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id'],
+            'transactions.*.customer_id' => ['nullable', 'integer', 'exists:customers,id', new BelongsToActiveBusiness('customers')],
+            'transactions.*.customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id', new BelongsToActiveBusiness('customer_vouchers')],
             'transactions.*.discount' => ['nullable', 'integer', 'min:0'],
             'transactions.*.shipping_cost' => ['nullable', 'integer', 'min:0'],
             'transactions.*.redeem_points' => ['nullable', 'integer', 'min:0'],
             'transactions.*.cash' => ['nullable', 'numeric', 'min:0'],
             'transactions.*.payment_method' => ['nullable', 'in:cash,pay_later,bank_transfer'],
-            'transactions.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
+            'transactions.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
             'transactions.*.pay_later' => ['nullable', 'boolean'],
             'transactions.*.due_date' => ['nullable', 'date'],
             'transactions.*.order_type' => ['nullable', 'in:in_store,takeaway,delivery'],
             'transactions.*.note' => ['nullable', 'string', 'max:1000'],
             'transactions.*.items' => ['required', 'array', 'min:1'],
-            'transactions.*.items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'transactions.*.items.*.product_id' => ['required', 'integer', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'transactions.*.items.*.qty' => ['required', 'numeric', 'min:0.01'],
-            'transactions.*.items.*.unit_id' => ['nullable', 'integer', 'exists:units,id'],
+            'transactions.*.items.*.unit_id' => ['nullable', 'integer', 'exists:units,id', new BelongsToActiveBusiness('units')],
         ]);
 
         $results = [];
@@ -739,8 +741,10 @@ class PosApiController extends Controller
             $uuid = $payload['client_uuid'];
             $fingerprint = CheckoutFingerprint::fromSyncPayload($payload);
 
-            // Idempotency: already synced?
-            if ($existing = Transaction::where('client_uuid', $uuid)->first()) {
+            // Idempotency lookup must stay inside the active business: an
+            // offline UUID from another tenant must never reveal its
+            // transaction id, invoice, or fingerprint.
+            if ($existing = $this->findSyncedTransaction($uuid)) {
                 $existingFingerprint = $existing->sync_fingerprint;
 
                 $results[] = array_merge([
@@ -763,6 +767,26 @@ class PosApiController extends Controller
         }
 
         return $this->ok(['results' => $results]);
+    }
+
+    /**
+     * Idempotency lookup scoped to the verified active business.
+     *
+     * Offline `client_uuid`s are tenant data: resolving one from another
+     * business would leak that transaction's id, invoice, and fingerprint.
+     * When tenancy is disabled the lookup is unrestricted (legacy behaviour).
+     */
+    private function findSyncedTransaction(string $uuid): ?Transaction
+    {
+        $query = Transaction::query()->where('client_uuid', $uuid);
+
+        $warehouseIds = $this->outletAccessService->activeBusinessWarehouseIds();
+
+        if ($warehouseIds !== null) {
+            $query->whereIn('warehouse_id', $warehouseIds);
+        }
+
+        return $query->first();
     }
 
     private function syncOne(Request $request, array $payload, string $uuid, string $fingerprint): array
@@ -875,7 +899,7 @@ class PosApiController extends Controller
                 // Lost a race: another worker committed the same client_uuid
                 // between our pre-check and this checkout. Nothing was
                 // committed by us (the transaction rolled back atomically).
-                $existing = Transaction::where('client_uuid', $uuid)->first();
+                $existing = $this->findSyncedTransaction($uuid);
 
                 if (! $existing) {
                     report($e);
