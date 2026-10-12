@@ -251,7 +251,7 @@ class FinancialOwnershipBackfillTest extends TestCase
         $po = $this->purchaseOrder($warehouse->id, 'PO-REPORT');
         $this->payable($po->id, 'PAY-REPORT');
 
-        $reportPath = '/tmp/opencode/fin-backfill-'.uniqid().'.json';
+        $reportPath = sys_get_temp_dir().'/fin-backfill-'.uniqid().'.json';
 
         $this->artisan('business:financial-ownership-backfill --apply --confirm-financial-ownership --report='.$reportPath)
             ->assertExitCode(0);
