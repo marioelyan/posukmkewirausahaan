@@ -248,6 +248,8 @@ Q5 ⇄ Q8 (job/scheduler perlu context)
 
 ## 7. Open questions untuk pemilik keputusan
 
+> **UPDATE 2026-10-13:** hampir seluruh pertanyaan di bawah **sudah diputuskan & terwujud** di §13 (Q7→FIN-01..05 §13.13; Q2/Q3/Q14→AUTH §13.14; Q9→FIN-04 §13.13; Q7.a→`business_id` payables/receivables §13.13; Q15→FIN-05 karantina §13.13; Q4/Q4.e→UNIQUE §13.14/§13.17/§13.20/§13.21; Q5→SETTINGS §13.14; Q5.g/Q8→SCHED §13.14; X1→GOV-01 §13.9). **Yang masih terbuka: butir 13 (X2 / Q1)** — definisi transaksi "completed".
+
 Tanpa jawaban yang diasumsikan:
 
 1. **Q7:** Apakah seluruh instalasi existing dianggap **satu business default**, dan apa nama/ID business default itu? (menentukan seluruh backfill)
@@ -695,7 +697,7 @@ Audit berbasis bukti untuk sisa keputusan (Q10–Q16), tanpa mengubah perilaku. 
 | **Q16** laporan lintas business | `Controllers/Reports/*` men-scope via `OutletAccessService::warehousesFor()` → `restrictToActiveBusiness()` + active outlet. **Super-admin pun dibatasi ke business aktif.** Tidak ada agregasi lintas business. | **SELESAI** — isolasi per business aktif ditegakkan; **agregasi lintas business tidak disediakan** (fitur terpisah bila owner butuh). |
 
 - **Yang masih tersisa setelah pass ini:** Q12 diimplementasikan di §13.24; Q10 cleanup (opsional, pasca-deploy); eksekusi runbook produksi (read replica + approval); self-service owner signup; aktivasi flag & deployment.
-- **Catatan doc:** tabel §1 `multi-business-open-decisions.md` untuk **Q1–Q9** masih berstatus "PERLU KEPUTUSAN" meski keputusannya sudah terwujud di §13.14–§13.17 — kandidat pembersihan dokumen terpisah (di luar lingkup pass ini).
+- **Catatan doc:** tabel §1 `multi-business-open-decisions.md` Q1–Q9 telah disinkronkan pada pass dokumentasi lanjutan (2026-10-13): **Q2/Q3/Q5/Q7/Q8/Q9 → SELESAI** (bukti §13.13/§13.14/§13.15/§13.16), **Q1 tetap terbuka** (keputusan bisnis — register §3.5 X2).
 - **Batas:** tidak ada perubahan kode/migrasi; flag tetap `false`; tidak ada mutasi data. PR disiapkan ke `development`.
 
 ### 13.24 Q12 `audit_logs.business_id` — ownership + scoping viewer — 2026-10-13
