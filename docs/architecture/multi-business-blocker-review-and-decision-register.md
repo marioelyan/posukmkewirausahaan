@@ -470,7 +470,7 @@ php artisan test --compact        (seluruh suite)
 
 1. **Konsistensi AUTH:** AUTH-01 (C) + AUTH-02 (A) + AUTH-03 (C) **konsisten**. **Residual risk** yang diterima secara implisit: karena `teams=false`, permission Spatie tetap global, sehingga user yang punya permission sensitif di Business A dapat memakainya di Business B tempat ia member. Ini **belum tertutup** oleh keputusan ini dan bergantung pada desain implementasi AUTH-02/AUTH-03 (bukan kontradiksi, tetapi risiko yang harus diselesaikan).
 2. **SCHED-01 vs Q8 (open-decisions):** opsi "queue per business" berpotensi **bertentangan** dengan batasan open-decisions **Q8** (shared hosting tanpa queue worker/Redis). Perlu klarifikasi pada saat desain scheduler; tidak diselesaikan di sini.
-3. **UNIQUE-08 / UNIQUE-09:** `customer_vouchers` dan `customer_segments` **belum punya `business_id`** → B/C hanya dapat diimplementasikan setelah **approval schema terpisah**.
+3. **UNIQUE-08 / UNIQUE-09:** `customer_vouchers` dan `customer_segments` **belum punya `business_id`** → B/C hanya dapat diimplementasikan setelah **approval schema terpisah**. *(— DISELESAIKAN §13.17: kolom `business_id` + swap composite unique, 2026-10-12.)*
 4. **UNIQUE-10:** `payables.document_number` (index, bukan unik) dan `transactions.invoice` (tidak unik) → penetapan "per-business unique" untuk keduanya memerlukan keputusan penambahan constraint terpisah.
 5. **UNIQUE-11:** keputusan hanya berupa **prinsip**; kandidat spesifik (mis. `transactions.client_uuid` = open-decisions **Q11**, `customer_campaigns.context_key`) **menunggu evidence + approval terpisah**.
 
@@ -582,7 +582,7 @@ php artisan test --compact        (seluruh suite)
 - **Phase-8-lite UI:**
   - Business switcher (`BusinessContextController::switch`, `BusinessSwitcher.jsx`, shared props `auth.currentBusiness`/`auth.businesses`) sudah ada. Residual yang ditutup: `HandleInertiaRequests` membagikan `auth.permissions` **per business** (role membership aktif) saat flag ON, agar gate UI sama dengan enforcement server. Super-admin & flag off memakai peta global legacy (tidak berubah).
 - **Test:** baru — `BusinessScopedUniquenessTest` (5), `SettingTenantScopeTest`, `StoreSettingsIsolationTest`, `BusinessSettingsBackfillTest`, `SchedulerTenantContextTest` (4 → 5 assertions), `AuthzBusinessRoleEnforcementTest` (5); plus perluasan `BusinessTenancyUiDemoTest` (3) dan penyesuaian fixture isolasi ke membership `manager`.
-- **Masih deferred (§13.6/§13.12/§13.13):** UNIQUE-10 (nomor dokumen + generator), UNIQUE-11 (kandidat menunggu evidence), langkah swap index manual + runbook produksi & backfill non-null (butuh read replica + approval), Fase 8 penuh (onboarding/rollout, keputusan Q6), aktivasi flag & deployment. UNIQUE-08/09 + ownership `customer_campaigns`/`customer_segments`/`customer_vouchers` kini SELESAI (§13.17).
+- **Masih deferred (§13.6/§13.12/§13.13):** UNIQUE-10 (nomor dokumen + generator), UNIQUE-11 (kandidat menunggu evidence), langkah swap index manual + eksekusi runbook produksi & backfill non-null (butuh read replica + approval), self-service owner signup, aktivasi flag & deployment. Sudah dituntaskan setelah slice ini: UNIQUE-08/09 + ownership CRM (§13.17), onboarding/bootstrap (§13.16), dan keputusan+UI Q6 admin-platform (§13.19); runbook produksi tersedia sebagai DRAFT (§13.18).
 - **Batas keselamatan:** tidak ada migrasi/backfill pada data nyata, tidak ada aktivasi flag, tidak ada deployment. Semua perubahan inert saat `multi_business.enabled=false`.
 
 ### 13.15 Membership provisioning + demo readiness — 2026-10-12
@@ -605,7 +605,7 @@ php artisan test --compact        (seluruh suite)
   - `SetupController` — saat flag ON: bootstrap business (nama dari `store_name`), set `BusinessContext` aktif sehingga setting toko (SETTINGS-07) ditulis ke baris business; read/update warehouse memakai `withoutGlobalScope('business')` (setup berjalan sebelum konteks ada). Flag OFF: perilaku lama identik, tidak ada business.
 - **Dampak data:** install baru dengan flag ON kini punya 1 business aktif yang memiliki outlet/warehouse/master-data hasil wizard; super-admin tetap jalur platform (AUTH-01, tanpa membership). Install existing tidak tersentuh — tetap lewat `business:backfill --create-default --apply` + `business:membership-backfill --apply`.
 - **Test:** `SetupWizardTest` +3 (`setup bootstraps default business when tenancy enabled`, `setup creates no business when tenancy disabled`, `index returns primary warehouse when tenancy enabled`). Total 20 setup test.
-- **Keputusan Q6 yang masih tersisa:** UI/rollout pembuatan business **tambahan** dan self-service owner signup — bukan bagian dari bootstrap ini (fase lanjut dengan kontrol abuse, menunggu keputusan Anda).
+- **Keputusan Q6 yang masih tersisa:** UI/rollout pembuatan business **tambahan** dan self-service owner signup — bukan bagian dari bootstrap ini (fase lanjut dengan kontrol abuse). **Dituntaskan 2026-10-13:** bagian admin-platform diputuskan (Q6 = A) dan diimplementasikan di §13.19; yang tersisa hanya self-service owner signup.
 
 ### 13.17 UNIQUE-08/09 + CRM ownership — 2026-10-12
 
@@ -629,7 +629,7 @@ php artisan test --compact        (seluruh suite)
 - **Status:** **DRAFT, belum dieksekusi.** Tidak ada data yang diubah. Menunggu (a) read replica/restored copy terotorisasi, (b) approval eksplisit owner + DBA. Dokumen ini mengunci referensi "runbook produksi" pada §13.15/§13.17.
 - **Batas:** flag tetap `false`; demo seeder dilarang di produksi; UNIQUE-10/11 dan UI Q6 di luar lingkup.
 
-### 13.19 Q6 (keputusan A) — pembuatan business oleh platform admin — 2026-10-12
+### 13.19 Q6 (keputusan A) — pembuatan business oleh platform admin — 2026-10-13
 
 - **Keputusan owner:** **A. Admin platform only.** Business tambahan hanya dibuat oleh super-admin (jalur platform eksplisit, AUTH-01). Self-service owner signup tetap deferred (fase lanjut dengan kontrol abuse); bootstrap first-install (§13.16) tidak berubah.
 - **Baru:**

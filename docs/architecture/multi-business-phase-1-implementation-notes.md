@@ -53,6 +53,7 @@ Aturan context:
 ## 3. Keputusan Terbuka yang Masih Menghambat
 
 - Q2/Q3 (owner & role per business), Q5 (setting global vs per business), Q6 (pembuatan business), Q7 (instalasi existing = satu business), Q9 (data lama tanpa ownership jelas), Q10 (DineIn), Q12 (audit_logs.business_id), Q13 (global scope).
+  - *(Status 2026-10-13: Q6 SELESAI §13.19; Q2/Q3/Q5/Q7/Q9 diputuskan & diimplementasikan via register §13.1–§13.18 + runbook. Yang benar-benar masih terbuka: Q10 (DineIn), Q12 (audit_logs.business_id), Q13 (global scope).)*
 - Implementasi Fase 1 memakai **REKOMENDASI** dokumen arsitektur (Opsi A). Bila arah keputusan berubah, penyesuaian masih murah karena belum ada data produksi yang memakai `business_id`.
 
 ---
