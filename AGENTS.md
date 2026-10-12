@@ -73,6 +73,10 @@ php artisan crm:sync-segments             # refresh auto segment memberships (da
 php artisan crm:generate-reminders       # queue campaign reminder messages (daily 01:15)
 php artisan scramble:cache               # warm Scramble OpenAPI cache
 php artisan scramble:clear               # invalidate Scramble OpenAPI cache
+php artisan business:backfill             # audit/backfill business_id on master data (dry-run default)
+  php artisan business:backfill --create-default --apply --confirm-legacy-ownership # create default business + map legacy rows
+php artisan business:membership-backfill  # provision memberships from outlet access (dry-run default)
+  php artisan business:membership-backfill --apply --confirm-membership-backfill # write memberships
 php artisan seed:demo                    # regenerate full demo dataset (truncates demo tables; --force skips confirm)
 php artisan db:seed --class=DemoSeeder --force # explicit full demo dataset (never use on production)
 
@@ -117,7 +121,7 @@ After seeding, a default `PUSAT` warehouse is created and existing product stock
 
 **No default users.** Admin account, store profile, business type, categories, and main warehouse are created via the first-install setup wizard at `/setup`. Open the root URL after migration; it automatically redirects to `/setup` while `Setting::app_setup_completed` is false. The `setup.notinstalled` middleware redirects to login once setup is done.
 
-**Demo data is opt-in, not part of `DatabaseSeeder`:** run `php artisan db:seed --class=DemoSeeder --force` (or `php artisan seed:demo --force`) for the complete demo dataset. It creates demo outlets `MAL`, `TKB`, and `PUT`; `PUSAT` remains a central non-sales warehouse. Demo accounts (password `password`): `arya@gmail.com` (super-admin, all outlets), `manager@gmail.com` (manager role, MAL+TKB), `cashier@gmail.com` (cashier, MAL). Never run the demo seeder on production. Full dataset details: `docs/demo-data.md`.
+**Demo data is opt-in, not part of `DatabaseSeeder`:** run `php artisan db:seed --class=DemoSeeder --force` (or `php artisan seed:demo --force`) for the complete demo dataset. It creates demo outlets `MAL`, `TKB`, and `PUT`; `PUSAT` remains a central non-sales warehouse. Demo accounts (password `password`): `arya@gmail.com` (super-admin, all outlets), `manager@gmail.com` (manager role, MAL+TKB), `cashier@gmail.com` (cashier, MAL). The demo seeder also provisions a demo business, scopes its outlets/warehouses/master data to it, and creates memberships (manager → `manager`, cashier → `staff`; the super-admin gets no membership), so the dataset is ready to run with `MULTI_BUSINESS_ENABLED=true`. Never run the demo seeder on production. Full dataset details: `docs/demo-data.md`.
 
 **Email verification is disabled** — `User` no longer implements `MustVerifyEmail`, dashboard routes carry no `verified` middleware, and the verification routes/controllers/pages are removed. `markEmailAsVerified()` is still available via the retained trait (used by seeders and tests).
 

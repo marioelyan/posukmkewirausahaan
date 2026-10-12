@@ -584,3 +584,14 @@ php artisan test --compact        (seluruh suite)
 - **Test:** baru — `BusinessScopedUniquenessTest` (5), `SettingTenantScopeTest`, `StoreSettingsIsolationTest`, `BusinessSettingsBackfillTest`, `SchedulerTenantContextTest` (4 → 5 assertions), `AuthzBusinessRoleEnforcementTest` (5); plus perluasan `BusinessTenancyUiDemoTest` (3) dan penyesuaian fixture isolasi ke membership `manager`.
 - **Masih deferred (§13.6/§13.12/§13.13):** UNIQUE-08/09/10/11 + schema `business_id` untuk `customer_campaigns`/`customer_segments`, runbook produksi + backfill non-null (butuh read replica + approval), Fase 8 penuh (onboarding/rollout, keputusan Q6), aktivasi flag & deployment.
 - **Batas keselamatan:** tidak ada migrasi/backfill pada data nyata, tidak ada aktivasi flag, tidak ada deployment. Semua perubahan inert saat `multi_business.enabled=false`.
+
+### 13.15 Membership provisioning + demo readiness — 2026-10-12
+
+- **Gap yang ditutup:** `business:backfill` hanya menstempel `business_id` pada master data/outlet/warehouse. **Tidak ada** apa pun yang membuat baris `business_user`, sehingga dengan flag ON seorang user non-super tidak punya konteks bisnis tervalidasi dan ditolak (403) — fitur tidak bisa dipakai walau kode sudah lolos test.
+- **Baru:**
+  - `App\Support\Tenancy\BusinessMembershipProvisioner` — menurunkan membership dari **akses outlet** user; mapping role platform → role business: `super-admin` = tanpa membership (jalur platform AUTH-01), `owner` → `owner`, `manager` → `manager`, `cashier` → `staff`, role lain **di-skip** (fail closed, harus assign manual). Idempotent (membership yang sudah ada tidak ditimpa). Mengisi `default_outlet_id` dari outlet user di business tersebut.
+  - `business:membership-backfill` — dry-run default; `--apply --confirm-membership-backfill` untuk menulis; `--business=ID` untuk menargetkan satu business.
+  - `DemoBusinessSeeder` (dipanggil `DemoSeeder`) — membuat business demo bila belum ada, memetakan outlet/warehouse/master data yang masih `NULL` ke business tersebut, lalu provisioning membership. `seed:demo` kini menghasilkan dataset yang **siap flag ON**.
+- **Test:** `BusinessMembershipBackfillCommandTest` (8), `DemoFlagOnAccessTest` (3 — bukti end-to-end: manager demo lolos route manager, kasir demo di-scope ke `staff`, super-admin jalur platform), perluasan `SeedDemoCommandTest` (assert business scoping + membership + idempotensi).
+- **Catatan onboarding (masih Fase 8 / Q6):** setup wizard first-install **tidak** membuat business; install baru dengan flag ON tetap butuh `business:backfill --create-default --apply` (lalu membership backfill) sebelum dashboard bisa diakses. Pembuatan business saat onboarding menunggu keputusan Q6.
+- **Batas keselamatan:** command default dry-run; tidak ada data produksi yang disentuh; flag tetap `false`.
