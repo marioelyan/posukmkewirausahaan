@@ -1,11 +1,11 @@
 # Multi-Business Open Decisions — Point of Sales
 
-- **Status:** PERENCANAAN / DOKUMENTASI ONLY. Tidak ada keputusan yang disetujui.
+- **Status:** PERENCANAAN / DOKUMENTASI ONLY — satu keputusan telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13). Item lain tetap perencanaan.
 - **Basis:** audit `multi-business-tenant-audit.md` §14 + temuan tambahan pada 2026-10-10.
 - **Label:** **FAKTA**, **REKOMENDASI**, **ASUMSI**, **PERLU KEPUTUSAN**.
 - Dokumen terkait: `multi-business-backend-implementation-plan.md`, `multi-business-data-ownership-matrix.md`, `multi-business-security-test-plan.md`.
 
-> **Aturan.** Tidak ada item di bawah ini berstatus "approved". Setiap item punya *default rekomendasi* yang dipakai **hanya sementara** agar perencanaan bisa dilanjutkan, dan *status penghambat* (blocking) untuk fase mana.
+> **Aturan.** Kecuali **Q6** (disetujui 2026-10-13, §13.19 register), tidak ada item di bawah ini berstatus "approved". Setiap item punya *default rekomendasi* yang dipakai **hanya sementara** agar perencanaan bisa dilanjutkan, dan *status penghambat* (blocking) untuk fase mana.
 
 ---
 
@@ -71,9 +71,9 @@
 - **REKOMENDASI.** Fase awal: hanya admin platform membuat business. Self-service signup owner ditambahkan belakangan dengan kontrol abuse.
 - **Alternatif.** Self-service langsung (risiko spam/penyalahgunaan).
 - **Dampak.** Route onboarding, `registration.enabled`, `EnsureNotInstalled`.
-- **Status (2026-10-12):** bootstrap first-install SELESAI — setup wizard membuat business default + scope saat `multi_business.enabled=true`, admin setup (super-admin) memakai jalur platform (AUTH-01). Yang masih menunggu keputusan: pembuatan business **tambahan** (UI/rollout) dan self-service owner signup.
+- **Status (2026-10-12):** bootstrap first-install SELESAI — setup wizard membuat business default + scope saat `multi_business.enabled=true`, admin setup (super-admin) memakai jalur platform (AUTH-01). Yang masih menunggu keputusan: pembuatan business **tambahan** (UI/rollout) dan self-service owner signup. *(dijawab 2026-10-13 — lihat KEPUTUSAN di bawah)*.
 - **KEPUTUSAN (2026-10-13):** **A. Admin platform only** — §13.19 register. Super-admin membuat business tambahan via dashboard (`dashboard/businesses*`, middleware `platform.admin`, `step_up`); provisioning via `BusinessProvisioner` (skeleton PUSAT + owner opsional, tanpa `assignUnscoped`); UI `Businesses/{Index,Create}` + item sidebar (tampil saat flag ON + super-admin). Self-service owner signup tetap fase lanjut. UNIQUE-10/11 tetap deferred.
-- **Blocking:** Fase 8 (sisa UI/rollout pembuatan business tambahan).
+- **Blocking:** Fase 8 (sisa: self-service owner signup + aktivasi flag/deployment; bagian admin-platform SELESAI §13.19).
 
 ### Q7 — Outlet existing = satu atau banyak business
 - **REKOMENDASI.** Seluruh instalasi existing dianggap **satu business** (banyak branch) → business default.
@@ -144,6 +144,7 @@ Ini adalah gate Fase 0. Tanpa jawaban, implementasi berisiko rework besar:
 
 | Item | Tanggal | Penanggung jawab | Status |
 |---|---|---|---|
-| Semua Q1-Q16 | — | — | **Belum disetujui** |
+| **Q6** — pembuatan business | 2026-10-13 | owner | **DISETUJUI — A (admin platform only)**, §13.19 register; self-service owner signup tetap fase lanjut |
+| Q1–Q5, Q7–Q16 (sisa) | — | — | **Belum disetujui** (default rekomendasi sementara) |
 
-**FAKTA.** Tidak ada baris di atas yang boleh ditandai "approved" tanpa konfirmasi eksplisit pengguna.
+**FAKTA.** Hanya Q6 yang berstatus disetujui (2026-10-13). Item lain tidak boleh ditandai "approved" tanpa konfirmasi eksplisit pengguna.
