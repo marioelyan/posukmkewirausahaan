@@ -65,16 +65,6 @@ const releases = [
         ],
     },
     {
-        version: "v2.4.0",
-        tag: "Dine-in QR",
-        date: "Sep 2026",
-        items: [
-            "QR menu dan self-order pelanggan",
-            "Floor plan area dan meja",
-            "Status pesanan publik dan alur accept/reject staff",
-        ],
-    },
-    {
         version: "v2.5.0",
         tag: "Onboarding",
         date: "Sep 2026",

@@ -128,6 +128,8 @@ class ReceivableService
 
     private function singleOutlet(): bool
     {
-        return Outlet::active()->count() <= 1;
+        // A single active outlet is not proof that an unowned receivable
+        // belongs to the active business; under tenancy they fail closed.
+        return ! config('multi_business.enabled') && Outlet::active()->count() <= 1;
     }
 }

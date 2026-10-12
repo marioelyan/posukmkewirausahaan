@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\BelongsToActiveBusiness;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreStockOpnameRequest extends FormRequest
@@ -15,7 +16,7 @@ class StoreStockOpnameRequest extends FormRequest
     {
         return [
             'notes' => ['nullable', 'string', 'max:1000'],
-            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
+            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
         ];
     }
 }

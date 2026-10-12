@@ -9,9 +9,6 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\CustomerCampaign;
 use App\Models\CustomerCampaignLog;
-use App\Models\DineArea;
-use App\Models\DineOrder;
-use App\Models\DiningTable;
 use App\Models\Outlet;
 use App\Models\PricingRule;
 use App\Models\Product;
@@ -187,41 +184,6 @@ class OutletAccessGuardTest extends TestCase
             ->assertForbidden();
 
         $this->assertDatabaseCount('stock_opname_items', 0);
-    }
-
-    public function test_dine_order_index_hides_other_outlet_orders(): void
-    {
-        $this->grant('dine-orders-access');
-
-        $areaA = DineArea::create(['name' => 'Area A', 'outlet_id' => $this->outletA->id, 'is_active' => true]);
-        $areaB = DineArea::create(['name' => 'Area B', 'outlet_id' => $this->outletB->id, 'is_active' => true]);
-        $tableA = DiningTable::create(['dine_area_id' => $areaA->id, 'name' => 'A1', 'is_active' => true]);
-        $tableB = DiningTable::create(['dine_area_id' => $areaB->id, 'name' => 'B1', 'is_active' => true]);
-
-        DineOrder::create(['dine_table_id' => $tableA->id, 'status' => DineOrder::STATUS_SUBMITTED, 'payment_option' => DineOrder::PAY_AT_COUNTER, 'subtotal' => 10000, 'item_count' => 1]);
-        DineOrder::create(['dine_table_id' => $tableB->id, 'status' => DineOrder::STATUS_SUBMITTED, 'payment_option' => DineOrder::PAY_AT_COUNTER, 'subtotal' => 20000, 'item_count' => 1]);
-
-        $this->actingAs($this->user)
-            ->get(route('dine-orders.index'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Dashboard/DineIn/Orders/Index')
-                ->has('orders', 1)
-                ->where('orders.0.dine_table_id', $tableA->id));
-    }
-
-    public function test_dine_order_reject_rejects_other_outlet_order(): void
-    {
-        $this->grant('dine-orders-process');
-
-        $areaB = DineArea::create(['name' => 'Area B', 'outlet_id' => $this->outletB->id, 'is_active' => true]);
-        $tableB = DiningTable::create(['dine_area_id' => $areaB->id, 'name' => 'B1', 'is_active' => true]);
-        $order = DineOrder::create(['dine_table_id' => $tableB->id, 'status' => DineOrder::STATUS_SUBMITTED, 'payment_option' => DineOrder::PAY_AT_COUNTER, 'subtotal' => 20000, 'item_count' => 1]);
-
-        $this->actingAs($this->user)
-            ->post(route('dine-orders.reject', $order), ['reason' => 'stok habis'])
-            ->assertNotFound();
-
-        $this->assertSame(DineOrder::STATUS_SUBMITTED, $order->fresh()->status);
     }
 
     public function test_crm_campaign_log_mark_sent_rejects_other_outlet_campaign(): void

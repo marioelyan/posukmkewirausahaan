@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Tenancy\FinancialOwnershipScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,7 @@ class Receivable extends Model
     protected $fillable = [
         'customer_id',
         'transaction_id',
+        'business_id',
         'invoice',
         'total',
         'paid',
@@ -19,18 +21,32 @@ class Receivable extends Model
         'status',
         'note',
         'collection_notes',
+        'ownership_status',
+        'ownership_evaluated_at',
+        'ownership_note',
     ];
 
     protected $casts = [
         'total' => 'float',
         'paid' => 'float',
         'due_date' => 'date',
+        'ownership_evaluated_at' => 'datetime',
     ];
 
     protected $appends = [
         'remaining',
         'aging_bucket',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new FinancialOwnershipScope);
+    }
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
 
     public function customer()
     {

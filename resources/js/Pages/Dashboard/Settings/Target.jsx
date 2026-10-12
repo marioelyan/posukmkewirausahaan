@@ -52,7 +52,7 @@ export default function Target({ settings }) {
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="monthly_sales_target" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Target Penjualan Bulanan
                                 </label>
                                 <div className="relative">
@@ -60,6 +60,7 @@ export default function Target({ settings }) {
                                         <IconCoin size={20} />
                                     </div>
                                     <input
+                                        id="monthly_sales_target"
                                         type="number"
                                         value={data.monthly_sales_target}
                                         onChange={(e) =>

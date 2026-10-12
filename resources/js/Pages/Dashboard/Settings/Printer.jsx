@@ -100,9 +100,9 @@ export default function Printer({ settings }) {
 
                 <form onSubmit={submit} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 max-w-lg">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ukuran Kertas</label>
-                        <select value={data.printer_paper_size} onChange={(e) => setData("printer_paper_size", e.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm">
+                        <label htmlFor="printer_paper_size" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ukuran Kertas</label>
+                        <select id="printer_paper_size" value={data.printer_paper_size} onChange={(e) => setData("printer_paper_size", e.target.value)}
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                             <option value="80mm">80 mm</option>
                             <option value="58mm">58 mm</option>
                         </select>
@@ -110,7 +110,7 @@ export default function Printer({ settings }) {
 
                     <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
                         <input type="checkbox" checked={data.printer_auto_print} onChange={(e) => setData("printer_auto_print", e.target.checked)}
-                            className="rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
+                            className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40" />
                         Cetak otomatis setelah transaksi
                     </label>
 
@@ -119,28 +119,28 @@ export default function Printer({ settings }) {
                         <div className="flex flex-wrap gap-2">
                             {!printerConnected ? (
                                 <button type="button" onClick={handleConnect} disabled={printerBusy}
-                                    className="px-4 py-2 rounded-xl border border-primary-500 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/30 text-sm font-medium disabled:opacity-50">
+                                    className="px-4 py-2 rounded-xl border border-primary-500 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/30 text-sm font-medium disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40">
                                     Hubungkan Printer
                                 </button>
                             ) : (
                                 <>
                                     <button type="button" onClick={handleTestPrint} disabled={printerBusy}
-                                        className="px-4 py-2 rounded-xl border border-primary-500 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/30 text-sm font-medium disabled:opacity-50">
+                                        className="px-4 py-2 rounded-xl border border-primary-500 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/30 text-sm font-medium disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40">
                                         Test Print
                                     </button>
                                     <button type="button" onClick={handleKickDrawer} disabled={printerBusy}
-                                        className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium disabled:opacity-50">
+                                        className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40">
                                         Buka Laci (Kick)
                                     </button>
                                     <button type="button" onClick={handleDisconnect}
-                                        className="px-4 py-2 rounded-xl border border-danger-300 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30 text-sm font-medium">
+                                        className="px-4 py-2 rounded-xl border border-danger-300 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40">
                                         Putuskan
                                     </button>
                                 </>
                             )}
                         </div>
                         <button type="submit" disabled={processing}
-                            className="px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50">
+                            className="px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
                             {processing ? "Menyimpan..." : "Simpan Pengaturan"}
                         </button>
                     </div>

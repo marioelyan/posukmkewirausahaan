@@ -23,7 +23,7 @@ export default function ListBox({ selected, data, setSelected, label, errors }) 
                             {({ selected }) => (
                                 <div
                                     className='text-sm cursor-pointer px-3 py-1.5 rounded-lg flex items-center gap-2 bg-white text-gray-700 hover:bg-gray-200 border dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 '>
-                                    {selected ? <IconCircleFilled size={15} strokeWidth={1.5} className='text-teal-500' /> : <IconCircle size={15} strokeWidth={1.5} />}
+                                    {selected ? <IconCircleFilled size={15} strokeWidth={1.5} className='text-primary-500' /> : <IconCircle size={15} strokeWidth={1.5} />}
                                     {item.name}
                                 </div>
                             )}

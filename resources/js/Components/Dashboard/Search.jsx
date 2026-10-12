@@ -3,9 +3,15 @@ import { IconSearch } from '@tabler/icons-react';
 import React from 'react'
 export default function Search({ url, placeholder }) {
 
+    // keep the current term visible after Inertia navigations
+    const initialSearch =
+        typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search).get('search') || ''
+            : '';
+
     // define use form inertia
     const { data, setData, get } = useForm({
-        search: '',
+        search: initialSearch,
     })
 
     // define method searchData
@@ -16,16 +22,17 @@ export default function Search({ url, placeholder }) {
     }
 
     return (
-        <form onSubmit={searchData}>
+        <form onSubmit={searchData} role="search">
             <div className='relative'>
                 <input
-                    type='text'
+                    type='search'
                     value={data.search}
                     onChange={e => setData('search', e.target.value)}
-                    className='py-2 px-4 pr-11 block w-full rounded-lg text-sm border focus:outline-none focus:ring-0 focus:ring-gray-400 text-gray-700 bg-white border-gray-200 focus:border-gray-200 dark:focus:ring-gray-500 dark:focus:border-gray-800 dark:text-gray-200 dark:bg-gray-950 dark:border-gray-900'
+                    aria-label={placeholder || 'Cari'}
+                    className='w-full h-11 py-2 px-4 pr-11 text-sm rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-800 bg-white border-slate-200 placeholder-slate-400 dark:text-slate-200 dark:bg-slate-900 dark:border-slate-700 dark:placeholder-slate-500'
                     placeholder={placeholder} />
                 <div className='absolute inset-y-0 right-0 flex items-center pointer-events-none pr-4'>
-                    <IconSearch className='text-gray-500 w-5 h-5' />
+                    <IconSearch className='text-slate-400 w-5 h-5' />
                 </div>
             </div>
         </form>

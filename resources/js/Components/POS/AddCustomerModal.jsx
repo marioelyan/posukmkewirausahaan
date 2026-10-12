@@ -44,8 +44,6 @@ export default function AddCustomerModal({
         // Basic validation
         const newErrors = {};
         if (!form.name.trim()) newErrors.name = "Nama wajib diisi";
-        if (!form.no_telp.trim()) newErrors.no_telp = "No. telepon wajib diisi";
-        if (!form.address.trim()) newErrors.address = "Alamat wajib diisi";
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -163,7 +161,9 @@ export default function AddCustomerModal({
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                             No. Telepon{" "}
-                            <span className="text-danger-500">*</span>
+                            <span className="text-slate-400 font-normal">
+                                (Opsional)
+                            </span>
                         </label>
                         <input
                             type="tel"
@@ -187,7 +187,10 @@ export default function AddCustomerModal({
                     {/* Address */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                            Alamat <span className="text-danger-500">*</span>
+                            Alamat{" "}
+                            <span className="text-slate-400 font-normal">
+                                (Opsional)
+                            </span>
                         </label>
                         <textarea
                             name="address"

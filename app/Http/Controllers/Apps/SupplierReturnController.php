@@ -7,6 +7,7 @@ use App\Models\GoodsReceiving;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\SupplierReturn;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
 use App\Services\SupplierReturnService;
 use Illuminate\Http\Request;
@@ -78,12 +79,12 @@ class SupplierReturnController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'supplier_id' => ['nullable', 'exists:suppliers,id'],
-            'goods_receiving_id' => ['nullable', 'exists:goods_receivings,id'],
-            'payable_id' => ['nullable', 'exists:payables,id'],
+            'supplier_id' => ['nullable', 'exists:suppliers,id', new BelongsToActiveBusiness('suppliers')],
+            'goods_receiving_id' => ['nullable', 'exists:goods_receivings,id', new BelongsToActiveBusiness('goods_receivings')],
+            'payable_id' => ['nullable', 'exists:payables,id', new BelongsToActiveBusiness('payables')],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => ['required', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'items.*.qty_returned' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.reason' => ['nullable', 'string', 'max:100'],

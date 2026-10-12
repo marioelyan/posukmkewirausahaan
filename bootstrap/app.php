@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Middleware\EnforceAbsoluteSessionLifetime;
+use App\Http\Middleware\EnforceBusinessRoleCapability;
+use App\Http\Middleware\EnsureActiveBusiness;
 use App\Http\Middleware\EnsureActiveCashierShift;
 use App\Http\Middleware\EnsureBotGuard;
 use App\Http\Middleware\EnsureNotInstalled;
 use App\Http\Middleware\EnsurePublicRegistrationEnabled;
 use App\Http\Middleware\EnsureRecentPasswordConfirmation;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ResolveBusinessContext;
 use App\Http\Middleware\SecureHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Auth\AuthenticationException;
@@ -15,6 +18,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Sanctum\Exceptions\MissingAbilityException;
@@ -52,7 +56,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'setup.notinstalled' => EnsureNotInstalled::class,
             'step_up' => EnsureRecentPasswordConfirmation::class,
             'abilities' => CheckAbilities::class,
+            'business' => ResolveBusinessContext::class,
+            'business.required' => EnsureActiveBusiness::class,
+            'business.role' => EnforceBusinessRoleCapability::class,
         ]);
+
+        // Resolve the verified business context BEFORE implicit route-model binding
+        // (SubstituteBindings lives in the `web` group) so tenant global scopes apply
+        // when the framework resolves `{model}` route parameters.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: ResolveBusinessContext::class,
+        );
+        $middleware->appendToPriorityList(
+            after: ResolveBusinessContext::class,
+            append: EnsureActiveBusiness::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (Throwable $exception, Request $request) {

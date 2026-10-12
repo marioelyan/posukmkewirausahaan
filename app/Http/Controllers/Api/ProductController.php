@@ -7,10 +7,11 @@ use App\Http\Resources\ProductResource;
 use App\Http\Traits\ApiResponder;
 use App\Models\Product;
 use App\Models\Warehouse;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -56,9 +57,9 @@ class ProductController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'barcode' => ['required', 'string', 'max:255', Rule::unique('products', 'barcode')],
-            'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'barcode' => ['required', 'string', 'max:255', TenantUnique::for('products', 'barcode')],
+            'sku' => ['nullable', 'string', 'max:255', TenantUnique::for('products', 'sku')],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id', new BelongsToActiveBusiness('categories')],
             'buy_price' => ['required', 'numeric', 'min:0'],
             'sell_price' => ['required', 'numeric', 'min:0'],
             'stock' => ['nullable', 'integer', 'min:0'],
@@ -68,7 +69,7 @@ class ProductController extends Controller
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'image' => ['nullable', 'string', 'max:255'],
             'is_composite' => ['nullable', 'boolean'],
-            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
+            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
         ]);
 
         $product = Product::create([
@@ -128,9 +129,9 @@ class ProductController extends Controller
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'barcode' => ['sometimes', 'string', 'max:255', Rule::unique('products', 'barcode')->ignore($product->id)],
-            'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product->id)],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'barcode' => ['sometimes', 'string', 'max:255', TenantUnique::for('products', 'barcode', $product->id)],
+            'sku' => ['nullable', 'string', 'max:255', TenantUnique::for('products', 'sku', $product->id)],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id', new BelongsToActiveBusiness('categories')],
             'buy_price' => ['sometimes', 'numeric', 'min:0'],
             'sell_price' => ['sometimes', 'numeric', 'min:0'],
             'stock' => ['nullable', 'integer', 'min:0'],

@@ -73,6 +73,10 @@ php artisan crm:sync-segments             # refresh auto segment memberships (da
 php artisan crm:generate-reminders       # queue campaign reminder messages (daily 01:15)
 php artisan scramble:cache               # warm Scramble OpenAPI cache
 php artisan scramble:clear               # invalidate Scramble OpenAPI cache
+php artisan business:backfill             # audit/backfill business_id on master data (dry-run default)
+  php artisan business:backfill --create-default --apply --confirm-legacy-ownership # create default business + map legacy rows
+php artisan business:membership-backfill  # provision memberships from outlet access (dry-run default)
+  php artisan business:membership-backfill --apply --confirm-membership-backfill # write memberships
 php artisan seed:demo                    # regenerate full demo dataset (truncates demo tables; --force skips confirm)
 php artisan db:seed --class=DemoSeeder --force # explicit full demo dataset (never use on production)
 
@@ -89,8 +93,8 @@ Production must trigger `php artisan schedule:run` every minute for the schedule
 
 - **Controllers**: `app/Http/Controllers/Apps/` — per-module web controllers (~35)
 - **API Controllers**: `app/Http/Controllers/Api/` — REST API (Sanctum token auth)
-- **Services**: `app/Services/` — ~22 services: AuditLog, BatchService, CashierShiftService, DineOrderService, GoodsReceivingService, LoyaltyService, PaymentGatewayManager, PricingService, PriceListService, PurchaseOrderService, ReorderService, StockMutationService, StockTransferService, UnitConversionService, WhatsAppService, etc.
-- **Layouts**: `POSLayout.jsx` (POS), `DashboardLayout.jsx` (admin), `AuthenticatedLayout.jsx` (profile), `GuestLayout.jsx` (auth), `PublicLayout.jsx` (public dine-in)
+- **Services**: `app/Services/` — ~22 services: AuditLog, BatchService, CashierShiftService, GoodsReceivingService, LoyaltyService, PaymentGatewayManager, PricingService, PriceListService, PurchaseOrderService, ReorderService, StockMutationService, StockTransferService, UnitConversionService, WhatsAppService, etc.
+- **Layouts**: `POSLayout.jsx` (POS), `DashboardLayout.jsx` (admin), `AuthenticatedLayout.jsx` (profile), `GuestLayout.jsx` (auth), `PublicLayout.jsx` (public/customer portal)
 - **Routes**: `routes/web.php` (~50+ dashboard routes), `routes/api.php` (webhooks + REST API), `routes/auth.php` (Breeze)
 - **Inertia shared props**: `HandleInertiaRequests.php` — auth, permissions, notifications (low stock, receivables, payables aging), active shift, store profile, appVersion
 
@@ -110,14 +114,14 @@ Production must trigger `php artisan schedule:run` every minute for the schedule
 `DatabaseSeeder` runs only system-essential seeders with permission cache reset before & after:
 
 ```
-PermissionSeeder → RoleSeeder → PaymentSettingSeeder → DineInSettingsSeeder
+PermissionSeeder → RoleSeeder → PaymentSettingSeeder
 ```
 
 After seeding, a default `PUSAT` warehouse is created and existing product stock is migrated to the `product_warehouse` pivot.
 
-**No default users.** Admin account, store profile, business type, categories, and main warehouse are created via the first-install setup wizard at `/setup`. Open the root URL after migration; it automatically redirects to `/setup` while `Setting::app_setup_completed` is false. The `setup.notinstalled` middleware redirects to login once setup is done.
+**No default users.** Admin account, store profile, business type, categories, and main warehouse are created via the first-install setup wizard at `/setup`. Open the root URL after migration; it automatically redirects to `/setup` while `Setting::app_setup_completed` is false. The `setup.notinstalled` middleware redirects to login once setup is done. With `MULTI_BUSINESS_ENABLED=true` the wizard also bootstraps the installation's single default business (Q7): it scopes the PUSAT warehouse + branch outlets/master data to the new `Business` and writes store settings to the business row, so the dashboard is reachable immediately. Existing installs keep the command path: `business:backfill --create-default --apply --confirm-legacy-ownership` then `business:membership-backfill --apply --confirm-membership-backfill`.
 
-**Demo data is opt-in, not part of `DatabaseSeeder`:** run `php artisan db:seed --class=DemoSeeder --force` (or `php artisan seed:demo --force`) for the complete demo dataset. It creates demo outlets `MAL`, `TKB`, and `PUT`; `PUSAT` remains a central non-sales warehouse. Demo accounts (password `password`): `arya@gmail.com` (super-admin, all outlets), `manager@gmail.com` (manager role, MAL+TKB), `cashier@gmail.com` (cashier, MAL). Never run the demo seeder on production. Full dataset details: `docs/demo-data.md`.
+**Demo data is opt-in, not part of `DatabaseSeeder`:** run `php artisan db:seed --class=DemoSeeder --force` (or `php artisan seed:demo --force`) for the complete demo dataset. It creates demo outlets `MAL`, `TKB`, and `PUT`; `PUSAT` remains a central non-sales warehouse. Demo accounts (password `password`): `arya@gmail.com` (super-admin, all outlets), `manager@gmail.com` (manager role, MAL+TKB), `cashier@gmail.com` (cashier, MAL). The demo seeder also provisions a demo business, scopes its outlets/warehouses/master data to it, and creates memberships (manager → `manager`, cashier → `staff`; the super-admin gets no membership), so the dataset is ready to run with `MULTI_BUSINESS_ENABLED=true`. Never run the demo seeder on production. Full dataset details: `docs/demo-data.md`.
 
 **Email verification is disabled** — `User` no longer implements `MustVerifyEmail`, dashboard routes carry no `verified` middleware, and the verification routes/controllers/pages are removed. `markEmailAsVerified()` is still available via the retained trait (used by seeders and tests).
 
@@ -130,14 +134,13 @@ After seeding, a default `PUSAT` warehouse is created and existing product stock
 1. **Permission cache stale after seed** — logout + login again. Seeder resets cache but session still holds old permissions.
 2. **Webhooks need public APP_URL** — Midtrans/Xendit won't work with localhost.
 3. **Product images need storage:link** — `php artisan storage:link` or images won't render.
-4. **Missing migrations cause 500 on new modules** — run `php artisan migrate` for newer modules (purchase orders, goods receiving, supplier returns, stock opname, dine-in, etc.).
+4. **Missing migrations cause 500 on new modules** — run `php artisan migrate` for newer modules (purchase orders, goods receiving, supplier returns, stock opname, etc.).
 5. **Tests force SQLite in-memory** — `phpunit.xml` sets `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`. Don't assume MySQL features. **Set `tax_rate=0` on test Product::create** to avoid PPN changing grand_total.
 6. **Dev servers unified** — `composer run dev` starts server + queue + pail + vite together (`php artisan dev`). WA service stays separate.
 7. **WhatsApp service separate** — `whatsapp-service/` needs `npm start` in another terminal + `WA_SERVICE_URL` in .env.
 8. **CRM campaign auto-send** — requires `wa_enabled=true` + connected device in Settings > WhatsApp.
 9. **Version bump on release** — update `APP_VERSION` in `.env` + `.env.example` when tagging.
 10. **Concurrency patterns** — all stock mutations (checkout, transfer, receiving, payment) are wrapped in `DB::transaction` with `lockForUpdate()` on affected rows. Never skip the transaction or lock.
-11. **Dine-in online payment is disabled** — `payment_option=pay_online` returns 422. Only `pay_at_counter` is accepted.
 
 ## Release Process
 
@@ -160,11 +163,13 @@ After seeding, a default `PUSAT` warehouse is created and existing product stock
 
 ## Docs
 
+- Production deployment: `docs/production-deployment.md`
 - Modules: `docs/features/`
 - Architecture: `docs/architecture-overview.md`
 - Config: `docs/configuration.md`
 - Feature index: `docs/feature-index.md`
 - Manual QA checklist (QRIS, ESC/POS, offline sync): `docs/testing-manual.md`
+- Multi-business staging/runbook: `docs/architecture/multi-business-backfill-production-runbook.md` + `docs/architecture/multi-business-blocker-review-and-decision-register.md`
 
 ## Test Conventions
 

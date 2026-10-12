@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductNotificationRead;
+use App\Rules\BelongsToActiveBusiness;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -14,7 +15,7 @@ class NotificationController extends Controller
     public function markLowStockRead(Request $request)
     {
         $request->validate([
-            'product_id' => ['required', 'exists:products,id'],
+            'product_id' => ['required', 'exists:products,id', new BelongsToActiveBusiness('products')],
         ]);
 
         ProductNotificationRead::updateOrCreate(

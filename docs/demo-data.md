@@ -42,8 +42,7 @@ Catatan:
 - **manager** — akses operasional lengkap (produk, stok, purchasing, transaksi, laporan, CRM,
   diskon) lintas outlet yang ditugaskan, tetapi **tanpa** administrasi users/roles/permissions,
   outlet, atau update kredensial payment gateway.
-- **cashier** — transaksi POS, buka/tutup shift, tambah pelanggan, bayar piutang/hutang, dan
-  memproses pesanan dine-in di outlet MAL.
+- **cashier** — transaksi POS, buka/tutup shift, tambah pelanggan, dan bayar piutang/hutang di outlet MAL.
 
 Semua akun demo dibuat dengan email yang sudah terverifikasi. Email verification kini dinonaktifkan
 secara global (lihat `docs/configuration.md`), jadi login langsung masuk ke dashboard.
@@ -59,7 +58,7 @@ secara global (lihat `docs/configuration.md`), jadi login langsung masuk ke dash
 | `SampleDataSeeder` | Pelanggan, supplier, kategori, produk (dengan gambar), transaksi, piutang, voucher, hutang, dan stok awal per gudang |
 | `OperationalCoreSeeder` | Shift kasir (histori + aktif), penugasan transaksi ke shift, dan retur penjualan |
 | `FeatureCoverageSeeder` | Profil toko, target, pajak, printer, WhatsApp, loyalty, diskon, bank account, payment setting, alur PO→GR→retur supplier, stock opname, dan audit log |
-| `FeatureDemoSeeder` | Split payment, unit konversi, batch & FEFO, produk komposit, pricing rule, price list, segment & campaign, stock transfer, dine-in, approval diskon, dan loyalty history |
+| `FeatureDemoSeeder` | Split payment, unit konversi, batch & FEFO, produk komposit, pricing rule, price list, segment & campaign, stock transfer, approval diskon, dan loyalty history |
 
 ## Data Per Outlet
 
@@ -79,5 +78,5 @@ Jalankan ulang salah satu perintah di atas. Seeder bersifat idempoten untuk enti
 
 | Seeder | Aman untuk produksi? | Isi |
 |--------|----------------------|-----|
-| `DatabaseSeeder` (default `migrate --seed`) | Ya | Permission, role, payment setting, dine-in setting, gudang `PUSAT` |
+| `DatabaseSeeder` (default `migrate --seed`) | Ya | Permission, role, payment setting, gudang `PUSAT` |
 | `DemoSeeder` / `seed:demo` | Tidak | Dataset demo lengkap + akun demo |

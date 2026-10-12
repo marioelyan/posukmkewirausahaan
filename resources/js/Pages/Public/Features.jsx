@@ -11,7 +11,6 @@ import {
     IconCreditCard,
     IconCheck,
     IconArrowRight,
-    IconQrcode,
     IconApi,
 } from "@tabler/icons-react";
 
@@ -133,20 +132,6 @@ const modules = [
             "Sales target & store profile",
             "Pengaturan printer & pajak",
             "Multi-bahasa: Indonesia & English",
-        ],
-    },
-    {
-        icon: IconQrcode,
-        title: "Dine-in QR & Self-Order",
-        desc: "Pelanggan dapat membuka menu dari QR meja, membuat pesanan, dan memantau statusnya.",
-        screenshot: "/screenshots/01-dashboard.png",
-        features: [
-            "Area dan floor plan meja",
-            "QR code unik per meja",
-            "Menu publik dan keranjang pelanggan",
-            "Status order dengan polling",
-            "Staff dapat menerima atau menolak pesanan",
-            "Pembayaran saat ini melalui kasir",
         ],
     },
     {

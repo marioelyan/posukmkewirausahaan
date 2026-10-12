@@ -45,6 +45,7 @@ const defaultFilters = {
     invoice: "",
     cashier_id: "",
     customer_id: "",
+    warehouse_id: "",
 };
 
 const formatCurrency = (value = 0) =>
@@ -60,6 +61,7 @@ const ProfitReport = ({
     filters,
     cashiers,
     customers,
+    warehouses = [],
 }) => {
     const [showFilters, setShowFilters] = useState(false);
     const [filterData, setFilterData] = useState({
@@ -113,7 +115,8 @@ const ProfitReport = ({
         filterData.start_date ||
         filterData.end_date ||
         filterData.cashier_id ||
-        filterData.customer_id;
+        filterData.customer_id ||
+        filterData.warehouse_id;
 
     const stats = {
         profit_total: summary?.profit_total ?? 0,
@@ -176,7 +179,9 @@ const ProfitReport = ({
                     </div>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                        aria-expanded={showFilters}
+                        aria-controls="profit-filters"
+                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                             showFilters || hasActiveFilters
                                 ? "bg-primary-50 border-primary-200 text-primary-700 dark:bg-primary-950/50 dark:border-primary-800 dark:text-primary-400"
                                 : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
@@ -200,16 +205,18 @@ const ProfitReport = ({
                 {/* Filters */}
                 {showFilters && (
                     <div
+                        id="profit-filters"
                         data-tour="reports-filters"
                         className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 animate-slide-up"
                     >
                         <form onSubmit={applyFilters}>
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    <label htmlFor="profit_start_date" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Tanggal Mulai
                                     </label>
                                     <input
+                                        id="profit_start_date"
                                         type="date"
                                         value={filterData.start_date}
                                         onChange={(e) =>
@@ -218,14 +225,15 @@ const ProfitReport = ({
                                                 e.target.value
                                             )
                                         }
-                                        className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                                        className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    <label htmlFor="profit_end_date" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Tanggal Akhir
                                     </label>
                                     <input
+                                        id="profit_end_date"
                                         type="date"
                                         value={filterData.end_date}
                                         onChange={(e) =>
@@ -234,14 +242,15 @@ const ProfitReport = ({
                                                 e.target.value
                                             )
                                         }
-                                        className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                                        className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    <label htmlFor="profit_invoice" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Invoice
                                     </label>
                                     <input
+                                        id="profit_invoice"
                                         type="text"
                                         placeholder="TRX-..."
                                         value={filterData.invoice}
@@ -251,7 +260,7 @@ const ProfitReport = ({
                                                 e.target.value
                                             )
                                         }
-                                        className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                                        className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                                     />
                                 </div>
                                 <InputSelect
@@ -282,20 +291,47 @@ const ProfitReport = ({
                                     placeholder="Semua pelanggan"
                                     searchable
                                 />
+                                <div>
+                                    <label htmlFor="profit_warehouse" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Gudang
+                                    </label>
+                                    <select
+                                        id="profit_warehouse"
+                                        value={filterData.warehouse_id ?? ""}
+                                        onChange={(e) =>
+                                            handleChange(
+                                                "warehouse_id",
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                                    >
+                                        <option value="">Semua gudang</option>
+                                        {warehouses.map((warehouse) => (
+                                            <option
+                                                key={warehouse.id}
+                                                value={String(warehouse.id)}
+                                            >
+                                                {warehouse.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                             <div className="flex justify-end gap-2 mt-4">
                                 {hasActiveFilters && (
                                     <button
                                         type="button"
                                         onClick={resetFilters}
-                                        className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors"
+                                        aria-label="Reset filter"
+                                        className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     >
                                         <IconX size={18} />
                                     </button>
                                 )}
                                 <button
                                     type="submit"
-                                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors"
+                                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 >
                                     <IconSearch size={18} />
                                     Terapkan
@@ -315,28 +351,28 @@ const ProfitReport = ({
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-slate-100 dark:border-slate-800">
-                                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
                                             No
                                         </th>
-                                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
                                             Invoice
                                         </th>
-                                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
                                             Tanggal
                                         </th>
-                                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
                                             Kasir
                                         </th>
-                                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
                                             Pelanggan
                                         </th>
-                                        <th className="px-4 py-4 text-center text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-center text-xs font-semibold text-slate-500 uppercase">
                                             Item
                                         </th>
-                                        <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase">
                                             Penjualan
                                         </th>
-                                        <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase">
+                                        <th scope="col" className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase">
                                             Profit
                                         </th>
                                     </tr>

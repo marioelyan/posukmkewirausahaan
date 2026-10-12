@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Business;
 use App\Models\CashierShift;
-use App\Models\DineOrder;
 use App\Models\Outlet;
 use App\Models\Payable;
 use App\Models\Product;
@@ -11,12 +11,16 @@ use App\Models\ProductBatch;
 use App\Models\Receivable;
 use App\Models\Setting;
 use App\Models\Transaction;
+use App\Services\BusinessContext;
+use App\Services\BusinessMembershipResolver;
 use App\Services\CashierShiftService;
 use App\Services\OutletAccessService;
 use App\Services\PayableAgingService;
 use App\Services\ReceivableService;
 use App\Support\ProductionSecurityBaseline;
+use App\Support\Tenancy\BusinessRoleCapabilities;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
@@ -42,16 +46,30 @@ class HandleInertiaRequests extends Middleware
         $payableAgingSummary = null;
         $receivableAgingSummary = null;
         $pendingApprovalCount = 0;
-        $pendingDineOrdersCount = 0;
         $activeShift = null;
         $activeOutlet = null;
         $availableOutlets = collect();
+
+        $businessSwitcher = null;
+        if ($request->user() && config('multi_business.enabled')) {
+            $current = app(BusinessContext::class)->business();
+            $accessible = $request->user()->isSuperAdmin()
+                ? Business::query()->active()->orderBy('name')->get()
+                : app(BusinessMembershipResolver::class)->activeMembershipsFor($request->user())
+                    ->pluck('business')
+                    ->filter()
+                    ->values();
+
+            $businessSwitcher = [
+                'current' => $current?->only(['id', 'name', 'slug']),
+                'accessible' => $accessible->map(fn (Business $b) => $b->only(['id', 'name', 'slug']))->values(),
+            ];
+        }
 
         if ($request->user()) {
             $userId = $request->user()->id;
             $outletAccess = app(OutletAccessService::class);
             $warehouseIds = $outletAccess->warehousesFor($request->user())->pluck('id');
-            $outletIds = $outletAccess->accessibleOutlets($request->user())->pluck('id');
             $includeLegacy = Outlet::active()->count() <= 1;
 
             if ($request->user()->can('discounts-approve')) {
@@ -65,19 +83,6 @@ class HandleInertiaRequests extends Middleware
                             if ($includeLegacy) {
                                 $query->orWhereNull('warehouse_id');
                             }
-                        }
-                    })
-                    ->count();
-            }
-
-            if ($request->user()->can('dine-orders-access')) {
-                $pendingDineOrdersCount = DineOrder::query()
-                    ->pending()
-                    ->whereHas('table.area', function ($query) use ($outletIds) {
-                        if ($outletIds->isEmpty()) {
-                            $query->whereRaw('1 = 0');
-                        } else {
-                            $query->whereIn('outlet_id', $outletIds);
                         }
                     })
                     ->count();
@@ -254,12 +259,16 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                'permissions' => $request->user() ? $request->user()->getPermissions() : [],
+                'permissions' => $this->resolvePermissions($request),
                 'super' => $request->user() ? $request->user()->isSuperAdmin() : false,
                 'completedTours' => $request->user()?->completed_tours ?? [],
                 'currentOutlet' => $activeOutlet?->only(['id', 'code', 'name']),
                 'outlets' => $availableOutlets->map(fn (Outlet $outlet) => $outlet->only(['id', 'code', 'name']))->values(),
                 'outletLocked' => (bool) $activeShift,
+                ...($businessSwitcher ? [
+                    'currentBusiness' => $businessSwitcher['current'],
+                    'businesses' => $businessSwitcher['accessible'],
+                ] : []),
             ],
             'locale' => [
                 'current' => app()->getLocale(),
@@ -279,7 +288,6 @@ class HandleInertiaRequests extends Middleware
             'storeProfile' => $storeProfile,
             'printerSettings' => $printerSettings,
             'pendingApprovalCount' => $pendingApprovalCount,
-            'pendingDineOrdersCount' => $pendingDineOrdersCount,
             'appVersion' => config('app.version'),
             'security' => [
                 'warnings' => $securityWarnings,
@@ -287,5 +295,42 @@ class HandleInertiaRequests extends Middleware
                 'stepUpFreshUntil' => $stepUpFreshUntil,
             ],
         ];
+    }
+
+    /**
+     * Share the capability map the UI gates on.
+     *
+     * With tenancy enabled the server enforces the ACTIVE membership's business
+     * role (AUTH-02/03 via the `business.role` middleware), so the shared map
+     * must match it — otherwise the menu would offer actions that 403. A
+     * non-super member therefore sees only the capabilities of their role in
+     * the active business. Super-admins keep the explicit platform path and
+     * the flag-off path keeps the legacy global map byte-for-byte.
+     *
+     * @return array<string, true>|Collection
+     */
+    private function resolvePermissions(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        if (! config('multi_business.enabled') || $user->isSuperAdmin()) {
+            return $user->getPermissions();
+        }
+
+        $context = app(BusinessContext::class);
+        $membership = $context->hasActiveBusiness() ? $context->membership() : null;
+
+        if (! $membership) {
+            // Tenancy enabled without a verified membership: fail closed, the
+            // same way the server-side capability check does.
+            return [];
+        }
+
+        return collect(app(BusinessRoleCapabilities::class)->permissionsFor($membership->role))
+            ->mapWithKeys(fn (string $name) => [$name => true]);
     }
 }

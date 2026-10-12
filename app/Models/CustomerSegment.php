@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CustomerSegment extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     public const TYPE_MANUAL = 'manual';
@@ -23,6 +25,7 @@ class CustomerSegment extends Model
         'name',
         'slug',
         'type',
+        'business_id',
         'is_active',
         'description',
         'auto_rule_type',

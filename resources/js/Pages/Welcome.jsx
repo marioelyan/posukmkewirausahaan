@@ -16,7 +16,6 @@ import {
     IconArrowRight,
     IconDeviceMobile,
     IconTerminal2,
-    IconQrcode,
     IconApi,
 } from "@tabler/icons-react";
 
@@ -83,11 +82,6 @@ const features = [
         desc: "Checkout yang sudah disiapkan dapat masuk antrean offline dan tersinkron saat koneksi kembali.",
     },
     {
-        icon: IconQrcode,
-        title: "Dine-in QR Menu",
-        desc: "Pelanggan scan QR meja, melihat menu, membuat pesanan, dan memantau status sampai diproses staff.",
-    },
-    {
         icon: IconApi,
         title: "API & Integrasi",
         desc: "API terautentikasi untuk master data, POS, checkout, shift, transaksi, dan sinkronisasi offline.",
@@ -97,7 +91,7 @@ const features = [
 const techStack = [
     { name: "Laravel 13", color: "bg-red-500" },
     { name: "Inertia.js 3", color: "bg-purple-500" },
-    { name: "React 19", color: "bg-cyan-500" },
+    { name: "React 19", color: "bg-accent-500" },
     { name: "Tailwind CSS", color: "bg-sky-500" },
     { name: "MySQL", color: "bg-orange-500" },
     { name: "PWA", color: "bg-emerald-500" },
@@ -180,7 +174,7 @@ export default function Welcome() {
                                 href={GITHUB_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full sm:w-auto px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl hover:from-primary-600 hover:to-primary-700 shadow-xl shadow-primary-500/30 transition-all flex items-center justify-center gap-2"
+                                className="w-full sm:w-auto px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-800 rounded-2xl hover:from-primary-700 hover:to-primary-900 shadow-xl shadow-primary-500/30 transition-all flex items-center justify-center gap-2"
                             >
                                 <IconStar size={20} />
                                 Star di GitHub

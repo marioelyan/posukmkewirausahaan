@@ -50,7 +50,6 @@ composer run dev
 - permission
 - role
 - payment setting awal
-- pengaturan dine-in
 - warehouse utama `PUSAT`
 
 Tidak ada user default atau sample data pada seeder utama. Outlet `PUSAT` dibuat sebagai gudang pusat non-penjualan. Pada instalasi pertama, buka root aplikasi dan wizard `/setup` akan terbuka otomatis untuk membuat akun admin.
@@ -61,7 +60,7 @@ Untuk dataset demo lengkap secara eksplisit:
 php artisan db:seed --class=DemoSeeder --force
 ```
 
-`DemoSeeder` membuat outlet demo `MAL`, `TKB`, dan `PUT`, user demo, produk, transaksi, shift, purchasing, inventory, pricing, dine-in, dan feature coverage. Transaksi penjualan hanya dibuat pada gudang outlet penjualan; tidak ada panggilan gateway pembayaran nyata.
+`DemoSeeder` membuat outlet demo `MAL`, `TKB`, dan `PUT`, user demo, produk, transaksi, shift, purchasing, inventory, pricing, dan feature coverage. Transaksi penjualan hanya dibuat pada gudang outlet penjualan; tidak ada panggilan gateway pembayaran nyata.
 
 Akun demo yang dibuat:
 

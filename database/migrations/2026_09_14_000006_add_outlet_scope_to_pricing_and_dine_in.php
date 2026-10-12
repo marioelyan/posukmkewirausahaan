@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        foreach (['pricing_rules', 'price_lists', 'dine_areas'] as $name) {
+        foreach (['pricing_rules', 'price_lists'] as $name) {
             if (! Schema::hasColumn($name, 'outlet_id')) {
                 Schema::table($name, function (Blueprint $table) {
                     $table->foreignId('outlet_id')->nullable()->after('id')->constrained('outlets')->nullOnDelete();
@@ -20,10 +20,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        foreach (['pricing_rules', 'price_lists', 'dine_areas'] as $name) {
+        foreach (['pricing_rules', 'price_lists'] as $name) {
             if (Schema::hasColumn($name, 'outlet_id')) {
                 Schema::table($name, function (Blueprint $table) use ($name) {
-                    $table->dropForeign([$name === 'dine_areas' ? 'outlet_id' : 'outlet_id']);
+                    $table->dropForeign([$name.'_outlet_id_foreign']);
                     $table->dropIndex($name.'_outlet_id_index');
                     $table->dropColumn('outlet_id');
                 });

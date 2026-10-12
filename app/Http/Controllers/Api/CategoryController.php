@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Http\Traits\ApiResponder;
 use App\Models\Category;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
@@ -34,7 +34,7 @@ class CategoryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')],
+            'name' => ['required', 'string', 'max:255', TenantUnique::for('categories', 'name')],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:255'],
         ]);
@@ -62,7 +62,7 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($category->id)],
+            'name' => ['sometimes', 'string', 'max:255', TenantUnique::for('categories', 'name', $category->id)],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:255'],
         ]);

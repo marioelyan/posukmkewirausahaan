@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\CustomerSegment;
 use App\Models\CustomerSegmentMembership;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 class CustomerSegmentationService
 {
@@ -146,6 +147,10 @@ class CustomerSegmentationService
 
     public function serializeCustomerSegments(Customer $customer): array
     {
+        if (config('multi_business.enabled')) {
+            return [];
+        }
+
         return $customer->segments
             ->sortBy('name')
             ->values()
@@ -162,6 +167,10 @@ class CustomerSegmentationService
 
     public function segmentOptions(string $type = 'all'): array
     {
+        if (config('multi_business.enabled')) {
+            return [];
+        }
+
         return CustomerSegment::query()
             ->when($type !== 'all', fn ($query) => $query->where('type', $type))
             ->where('is_active', true)
@@ -177,7 +186,12 @@ class CustomerSegmentationService
 
     public function segmentStats(CustomerSegment $segment): array
     {
-        $memberships = $segment->memberships()->with('customer:id')->get();
+        $memberships = $segment->memberships()
+            ->with('customer:id')
+            ->when(config('multi_business.enabled'), function (Builder $query) {
+                $query->whereHas('customer');
+            })
+            ->get();
 
         return [
             'total_members' => $memberships->count(),

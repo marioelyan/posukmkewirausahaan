@@ -29,12 +29,12 @@ Kembali ke indeks dokumentasi: `docs/README.md`
 - `resources/js/Layouts/` — 5 layout: POSLayout, DashboardLayout, AuthenticatedLayout, GuestLayout, PublicLayout
 - `resources/js/Utils/` — escpos (WebUSB), offlineDb (IndexedDB), tours (driver.js), authorization
 - `database/migrations/` — 97 migration
-- `database/seeders/` — seeder inti (PermissionSeeder, RoleSeeder, PaymentSettingSeeder, DineInSettingsSeeder) dan seeder demo/coverage (DemoOutletSeeder, UserSeeder, SampleDataSeeder, OperationalCoreSeeder, FeatureCoverageSeeder, FeatureDemoSeeder) yang dijalankan secara eksplisit
+- `database/seeders/` — seeder inti (PermissionSeeder, RoleSeeder, PaymentSettingSeeder) dan seeder demo/coverage (DemoOutletSeeder, UserSeeder, SampleDataSeeder, OperationalCoreSeeder, FeatureCoverageSeeder, FeatureDemoSeeder) yang dijalankan secara eksplisit
 
 ### Seeder
 
-`DatabaseSeeder` menjalankan `PermissionSeeder`, `RoleSeeder`, `PaymentSettingSeeder`,
-dan `DineInSettingsSeeder`, lalu memastikan warehouse utama `PUSAT` tersedia. Seeder
+`DatabaseSeeder` menjalankan `PermissionSeeder`, `RoleSeeder`, dan `PaymentSettingSeeder`,
+lalu memastikan warehouse utama `PUSAT` tersedia. Seeder
 `DemoOutletSeeder`, `UserSeeder`, `SampleDataSeeder`, `OperationalCoreSeeder`,
 `FeatureCoverageSeeder`, dan `FeatureDemoSeeder` bersifat opt-in untuk demo atau pengujian,
 dan diorkestrasi oleh `DemoSeeder` (dijalankan lewat `php artisan seed:demo` atau

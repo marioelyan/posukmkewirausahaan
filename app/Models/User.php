@@ -6,6 +6,7 @@ use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -127,6 +128,23 @@ class User extends Authenticatable
     public function outlets(): BelongsToMany
     {
         return $this->belongsToMany(Outlet::class, 'user_outlets')->withPivot('is_default')->withTimestamps();
+    }
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(BusinessUser::class);
+    }
+
+    public function businesses(): BelongsToMany
+    {
+        return $this->belongsToMany(Business::class, 'business_user')
+            ->withPivot(['role', 'status', 'default_outlet_id', 'invited_by_user_id', 'invited_at', 'joined_at'])
+            ->withTimestamps();
+    }
+
+    public function membershipsInActiveState(): HasMany
+    {
+        return $this->memberships()->where('status', BusinessUser::STATUS_ACTIVE);
     }
 
     public function auditLogs()

@@ -165,4 +165,38 @@ class ProductStoreTest extends TestCase
         $this->assertNull($product->image);
         $this->assertNull($product->description);
     }
+
+    public function test_store_non_composite_accepts_empty_components_and_units(): void
+    {
+        $payload = [
+            ...$this->validPayload(),
+            'is_composite' => false,
+            'components' => [],
+            'units' => [],
+            'min_stock' => '',
+            'max_stock' => '',
+        ];
+
+        $this->post(route('products.store'), $payload)
+            ->assertRedirect(route('products.index'));
+
+        $product = Product::latest('id')->first();
+
+        $this->assertFalse((bool) $product->is_composite);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'min_stock' => 0, 'max_stock' => 0]);
+    }
+
+    public function test_store_composite_rejects_empty_components(): void
+    {
+        $payload = [
+            ...$this->validPayload(),
+            'is_composite' => true,
+            'components' => [],
+        ];
+
+        $this->post(route('products.store'), $payload)
+            ->assertSessionHasErrors('components');
+
+        $this->assertDatabaseCount('products', 0);
+    }
 }

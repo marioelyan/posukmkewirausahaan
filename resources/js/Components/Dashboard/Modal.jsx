@@ -33,7 +33,7 @@ export default function Modal({ children, title, show = false, maxWidth = '2xl',
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="absolute inset-0 bg-gray-500/75" />
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                 </Transition.Child>
 
                 <Transition.Child
@@ -46,12 +46,14 @@ export default function Modal({ children, title, show = false, maxWidth = '2xl',
                     leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 >
                     <Dialog.Panel
-                        className={`mb-6 bg-white dark:bg-gray-950 rounded-lg overflow-hidden shadow-xl transform transition-all w-full sm:mx-auto ${maxWidthClass}`}
+                        className={`mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-xl transform transition-all w-full sm:mx-auto ${maxWidthClass}`}
                     >
-                        <Dialog.Title className={'border-b px-4 py-2 font-semibold text-base flex items-center gap-2 text-gray-700 dark:border-gray-900 dark:text-gray-300'}>
-                            {title}
-                        </Dialog.Title>
-                        <div className='p-4'>
+                        {title && (
+                            <Dialog.Title className={'border-b border-slate-200 dark:border-slate-800 px-5 py-3 font-semibold text-base flex items-center gap-2 text-slate-800 dark:text-slate-200'}>
+                                {title}
+                            </Dialog.Title>
+                        )}
+                        <div className='p-5'>
                             {children}
                         </div>
                     </Dialog.Panel>

@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\CustomersImport;
 use App\Imports\ProductsImport;
 use App\Models\Outlet;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Concerns\FromArray;
@@ -31,10 +32,22 @@ class ImportExportController extends Controller
 
     public function exportTransactions(Request $request)
     {
-        $warehouseIds = $request->user()->isSuperAdmin()
+        // A client must not be able to widen an export by naming another
+        // business's warehouse. The rule is a no-op in legacy mode.
+        $request->validate([
+            'warehouse_id' => ['nullable', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
+        ]);
+
+        $tenancyEnabled = (bool) config('multi_business.enabled');
+
+        // When tenancy is enabled every operator (super-admin included) is
+        // constrained to the active business's warehouses so an export can never
+        // blend businesses. Legacy mode keeps the historical super-admin bypass.
+        $warehouseIds = $request->user()->isSuperAdmin() && ! $tenancyEnabled
             ? null
             : $this->outletAccessService->warehousesFor($request->user())->pluck('id')->all();
-        $includeLegacy = Outlet::active()->count() <= 1;
+
+        $includeLegacy = $tenancyEnabled ? false : Outlet::active()->count() <= 1;
 
         return Excel::download(new TransactionsExport($request, $warehouseIds, $includeLegacy), 'transaksi.xlsx');
     }
@@ -43,7 +56,7 @@ class ImportExportController extends Controller
     {
         $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
-            'warehouse_id' => ['nullable', 'exists:warehouses,id'],
+            'warehouse_id' => ['nullable', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
         ]);
 
         // same warehouse resolution/authorization as manual product creation

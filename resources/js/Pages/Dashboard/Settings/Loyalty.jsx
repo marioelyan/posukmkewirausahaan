@@ -71,7 +71,7 @@ export default function Loyalty({ settings }) {
                                         onChange={(event) =>
                                             setData("enable_earn", event.target.checked)
                                         }
-                                        className="h-4 w-4 rounded border-slate-300 text-primary-500"
+                                        className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     />
                                 </label>
                                 <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-800">
@@ -87,15 +87,16 @@ export default function Loyalty({ settings }) {
                                                 event.target.checked
                                             )
                                         }
-                                        className="h-4 w-4 rounded border-slate-300 text-primary-500"
+                                        className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     />
                                 </label>
 
                                 <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    <label htmlFor="earn_rate_amount" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                                         Nominal belanja untuk 1 poin
                                     </label>
                                     <input
+                                        id="earn_rate_amount"
                                         type="number"
                                         min="1"
                                         value={data.earn_rate_amount}
@@ -105,20 +106,21 @@ export default function Loyalty({ settings }) {
                                                 event.target.value
                                             )
                                         }
-                                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                     />
                                     {errors.earn_rate_amount && (
-                                        <p className="mt-1 text-xs text-rose-500">
+                                        <p className="mt-1 text-xs text-danger-500">
                                             {errors.earn_rate_amount}
                                         </p>
                                     )}
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    <label htmlFor="redeem_point_value" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                                         Nilai rupiah per 1 poin redeem
                                     </label>
                                     <input
+                                        id="redeem_point_value"
                                         type="number"
                                         min="1"
                                         value={data.redeem_point_value}
@@ -128,10 +130,10 @@ export default function Loyalty({ settings }) {
                                                 event.target.value
                                             )
                                         }
-                                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                     />
                                     {errors.redeem_point_value && (
-                                        <p className="mt-1 text-xs text-rose-500">
+                                        <p className="mt-1 text-xs text-danger-500">
                                             {errors.redeem_point_value}
                                         </p>
                                     )}
@@ -157,10 +159,11 @@ export default function Loyalty({ settings }) {
                             <div className="grid gap-4 sm:grid-cols-2">
                                 {settings.tiers.map((tier) => (
                                     <div key={tier.key}>
-                                        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        <label htmlFor={`tier-${tier.key}`} className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                                             {tier.label}
                                         </label>
                                         <input
+                                            id={`tier-${tier.key}`}
                                             type="number"
                                             min="0"
                                             value={data.tiers[tier.key] || ""}
@@ -170,13 +173,13 @@ export default function Loyalty({ settings }) {
                                                     [tier.key]: event.target.value,
                                                 })
                                             }
-                                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                         />
                                     </div>
                                 ))}
                             </div>
                             {errors.tiers && (
-                                <p className="mt-3 text-xs text-rose-500">{errors.tiers}</p>
+                                <p className="mt-3 text-xs text-danger-500">{errors.tiers}</p>
                             )}
                         </section>
                     </div>
@@ -185,7 +188,7 @@ export default function Loyalty({ settings }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                             <IconDeviceFloppy size={18} />
                             {processing ? "Menyimpan..." : "Simpan Pengaturan"}

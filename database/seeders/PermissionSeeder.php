@@ -87,6 +87,11 @@ class PermissionSeeder extends Seeder
         $create('payables-pay');
         $create('suppliers-access');
 
+        // FIN-01/02/05 — financial ownership administration (platform-level)
+        $create('financial-ownership-reconcile');
+        $create('financial-ownership-assign');
+        $create('financial-ownership-quarantine');
+
         // permission reports
         $create('reports-access');
         $create('profits-access');
@@ -173,14 +178,6 @@ class PermissionSeeder extends Seeder
         // whatsapp
         $create('whatsapp-settings-access');
         $create('whatsapp-settings-update');
-
-        // dine-in
-        $create('dine-tables-access');
-        $create('dine-tables-create');
-        $create('dine-tables-update');
-        $create('dine-tables-delete');
-        $create('dine-orders-access');
-        $create('dine-orders-process');
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

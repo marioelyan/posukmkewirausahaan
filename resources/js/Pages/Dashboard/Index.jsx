@@ -80,7 +80,7 @@ function TargetCard({ title, current, target, icon: Icon }) {
     const isAchieved = percentage >= 100;
 
     return (
-        <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg">
+        <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg">
             {/* Background Pattern */}
             <div className="absolute top-0 right-0 w-32 h-32 opacity-20">
                 <Icon
@@ -234,8 +234,8 @@ export default function Dashboard({
 
         const ctx = chartRef.current.getContext("2d");
         const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-        gradient.addColorStop(0, "rgba(99, 102, 241, 0.3)");
-        gradient.addColorStop(1, "rgba(99, 102, 241, 0.01)");
+        gradient.addColorStop(0, "rgba(60, 122, 231, 0.3)");
+        gradient.addColorStop(1, "rgba(60, 122, 231, 0.01)");
 
         chartInstance.current = new Chart(chartRef.current, {
             type: "line",
@@ -245,14 +245,14 @@ export default function Dashboard({
                     {
                         label: "Pendapatan",
                         data: totals,
-                        borderColor: "#6366f1",
+                        borderColor: "#3c7ae7",
                         backgroundColor: gradient,
                         borderWidth: 3,
                         fill: true,
                         tension: 0.4,
                         pointRadius: 0,
                         pointHoverRadius: 6,
-                        pointHoverBackgroundColor: "#6366f1",
+                        pointHoverBackgroundColor: "#3c7ae7",
                         pointHoverBorderColor: "#fff",
                         pointHoverBorderWidth: 2,
                     },

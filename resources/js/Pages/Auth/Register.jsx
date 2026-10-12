@@ -41,7 +41,7 @@ export default function Register({ botGuard }) {
 
             <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
                 {/* Left - Decoration */}
-                <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary-500 to-primary-700 items-center justify-center p-12">
+                <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary-700 via-primary-600 to-primary-900 items-center justify-center p-12">
                     <div className="max-w-md text-center text-white">
                         <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-8">
                             <IconShoppingCart size={48} />
@@ -83,7 +83,7 @@ export default function Register({ botGuard }) {
                                 href="/"
                                 className="inline-flex items-center gap-3 mb-6"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center shadow-lg shadow-primary-500/20">
                                     <IconShoppingCart
                                         size={24}
                                         className="text-white"
@@ -115,7 +115,7 @@ export default function Register({ botGuard }) {
                             )}
                             {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Nama Lengkap
                                 </label>
                                 <div className="relative">
@@ -123,6 +123,7 @@ export default function Register({ botGuard }) {
                                         <IconUser size={20} />
                                     </div>
                                     <input
+                                        id="name"
                                         type="text"
                                         value={data.name}
                                         onChange={(e) =>
@@ -145,7 +146,7 @@ export default function Register({ botGuard }) {
 
                             {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Email
                                 </label>
                                 <div className="relative">
@@ -153,6 +154,7 @@ export default function Register({ botGuard }) {
                                         <IconMail size={20} />
                                     </div>
                                     <input
+                                        id="email"
                                         type="email"
                                         value={data.email}
                                         onChange={(e) =>
@@ -175,7 +177,7 @@ export default function Register({ botGuard }) {
 
                             {/* Password */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Password
                                 </label>
                                 <div className="relative">
@@ -183,6 +185,7 @@ export default function Register({ botGuard }) {
                                         <IconLock size={20} />
                                     </div>
                                     <input
+                                        id="password"
                                         type={
                                             showPassword ? "text" : "password"
                                         }
@@ -202,7 +205,9 @@ export default function Register({ botGuard }) {
                                         onClick={() =>
                                             setShowPassword(!showPassword)
                                         }
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     >
                                         {showPassword ? (
                                             <IconEyeOff size={20} />
@@ -220,7 +225,7 @@ export default function Register({ botGuard }) {
 
                             {/* Confirm Password */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="password_confirmation" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Konfirmasi Password
                                 </label>
                                 <div className="relative">
@@ -228,6 +233,7 @@ export default function Register({ botGuard }) {
                                         <IconLock size={20} />
                                     </div>
                                     <input
+                                        id="password_confirmation"
                                         type={
                                             showConfirmPassword
                                                 ? "text"
@@ -254,7 +260,9 @@ export default function Register({ botGuard }) {
                                                 !showConfirmPassword
                                             )
                                         }
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        aria-label={showConfirmPassword ? "Sembunyikan konfirmasi kata sandi" : "Tampilkan konfirmasi kata sandi"}
+                                        aria-pressed={showConfirmPassword}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     >
                                         {showConfirmPassword ? (
                                             <IconEyeOff size={20} />

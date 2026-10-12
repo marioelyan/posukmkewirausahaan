@@ -31,21 +31,21 @@ export default function Sidebar({ sidebarOpen }) {
             {/* Logo */}
             <div className="flex items-center justify-center h-16 border-b border-slate-100 dark:border-slate-800">
                 {sidebarOpen ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
                         {storeLogo ? (
                             <img
                                 src={storeLogo}
                                 alt={storeName}
-                                className="w-10 h-10  object-cover"
+                                className="w-10 h-10 rounded-xl object-cover shrink-0"
                             />
                         ) : (
-                            <div className="w-10 h-10  bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shrink-0">
                                 <span className="text-white font-bold text-sm">
                                     {storeInitial}
                                 </span>
                             </div>
                         )}
-                        <span className="text-xl font-bold text-slate-800 dark:text-white truncate">
+                        <span className="text-lg font-bold text-slate-800 dark:text-white truncate">
                             {storeName}
                         </span>
                     </div>
@@ -54,10 +54,10 @@ export default function Sidebar({ sidebarOpen }) {
                         <img
                             src={storeLogo}
                             alt={storeName}
-                            className="w-9 h-9 rounded-md object-cover"
+                            className="w-9 h-9 rounded-lg object-cover"
                         />
                     ) : (
-                        <div className="w-9 h-9 rounded-md bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
                             <span className="text-white font-bold text-sm">
                                 {storeInitial}
                             </span>

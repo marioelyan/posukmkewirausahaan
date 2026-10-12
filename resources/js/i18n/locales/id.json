@@ -253,7 +253,6 @@
             "procurement": "Pengadaan",
             "crmPricing": "CRM & Harga",
             "reports": "Laporan",
-            "dineIn": "Dine-In",
             "operations": "Operasional",
             "userManagement": "Manajemen User",
             "settings": "Pengaturan"
@@ -283,9 +282,6 @@
             "customerSegments": "Segment Customer",
             "crmCampaigns": "Campaign CRM",
             "crmReminders": "Reminder CRM",
-            "dineAreas": "Area Dine-In",
-            "dineTables": "Meja Dine-In",
-            "dineOrders": "Pesanan Dine-In",
             "salesReport": "Laporan Penjualan",
             "profitReport": "Laporan Keuntungan",
             "advancedInsights": "Advanced Insights",
@@ -911,7 +907,7 @@
             },
             "widgets": {
                 "title": "Widget Pemantauan",
-                "desc": "Shift kasir aktif, piutang, hutang, dan pesanan dine-in yang perlu perhatian."
+                "desc": "Shift kasir aktif, piutang, dan hutang yang perlu perhatian."
             },
             "recent": {
                 "title": "Transaksi Terbaru",

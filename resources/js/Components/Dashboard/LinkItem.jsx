@@ -21,6 +21,7 @@ export default function LinkItem({
     const baseClasses = `
         flex items-center gap-3
         transition-all duration-200
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-inset
         text-slate-600 dark:text-slate-400
     `;
 
@@ -32,6 +33,7 @@ export default function LinkItem({
         return (
             <Link
                 href={href}
+                aria-current={isActive ? "page" : undefined}
                 className={`${baseClasses} ${activeClasses} px-4 py-2.5 text-sm font-medium`}
                 {...props}
             >

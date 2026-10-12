@@ -8,6 +8,8 @@ use App\Models\CustomerVoucher;
 use App\Models\Transaction;
 use App\Services\CustomerSegmentationService;
 use App\Services\LoyaltyService;
+use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -20,7 +22,8 @@ class MemberController extends Controller
 {
     public function __construct(
         private readonly LoyaltyService $loyaltyService,
-        private readonly CustomerSegmentationService $segmentationService
+        private readonly CustomerSegmentationService $segmentationService,
+        private readonly OutletAccessService $outletAccessService
     ) {}
 
     public function index(Request $request)
@@ -66,9 +69,9 @@ class MemberController extends Controller
                     ->orWhereNotNull('member_code');
             });
 
-        $memberRevenue = (int) Transaction::query()
-            ->whereIn('customer_id', (clone $summaryQuery)->pluck('id'))
-            ->sum('grand_total');
+        $memberRevenue = (int) $this->scopeTransactionsToBusiness(
+            Transaction::query()->whereIn('customer_id', (clone $summaryQuery)->pluck('id'))
+        )->sum('grand_total');
 
         $repeatMembers = (clone $summaryQuery)
             ->where('loyalty_transaction_count', '>', 1)
@@ -205,7 +208,7 @@ class MemberController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'no_telp' => ['required', 'string', Rule::unique('customers', 'no_telp')->ignore($customer?->id)],
+            'no_telp' => ['required', 'string', TenantUnique::for('customers', 'no_telp', $customer?->id)],
             'address' => ['required', 'string'],
             'is_loyalty_member' => ['nullable', 'boolean'],
             'loyalty_tier' => ['nullable', 'string', Rule::in(array_keys($this->loyaltyService->tiers()))],
@@ -258,9 +261,26 @@ class MemberController extends Controller
         ];
     }
 
+    /**
+     * Constrain a member transaction query to the active business. Transactions
+     * carry no `business_id`; ownership is resolved through their warehouse.
+     * Returns the query untouched in legacy mode and fails closed under tenancy
+     * without a context (empty warehouse set).
+     */
+    private function scopeTransactionsToBusiness($query)
+    {
+        $warehouseIds = $this->outletAccessService->activeBusinessWarehouseIds();
+
+        if ($warehouseIds === null) {
+            return $query;
+        }
+
+        return $query->whereIn('transactions.warehouse_id', $warehouseIds);
+    }
+
     private function buildStats(Customer $customer)
     {
-        return Transaction::where('customer_id', $customer->id)
+        return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
             ->selectRaw('
                 COUNT(*) as total_transactions,
                 SUM(grand_total) as total_spent,
@@ -271,7 +291,7 @@ class MemberController extends Controller
 
     private function recentTransactions(Customer $customer)
     {
-        return Transaction::where('customer_id', $customer->id)
+        return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
             ->select('id', 'invoice', 'grand_total', 'payment_method', 'created_at')
             ->orderByDesc('created_at')
             ->limit(5)
@@ -287,7 +307,7 @@ class MemberController extends Controller
 
     private function frequentProducts(Customer $customer)
     {
-        return Transaction::where('customer_id', $customer->id)
+        return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
             ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
             ->join('products', 'transaction_details.product_id', '=', 'products.id')
             ->selectRaw('products.id, products.title, SUM(transaction_details.qty) as total_qty')

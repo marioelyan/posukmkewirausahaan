@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Apps;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -51,7 +52,7 @@ class CategoryController extends Controller
          */
         $request->validate([
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'name' => 'required',
+            'name' => ['required', TenantUnique::for('categories', 'name')],
             'description' => 'nullable|string',
         ]);
 
@@ -95,7 +96,7 @@ class CategoryController extends Controller
          * validate
          */
         $request->validate([
-            'name' => 'required',
+            'name' => ['required', TenantUnique::for('categories', 'name', $category->id)],
             'description' => 'nullable|string',
         ]);
 

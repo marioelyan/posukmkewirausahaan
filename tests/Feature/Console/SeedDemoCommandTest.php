@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Console;
 
+use App\Models\Business;
+use App\Models\BusinessUser;
 use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\Setting;
@@ -64,11 +66,32 @@ class SeedDemoCommandTest extends TestCase
         $this->assertSame(0, Transaction::where('warehouse_id', Warehouse::where('code', 'PUSAT')->value('id'))->count());
         $this->assertGreaterThan(0, Transaction::whereNotNull('warehouse_id')->count());
 
+        // Multi-business: the demo dataset creates a business, scopes master data
+        // to it, and provisions memberships so the flag can be turned on.
+        $business = Business::first();
+        $this->assertNotNull($business);
+        $this->assertSame($business->id, Outlet::first()->business_id);
+        $this->assertSame($business->id, Product::first()->business_id);
+
+        $managerMembership = BusinessUser::where('user_id', $manager->id)->first();
+        $this->assertNotNull($managerMembership);
+        $this->assertSame(BusinessUser::ROLE_MANAGER, $managerMembership->role);
+        $this->assertSame($business->id, $managerMembership->business_id);
+
+        $cashierMembership = BusinessUser::where('user_id', $cashier->id)->first();
+        $this->assertNotNull($cashierMembership);
+        $this->assertSame(BusinessUser::ROLE_STAFF, $cashierMembership->role);
+
+        // Super-admin uses the explicit platform path (AUTH-01): no membership.
+        $this->assertSame(0, BusinessUser::where('user_id', $admin->id)->count());
+
         $counts = [
             'outlets' => Outlet::count(),
             'warehouses' => Warehouse::count(),
             'products' => Product::count(),
             'transactions' => Transaction::count(),
+            'businesses' => Business::count(),
+            'memberships' => BusinessUser::count(),
         ];
 
         $this->artisan('db:seed', ['--class' => 'DemoSeeder', '--force'])
@@ -79,6 +102,8 @@ class SeedDemoCommandTest extends TestCase
             'warehouses' => Warehouse::count(),
             'products' => Product::count(),
             'transactions' => Transaction::count(),
+            'businesses' => Business::count(),
+            'memberships' => BusinessUser::count(),
         ]);
     }
 

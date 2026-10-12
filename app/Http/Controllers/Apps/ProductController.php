@@ -7,13 +7,16 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductWarehouse;
 use App\Models\Unit;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
 use App\Services\OutletAccessService;
 use App\Services\StockMutationService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -78,20 +81,20 @@ class ProductController extends Controller
          */
         $request->validate([
             'image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
-            'barcode' => 'required|unique:products,barcode',
-            'sku' => 'required|unique:products,sku',
+            'barcode' => ['required', TenantUnique::for('products', 'barcode')],
+            'sku' => ['required', TenantUnique::for('products', 'sku')],
             'title' => 'required',
             'description' => 'nullable|string',
-            'category_id' => 'required',
+            'category_id' => ['required', new BelongsToActiveBusiness('categories')],
             'buy_price' => 'required',
             'sell_price' => 'required',
             'stock' => 'required|integer|min:0',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'warehouse_id' => ['nullable', new BelongsToActiveBusiness('warehouses')],
             'min_stock' => 'nullable|integer|min:0',
             'max_stock' => 'nullable|integer|min:0',
             'tax_type' => 'nullable|in:exclusive,inclusive',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
-            ...$this->compositeRules(),
+            ...$this->compositeRules($request),
             ...$this->unitRules(),
         ]);
         // resolve + authorize the stock warehouse BEFORE creating anything
@@ -201,18 +204,18 @@ class ProductController extends Controller
          * validate
          */
         $request->validate([
-            'barcode' => 'required|unique:products,barcode,'.$product->id,
-            'sku' => 'required|unique:products,sku,'.$product->id,
+            'barcode' => ['required', TenantUnique::for('products', 'barcode', $product->id)],
+            'sku' => ['required', TenantUnique::for('products', 'sku', $product->id)],
             'title' => 'required',
             'description' => 'nullable|string',
-            'category_id' => 'required',
+            'category_id' => ['required', new BelongsToActiveBusiness('categories')],
             'buy_price' => 'required',
             'sell_price' => 'required',
             'min_stock' => 'nullable|integer|min:0',
             'max_stock' => 'nullable|integer|min:0',
             'tax_type' => 'nullable|in:exclusive,inclusive',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
-            ...$this->compositeRules(),
+            ...$this->compositeRules($request),
             ...$this->unitRules(),
         ]);
 
@@ -320,12 +323,18 @@ class ProductController extends Controller
         return back();
     }
 
-    private function compositeRules(): array
+    private function compositeRules(Request $request): array
     {
+        $isComposite = $request->boolean('is_composite');
+
         return [
             'is_composite' => 'nullable|boolean',
-            'components' => 'required_if:is_composite,1,true|array|min:1',
-            'components.*.component_product_id' => 'required|integer|distinct|exists:products,id',
+            'components' => Rule::when(
+                $isComposite,
+                ['required', 'array', 'min:1'],
+                ['nullable', 'array']
+            ),
+            'components.*.component_product_id' => ['required', 'integer', 'distinct', new BelongsToActiveBusiness('products')],
             'components.*.qty' => 'required|integer|min:1',
         ];
     }
@@ -360,7 +369,7 @@ class ProductController extends Controller
     {
         return [
             'units' => 'nullable|array',
-            'units.*.unit_id' => 'required|integer|distinct|exists:units,id',
+            'units.*.unit_id' => ['required', 'integer', 'distinct', new BelongsToActiveBusiness('units')],
             'units.*.is_base' => 'required|boolean',
             'units.*.conversion_factor' => 'required|numeric|min:0.0001',
             'units.*.buy_price' => 'nullable|integer|min:0',

@@ -28,7 +28,9 @@ class DashboardController extends Controller
                 ->where('outlet_id', $activeOutlet->id)
                 ->pluck('id');
         }
-        $includeLegacy = Outlet::active()->count() <= 1;
+        // Legacy rows without a warehouse cannot be proven to belong to the
+        // active business, so they are only folded in when tenancy is off.
+        $includeLegacy = ! config('multi_business.enabled') && Outlet::active()->count() <= 1;
         $scope = fn ($query, $column = 'warehouse_id') => $query->where(function ($q) use ($warehouseIds, $includeLegacy, $column) {
             $q->whereIn($column, $warehouseIds);
             if ($includeLegacy) {
@@ -242,7 +244,11 @@ class DashboardController extends Controller
                 'category' => Category::exists(),
                 'product' => Product::exists(),
                 'customer' => Customer::exists(),
-                'transaction' => Transaction::exists(),
+                // Transactions carry no tenant scope, so the existence check is
+                // warehouse-scoped while tenancy is enabled.
+                'transaction' => config('multi_business.enabled')
+                    ? $scopeTransactions(Transaction::query())->exists()
+                    : Transaction::exists(),
             ],
         ]);
     }

@@ -7,18 +7,18 @@ import {
     IconDatabaseOff,
     IconPencilCog,
     IconTrash,
-    IconLayoutGrid,
-    IconList,
     IconPackage,
-    IconSearch,
     IconBarcode,
     IconPrinter,
+    IconSearch,
+    IconArrowLeft,
     IconUpload,
     IconDownload,
 } from "@tabler/icons-react";
 import Search from "@/Components/Dashboard/Search";
 import Table from "@/Components/Dashboard/Table";
 import Pagination from "@/Components/Dashboard/Pagination";
+import ViewToggle from "@/Components/Dashboard/ViewToggle";
 import BarcodePrintModal from "@/Components/Barcode/BarcodePrintModal";
 import { useAuthorization } from "@/Utils/authorization";
 import { router } from "@inertiajs/react";
@@ -62,6 +62,7 @@ function ProductCard({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => onToggle(product)}
+                        aria-label={`Pilih ${product.title}`}
                         className="w-5 h-5 rounded border-2 border-white bg-white/80 text-primary-500 focus:ring-primary-500 cursor-pointer shadow-sm"
                     />
                 </div>
@@ -97,11 +98,12 @@ function ProductCard({
 
                 {/* Action Buttons Overlay */}
                 {(canUpdate || canDelete) && (
-                    <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 group-focus-within:bg-slate-900/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 max-sm:opacity-100">
                         {canUpdate && (
                             <Link
                                 href={route("products.edit", product.id)}
-                                className="p-2.5 rounded-xl bg-white text-warning-600 hover:bg-warning-50 shadow-lg transition-colors"
+                                aria-label={`Ubah ${product.title}`}
+                                className="p-2.5 rounded-xl bg-white text-warning-600 hover:bg-warning-50 shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                             >
                                 <IconPencilCog size={18} />
                             </Link>
@@ -110,6 +112,7 @@ function ProductCard({
                             <Button
                                 type={"delete"}
                                 icon={<IconTrash size={18} />}
+                                aria-label={`Hapus ${product.title}`}
                                 className={
                                     "p-2.5 rounded-xl bg-white text-danger-600 hover:bg-danger-50 shadow-lg"
                                 }
@@ -174,6 +177,10 @@ function ProductCard({
 
 export default function Index({ products }) {
     const { can } = useAuthorization();
+    const { url } = usePage();
+    const activeSearch =
+        new URLSearchParams(url.split("?")[1] || "").get("search") || "";
+    const isSearching = activeSearch.trim() !== "";
     const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
     const [showBarcodeModal, setShowBarcodeModal] = useState(false);
     const [singleProductBarcode, setSingleProductBarcode] = useState(null);
@@ -243,7 +250,8 @@ export default function Index({ products }) {
                     >
                         <button
                             onClick={handlePrintAllBarcodes}
-                            className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto"
+                            aria-label="Cetak semua barcode produk"
+                            className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                             <IconBarcode size={18} />
                             Cetak All Barcode
@@ -252,7 +260,7 @@ export default function Index({ products }) {
                             <>
                                 <a
                                     href={route("export.products")}
-                                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto"
+                                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                                 >
                                     <IconDownload size={18} />
                                     Export
@@ -260,7 +268,7 @@ export default function Index({ products }) {
                                 <button
                                     type="button"
                                     onClick={() => document.getElementById("import-products-input")?.click()}
-                                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto"
+                                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                                 >
                                     <IconUpload size={18} />
                                     Import
@@ -319,6 +327,7 @@ export default function Index({ products }) {
                                 products.data.length > 0
                             }
                             onChange={toggleSelectAll}
+                            aria-label="Pilih semua produk di halaman ini"
                             className="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
                         />
                         <span className="text-sm text-slate-600 dark:text-slate-400 hidden sm:inline">
@@ -331,34 +340,13 @@ export default function Index({ products }) {
                     {selectedProducts.length > 0 && (
                         <button
                             onClick={handlePrintSelected}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                             <IconPrinter size={18} />
                             Cetak Terpilih ({selectedProducts.length})
                         </button>
                     )}
-                    <button
-                        onClick={() => setViewMode("grid")}
-                        className={`p-2.5 rounded-lg transition-colors ${
-                            viewMode === "grid"
-                                ? "bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400"
-                                : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                        title="Grid View"
-                    >
-                        <IconLayoutGrid size={20} />
-                    </button>
-                    <button
-                        onClick={() => setViewMode("list")}
-                        className={`p-2.5 rounded-lg transition-colors ${
-                            viewMode === "list"
-                                ? "bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400"
-                                : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                        title="List View"
-                    >
-                        <IconList size={20} />
-                    </button>
+                    <ViewToggle value={viewMode} onChange={setViewMode} />
                 </div>
             </div>
 
@@ -471,6 +459,7 @@ export default function Index({ products }) {
                                                         className={
                                                             "border bg-warning-100 border-warning-200 text-warning-600 hover:bg-warning-200 dark:bg-warning-900/50 dark:border-warning-800 dark:text-warning-400"
                                                         }
+                                                        aria-label={`Ubah ${product.title}`}
                                                         href={route(
                                                             "products.edit",
                                                             product.id
@@ -491,6 +480,7 @@ export default function Index({ products }) {
                                                         className={
                                                             "border bg-danger-100 border-danger-200 text-danger-600 hover:bg-danger-200 dark:bg-danger-900/50 dark:border-danger-800 dark:text-danger-400"
                                                         }
+                                                        aria-label={`Hapus ${product.title}`}
                                                         url={route(
                                                             "products.destroy",
                                                             product.id
@@ -509,28 +499,50 @@ export default function Index({ products }) {
                 /* Empty State */
                 <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                        <IconDatabaseOff
-                            size={32}
-                            className="text-slate-400"
-                            strokeWidth={1.5}
-                        />
+                        {isSearching ? (
+                            <IconSearch
+                                size={32}
+                                className="text-slate-400"
+                                strokeWidth={1.5}
+                            />
+                        ) : (
+                            <IconDatabaseOff
+                                size={32}
+                                className="text-slate-400"
+                                strokeWidth={1.5}
+                            />
+                        )}
                     </div>
                     <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-1">
-                        Belum Ada Produk
+                        {isSearching ? "Produk Tidak Ditemukan" : "Belum Ada Produk"}
                     </h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        Tambahkan produk pertama Anda untuk memulai.
+                        {isSearching
+                            ? `Tidak ada produk yang cocok dengan "${activeSearch}".`
+                            : "Tambahkan produk pertama Anda untuk memulai."}
                     </p>
-                    {canCreateProducts && (
+                    {isSearching ? (
                         <Button
                             type={"link"}
-                            icon={<IconCirclePlus size={18} />}
+                            icon={<IconArrowLeft size={18} />}
                             className={
-                                "bg-primary-500 hover:bg-primary-600 text-white"
+                                "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
                             }
-                            label={"Tambah Produk"}
-                            href={route("products.create")}
+                            label={"Reset Pencarian"}
+                            href={route("products.index")}
                         />
+                    ) : (
+                        canCreateProducts && (
+                            <Button
+                                type={"link"}
+                                icon={<IconCirclePlus size={18} />}
+                                className={
+                                    "bg-primary-500 hover:bg-primary-600 text-white"
+                                }
+                                label={"Tambah Produk"}
+                                href={route("products.create")}
+                            />
+                        )
                     )}
                 </div>
             )}

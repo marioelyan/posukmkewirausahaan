@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Apps;
 use App\Http\Controllers\Controller;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -43,7 +45,7 @@ class PriceListController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'slug' => ['required', 'string', 'max:100', 'unique:price_lists,slug'],
+            'slug' => ['required', 'string', 'max:100', TenantUnique::for('price_lists', 'slug')],
             'customer_scope' => ['required', Rule::in(['all', 'walk_in', 'registered', 'member', 'segment'])],
             'customer_segment_id' => ['nullable', 'exists:customer_segments,id'],
             'priority' => ['integer', 'min:0'],
@@ -63,7 +65,7 @@ class PriceListController extends Controller
         abort_unless($this->canUseList($priceList), 404);
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'slug' => ['required', 'string', 'max:100', Rule::unique('price_lists', 'slug')->ignore($priceList->id)],
+            'slug' => ['required', 'string', 'max:100', TenantUnique::for('price_lists', 'slug', $priceList->id)],
             'customer_scope' => ['required', Rule::in(['all', 'walk_in', 'registered', 'member', 'segment'])],
             'customer_segment_id' => ['nullable', 'exists:customer_segments,id'],
             'is_active' => ['boolean'],
@@ -88,7 +90,7 @@ class PriceListController extends Controller
     {
         abort_unless($this->canUseList($priceList), 404);
         $request->validate([
-            'product_id' => ['required', 'exists:products,id'],
+            'product_id' => ['required', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'price' => ['required', 'numeric', 'min:0'],
         ]);
 

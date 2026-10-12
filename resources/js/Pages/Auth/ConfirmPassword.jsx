@@ -64,7 +64,7 @@ export default function ConfirmPassword({ challenge = null }) {
 
                         <form onSubmit={submit} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Password
                                 </label>
                                 <div className="relative">
@@ -87,7 +87,9 @@ export default function ConfirmPassword({ challenge = null }) {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword((value) => !value)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     >
                                         {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
                                     </button>

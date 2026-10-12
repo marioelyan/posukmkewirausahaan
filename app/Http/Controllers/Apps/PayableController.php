@@ -8,6 +8,9 @@ use App\Models\Outlet;
 use App\Models\Payable;
 use App\Models\PayablePayment;
 use App\Models\Supplier;
+use App\Rules\BelongsToActiveBusiness;
+use App\Services\BusinessContext;
+use App\Services\FinancialOwnershipService;
 use App\Services\OutletAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -70,18 +73,31 @@ class PayableController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'supplier_id' => ['nullable', 'exists:suppliers,id', new BelongsToActiveBusiness('suppliers')],
             'document_number' => ['nullable', 'string', 'max:100'],
             'total' => ['required', 'numeric', 'min:1'],
             'due_date' => ['nullable', 'date'],
             'note' => ['nullable', 'string'],
         ]);
 
-        if (! $data['document_number']) {
+        if (! ($data['document_number'] ?? null)) {
             $data['document_number'] = 'INV-'.Str::upper(Str::random(8));
         }
         $data['status'] = 'unpaid';
         $data['paid'] = 0;
+
+        // FIN-04 (Q9.1): under tenancy a manually created payable must be created
+        // inside an active business context — otherwise it cannot be owned and is
+        // rejected (fail closed). Legacy single-tenant mode is unchanged.
+        if (config('multi_business.enabled')) {
+            $businessId = app(BusinessContext::class)->businessId();
+
+            abort_if($businessId === null, 422, 'Active business context required to create a payable.');
+
+            $data['business_id'] = $businessId;
+            $data['ownership_status'] = FinancialOwnershipService::STATUS_RESOLVED;
+            $data['ownership_evaluated_at'] = now();
+        }
 
         Payable::create($data);
 
@@ -170,7 +186,7 @@ class PayableController extends Controller
             'amount' => ['required', 'numeric', 'min:1'],
             'paid_at' => ['required', 'date'],
             'method' => ['required', 'string', 'max:30'],
-            'bank_account_id' => ['nullable', 'exists:bank_accounts,id'],
+            'bank_account_id' => ['nullable', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -225,7 +241,10 @@ class PayableController extends Controller
 
             if ($warehouseIds->isEmpty()) {
                 $builder->whereRaw('1 = 0');
-            } elseif (Outlet::active()->count() <= 1) {
+            } elseif (! config('multi_business.enabled') && Outlet::active()->count() <= 1) {
+                // Legacy single-outlet installs surfaced manual payables here.
+                // Under tenancy a lone outlet is not proof of ownership, so
+                // unowned payables stay excluded (fail closed).
                 $builder->orWhereDoesntHave('purchaseOrder');
             }
         });

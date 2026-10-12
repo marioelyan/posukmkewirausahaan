@@ -54,7 +54,7 @@ export default function BankAccounts({ bankAccounts = [] }) {
                         {canUpdatePaymentSettings && (
                             <Link
                                 href={route("settings.bank-accounts.create")}
-                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors"
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                             >
                                 <IconPlus size={18} />
                                 Tambah Bank
@@ -67,11 +67,11 @@ export default function BankAccounts({ bankAccounts = [] }) {
                             {bankAccounts.map((bank) => (
                                 <div
                                     key={bank.id}
-                                    className={`p-4 flex items-center gap-4 ${
+                                    className={`p-4 flex flex-wrap items-center gap-4 ${
                                         !bank.is_active ? "opacity-50" : ""
                                     }`}
                                 >
-                                    <div className="text-slate-400 cursor-move">
+                                    <div className="text-slate-400 cursor-move" aria-hidden="true">
                                         <IconGripVertical size={20} />
                                     </div>
                                     <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -88,7 +88,7 @@ export default function BankAccounts({ bankAccounts = [] }) {
                                             />
                                         )}
                                     </div>
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                         <p className="font-semibold text-slate-800 dark:text-white">
                                             {bank.bank_name}
                                         </p>
@@ -101,7 +101,8 @@ export default function BankAccounts({ bankAccounts = [] }) {
                                             <>
                                                 <button
                                                     onClick={() => handleToggle(bank)}
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                    aria-pressed={!!bank.is_active}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                                                         bank.is_active
                                                             ? "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400"
                                                             : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
@@ -111,13 +112,15 @@ export default function BankAccounts({ bankAccounts = [] }) {
                                                 </button>
                                                 <Link
                                                     href={route("settings.bank-accounts.edit", bank.id)}
-                                                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                    aria-label={`Edit rekening ${bank.bank_name}`}
+                                                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                                 >
                                                     <IconPencil size={18} />
                                                 </Link>
                                                 <button
                                                     onClick={() => handleDelete(bank)}
-                                                    className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
+                                                    aria-label={`Hapus rekening ${bank.bank_name}`}
+                                                    className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40"
                                                 >
                                                     <IconTrash size={18} />
                                                 </button>

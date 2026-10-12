@@ -24,6 +24,10 @@ class OutletAccessService
             return false;
         }
 
+        if (! $this->warehouseBelongsToActiveBusiness($warehouse)) {
+            return false;
+        }
+
         if ($user->isSuperAdmin()) {
             return true;
         }
@@ -76,41 +80,84 @@ class OutletAccessService
 
     public function warehousesFor(User $user): Collection
     {
-        $query = Warehouse::query()->active()->orderBy('sort_order')->orderBy('code');
+        $query = $this->restrictToActiveBusiness(
+            Warehouse::query()->active()->orderBy('sort_order')->orderBy('code')
+        );
+
         if (! $user->isSuperAdmin()) {
-            $outletIds = $user->outlets()->pluck('outlets.id');
+            $outletIds = $user->outlets()->pluck('outlets.id')->map(fn ($id) => (int) $id);
+
             if ($outletIds->isNotEmpty()) {
                 $query->whereIn('outlet_id', $outletIds);
+            } elseif (! $this->legacySingleOutletBypass()) {
+                $query->whereRaw('1 = 0');
             }
         }
 
-        return $query->with('outlet:id,is_sales_enabled')->get(['id', 'code', 'name', 'outlet_id', 'is_active']);
+        return $query->with('outlet:id,business_id,is_sales_enabled')
+            ->get(['id', 'code', 'name', 'outlet_id', 'is_active', 'business_id']);
+    }
+
+    /**
+     * Warehouse ids owned by the verified active business.
+     *
+     * Returns null while multi-business is disabled (legacy callers apply no
+     * restriction), an empty collection when tenancy is enabled without a
+     * verified context (fail closed), and the active business warehouse ids
+     * otherwise. Ownership is the warehouse's own `business_id` or, before the
+     * denormalisation backfill, the outlet it belongs to.
+     *
+     * @return \Illuminate\Support\Collection<int, int>|null
+     */
+    public function activeBusinessWarehouseIds(): ?\Illuminate\Support\Collection
+    {
+        if (! config('multi_business.enabled')) {
+            return null;
+        }
+
+        $businessId = app(BusinessContext::class)->businessId();
+
+        if ($businessId === null) {
+            return collect();
+        }
+
+        return Warehouse::query()
+            ->where(function ($query) use ($businessId) {
+                $query->where('business_id', $businessId)
+                    ->orWhere(function ($query) use ($businessId) {
+                        $query->whereNull('business_id')
+                            ->whereHas('outlet', fn ($outlet) => $outlet->where('business_id', $businessId));
+                    });
+            })
+            ->pluck('id');
     }
 
     public function defaultOutlet(User $user): ?Outlet
     {
         if ($user->isSuperAdmin()) {
-            return Outlet::active()->orderBy('code')->first();
+            return $this->restrictToActiveBusiness(Outlet::active()->orderBy('code'))->first();
         }
 
-        return $user->outlets()
-            ->where('outlets.is_active', true)
-            ->orderByDesc('user_outlets.is_default')
-            ->orderBy('outlets.code')
-            ->first();
+        return $this->restrictToActiveBusiness(
+            $user->outlets()
+                ->where('outlets.is_active', true)
+                ->orderByDesc('user_outlets.is_default')
+                ->orderBy('outlets.code')
+        )->first();
     }
 
     public function accessibleOutlets(User $user): Collection
     {
         if ($user->isSuperAdmin()) {
-            return Outlet::active()->orderBy('code')->get();
+            return $this->restrictToActiveBusiness(Outlet::active()->orderBy('code'))->get();
         }
 
-        return $user->outlets()
-            ->where('outlets.is_active', true)
-            ->orderByDesc('user_outlets.is_default')
-            ->orderBy('outlets.code')
-            ->get();
+        return $this->restrictToActiveBusiness(
+            $user->outlets()
+                ->where('outlets.is_active', true)
+                ->orderByDesc('user_outlets.is_default')
+                ->orderBy('outlets.code')
+        )->get();
     }
 
     public function activeOutlet(Request $request): ?Outlet
@@ -184,7 +231,44 @@ class OutletAccessService
 
     private function legacySingleOutletBypass(): bool
     {
+        // A lone active outlet is a convenience for legacy single-tenant
+        // installs, but it is not proof of ownership. Under tenancy it must
+        // never let a request skip the tenant ownership checks, so fail closed.
+        if (config('multi_business.enabled')) {
+            return false;
+        }
+
         return config('security.outlet.legacy_single_outlet_bypass', true)
             && Outlet::active()->count() <= 1;
+    }
+
+    /**
+     * Constrain an outlet/warehouse query to the verified active business when
+     * multi-business is enabled. Fails closed (no rows) when tenancy is on but
+     * there is no context, and is a no-op in legacy single-tenant mode.
+     */
+    private function restrictToActiveBusiness($query)
+    {
+        if (! config('multi_business.enabled')) {
+            return $query;
+        }
+
+        $businessId = app(BusinessContext::class)->businessId();
+
+        if ($businessId === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('business_id', $businessId);
+    }
+
+    private function warehouseBelongsToActiveBusiness(Warehouse $warehouse): bool
+    {
+        if (! config('multi_business.enabled')) {
+            return true;
+        }
+
+        return app(BusinessHierarchyService::class)
+            ->warehouseBelongsToBusiness($warehouse, app(BusinessContext::class)->businessId());
     }
 }

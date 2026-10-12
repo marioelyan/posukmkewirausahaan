@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Model;
 
 class Unit extends Model
 {
-    protected $fillable = ['code', 'name', 'symbol'];
+    use BelongsToBusiness;
+
+    protected $fillable = ['code', 'name', 'symbol', 'business_id'];
 
     public function products()
     {
