@@ -4,10 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Models\Setting;
+use App\Support\Tenancy\BusinessBootstrap;
 use App\Support\Tenancy\BusinessMembershipProvisioner;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Makes the demo dataset usable with `MULTI_BUSINESS_ENABLED=true`.
@@ -25,58 +24,24 @@ use Illuminate\Support\Str;
  */
 class DemoBusinessSeeder extends Seeder
 {
-    /**
-     * Master-data tables owned directly by a business (mirrors
-     * BusinessBackfillCommand::$businessOwned).
-     *
-     * @var array<int, string>
-     */
-    private array $businessOwned = [
-        'products',
-        'categories',
-        'customers',
-        'suppliers',
-        'units',
-        'price_lists',
-    ];
-
     public function run(): void
     {
         $business = Business::query()->orderBy('id')->first();
 
         if (! $business) {
-            $name = Setting::get('store_name') ?: config('multi_business.default_name');
-
-            $business = Business::create([
-                'name' => $name,
-                'slug' => Str::slug($name).'-'.Str::lower(Str::random(6)),
-                'status' => Business::STATUS_ACTIVE,
-                'currency' => 'IDR',
-                'timezone' => config('app.timezone', 'Asia/Jakarta'),
-            ]);
+            $business = app(BusinessBootstrap::class)->bootstrap(
+                Setting::get('store_name') ?: (string) config('multi_business.default_name'),
+            );
 
             $this->command?->info("Demo business created: #{$business->id} {$business->name}");
+        } else {
+            app(BusinessBootstrap::class)->bootstrap($business->name);
         }
-
-        $this->assignUnscoped($business->id);
 
         $result = app(BusinessMembershipProvisioner::class)->apply();
 
         $this->command?->info(
             "Demo memberships: {$result['created']} created, {$result['skipped']} already present, {$result['unmapped']} unmapped."
         );
-    }
-
-    private function assignUnscoped(int $businessId): void
-    {
-        foreach (array_merge(['outlets', 'warehouses'], $this->businessOwned) as $table) {
-            if (! DB::getSchemaBuilder()->hasTable($table) || ! DB::getSchemaBuilder()->hasColumn($table, 'business_id')) {
-                continue;
-            }
-
-            DB::table($table)
-                ->whereNull('business_id')
-                ->update(['business_id' => $businessId]);
-        }
     }
 }

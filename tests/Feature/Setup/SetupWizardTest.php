@@ -2,11 +2,14 @@
 
 namespace Tests\Feature\Setup;
 
+use App\Models\Business;
+use App\Models\BusinessUser;
 use App\Models\Category;
 use App\Models\Outlet;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\BusinessContext;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -288,5 +291,68 @@ class SetupWizardTest extends TestCase
 
         $warehouse = Warehouse::where('code', 'PUSAT')->first();
         $this->assertSame($warehouse->id, (int) Setting::get('setup_warehouse_id'));
+    }
+
+    public function test_setup_bootstraps_default_business_when_tenancy_enabled(): void
+    {
+        config()->set('multi_business.enabled', true);
+
+        $this->post(route('setup.store'), $this->validPayload())->assertRedirect(route('login'));
+
+        // A fresh install with the flag on must end up with a business; without
+        // one, the fail-closed context resolver rejects even the super-admin.
+        $business = Business::firstOrFail();
+        $this->assertSame('Toko Berkah', $business->name);
+        $this->assertSame(Business::STATUS_ACTIVE, $business->status);
+
+        // The install's outlets, warehouses and master data belong to it.
+        $this->assertSame($business->id, (int) Outlet::where('code', 'PUSAT')->value('business_id'));
+        $this->assertSame($business->id, (int) Outlet::where('code', 'MAL')->value('business_id'));
+        $this->assertSame($business->id, (int) Warehouse::withoutGlobalScope('business')->where('code', 'PUSAT')->value('business_id'));
+        $this->assertSame($business->id, (int) Warehouse::withoutGlobalScope('business')->where('code', 'WH-MAL')->value('business_id'));
+        $this->assertSame($business->id, (int) Category::withoutGlobalScope('business')->where('name', 'Makanan')->value('business_id'));
+
+        // Store settings are written to the business row (SETTINGS-07) and the
+        // layered resolution (`outlet -> business -> global`) prefers it.
+        $businessRow = Setting::where('key', 'store_name')->where('business_id', $business->id)->first();
+        $this->assertNotNull($businessRow);
+        $this->assertSame('Toko Berkah', $businessRow->value);
+
+        app(BusinessContext::class)->setActive($business);
+        $this->assertSame('Toko Berkah', Setting::get('store_name'));
+        app(BusinessContext::class)->clear();
+        // ...while platform keys stay on the single global row.
+        $this->assertNull(Setting::where('key', 'app_setup_completed')->value('business_id'));
+        $this->assertTrue(Setting::getBool('app_setup_completed'));
+
+        // Super-admin keeps the explicit platform path (AUTH-01): no membership.
+        $adminId = User::where('email', 'owner@example.com')->value('id');
+        $this->assertSame(0, BusinessUser::where('user_id', $adminId)->count());
+    }
+
+    public function test_setup_creates_no_business_when_tenancy_disabled(): void
+    {
+        $this->post(route('setup.store'), $this->validPayload())->assertRedirect(route('login'));
+
+        $this->assertSame(0, Business::count());
+        $this->assertNull(Setting::where('key', 'store_name')->value('business_id'));
+    }
+
+    public function test_index_returns_primary_warehouse_when_tenancy_enabled(): void
+    {
+        config()->set('multi_business.enabled', true);
+
+        $warehouse = Warehouse::create([
+            'code' => 'PUSAT',
+            'name' => 'Gudang Pusat',
+            'type' => 'main',
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+        Setting::set('setup_warehouse_id', $warehouse->id);
+
+        $this->get(route('setup.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('primaryWarehouse.id', $warehouse->id));
     }
 }

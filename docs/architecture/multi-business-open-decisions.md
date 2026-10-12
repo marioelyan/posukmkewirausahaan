@@ -70,7 +70,8 @@
 - **REKOMENDASI.** Fase awal: hanya admin platform membuat business. Self-service signup owner ditambahkan belakangan dengan kontrol abuse.
 - **Alternatif.** Self-service langsung (risiko spam/penyalahgunaan).
 - **Dampak.** Route onboarding, `registration.enabled`, `EnsureNotInstalled`.
-- **Blocking:** Fase 8.
+- **Status (2026-10-12):** bootstrap first-install SELESAI — setup wizard membuat business default + scope saat `multi_business.enabled=true`, admin setup (super-admin) memakai jalur platform (AUTH-01). Yang masih menunggu keputusan: pembuatan business **tambahan** (UI/rollout) dan self-service owner signup.
+- **Blocking:** Fase 8 (sisa UI/rollout pembuatan business tambahan).
 
 ### Q7 — Outlet existing = satu atau banyak business
 - **REKOMENDASI.** Seluruh instalasi existing dianggap **satu business** (banyak branch) → business default.

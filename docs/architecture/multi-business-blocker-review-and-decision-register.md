@@ -593,5 +593,16 @@ php artisan test --compact        (seluruh suite)
   - `business:membership-backfill` — dry-run default; `--apply --confirm-membership-backfill` untuk menulis; `--business=ID` untuk menargetkan satu business.
   - `DemoBusinessSeeder` (dipanggil `DemoSeeder`) — membuat business demo bila belum ada, memetakan outlet/warehouse/master data yang masih `NULL` ke business tersebut, lalu provisioning membership. `seed:demo` kini menghasilkan dataset yang **siap flag ON**.
 - **Test:** `BusinessMembershipBackfillCommandTest` (8), `DemoFlagOnAccessTest` (3 — bukti end-to-end: manager demo lolos route manager, kasir demo di-scope ke `staff`, super-admin jalur platform), perluasan `SeedDemoCommandTest` (assert business scoping + membership + idempotensi).
-- **Catatan onboarding (masih Fase 8 / Q6):** setup wizard first-install **tidak** membuat business; install baru dengan flag ON tetap butuh `business:backfill --create-default --apply` (lalu membership backfill) sebelum dashboard bisa diakses. Pembuatan business saat onboarding menunggu keputusan Q6.
+- **Catatan onboarding:** sebelumnya diblokir ke Q6. Ditutup via bootstrap first-install di §13.16 (selaras rekomendasi Q6 fase awal: admin platform membuat business, tanpa menambah UI).
 - **Batas keselamatan:** command default dry-run; tidak ada data produksi yang disentuh; flag tetap `false`.
+
+### 13.16 Onboarding bootstrap (first-install) — 2026-10-12
+
+- **Gap yang ditutup:** dengan flag ON, install baru gagal total — setup wizard **tidak** membuat business, sementara resolver context bersifat fail-closed (`1 = 0` / 403) saat belum ada business aktif. Bahkan super-admin pun tidak bisa membuka dashboard, dan `Setting::set` untuk key tenant melempar `TenantSettingScopeException`; read `Warehouse`/`Category` terglobal-scope sehingga wizard setup bisa 500.
+- **Baru:**
+  - `App\\Support\\Tenancy\\BusinessDataScoper` — satu definisi tabel business-owned (outlet/warehouse + master data), `assignUnscoped()` untuk menstempel baris `NULL`.
+  - `App\\Support\\Tenancy\\BusinessBootstrap` — buat business default (idempotent) + scope; dipakai setup dan demo.
+  - `SetupController` — saat flag ON: bootstrap business (nama dari `store_name`), set `BusinessContext` aktif sehingga setting toko (SETTINGS-07) ditulis ke baris business; read/update warehouse memakai `withoutGlobalScope('business')` (setup berjalan sebelum konteks ada). Flag OFF: perilaku lama identik, tidak ada business.
+- **Dampak data:** install baru dengan flag ON kini punya 1 business aktif yang memiliki outlet/warehouse/master-data hasil wizard; super-admin tetap jalur platform (AUTH-01, tanpa membership). Install existing tidak tersentuh — tetap lewat `business:backfill --create-default --apply` + `business:membership-backfill --apply`.
+- **Test:** `SetupWizardTest` +3 (`setup bootstraps default business when tenancy enabled`, `setup creates no business when tenancy disabled`, `index returns primary warehouse when tenancy enabled`). Total 20 setup test.
+- **Keputusan Q6 yang masih tersisa:** UI/rollout pembuatan business **tambahan** dan self-service owner signup — bukan bagian dari bootstrap ini (fase lanjut dengan kontrol abuse, menunggu keputusan Anda).
