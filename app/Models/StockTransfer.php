@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockTransfer extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $fillable = [
@@ -19,12 +21,14 @@ class StockTransfer extends Model
         'notes',
         'created_by',
         'completed_at',
+        'business_id',
     ];
 
     protected function casts(): array
     {
         return [
             'completed_at' => 'datetime',
+            'business_id' => 'integer',
         ];
     }
 

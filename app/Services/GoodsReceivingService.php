@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class GoodsReceivingService
@@ -20,19 +19,13 @@ class GoodsReceivingService
     public function __construct(
         private readonly StockMutationService $stockMutationService,
         private readonly AuditLogService $auditLogService,
-        private readonly OutletAccessService $outletAccessService
+        private readonly OutletAccessService $outletAccessService,
+        private readonly DocumentNumberGenerator $documentNumberGenerator
     ) {}
 
     public function generateDocumentNumber(): string
     {
-        $prefix = 'GR-'.now()->format('Ymd').'-';
-        $last = GoodsReceiving::where('document_number', 'like', $prefix.'%')
-            ->orderByDesc('document_number')
-            ->value('document_number');
-
-        $next = $last ? (int) Str::afterLast($last, '-') + 1 : 1;
-
-        return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $this->documentNumberGenerator->next(GoodsReceiving::class, 'GR-');
     }
 
     public function receive(PurchaseOrder $order, array $items, ?string $notes, int $userId): GoodsReceiving

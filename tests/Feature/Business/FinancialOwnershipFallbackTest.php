@@ -10,6 +10,7 @@ use App\Models\Receivable;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\BusinessContext;
 use App\Services\OutletAccessService;
 use App\Services\PayableAgingService;
 use App\Services\ReceivableService;
@@ -183,6 +184,7 @@ class FinancialOwnershipFallbackTest extends TestCase
     public function test_owned_payable_stays_visible_under_tenancy(): void
     {
         config()->set('multi_business.enabled', true);
+        app(BusinessContext::class)->setActive($this->businessA);
 
         $payable = $this->ownedPayable();
 
@@ -275,6 +277,7 @@ class FinancialOwnershipFallbackTest extends TestCase
     public function test_orphaned_payable_is_denied_under_tenancy(): void
     {
         config()->set('multi_business.enabled', true);
+        app(BusinessContext::class)->setActive($this->businessA);
 
         // A payable whose purchase-order parent has been removed becomes an
         // unowned/orphaned record; it must fail closed, not fall back to any

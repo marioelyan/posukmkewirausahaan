@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class StockOpname extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $fillable = [
@@ -17,6 +19,7 @@ class StockOpname extends Model
         'created_by',
         'finalized_by',
         'finalized_at',
+        'business_id',
     ];
 
     protected $casts = [
@@ -24,6 +27,7 @@ class StockOpname extends Model
         'created_by' => 'integer',
         'finalized_by' => 'integer',
         'finalized_at' => 'datetime',
+        'business_id' => 'integer',
     ];
 
     public function items()

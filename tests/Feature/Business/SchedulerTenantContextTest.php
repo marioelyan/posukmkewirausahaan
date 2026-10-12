@@ -50,9 +50,11 @@ class SchedulerTenantContextTest extends TestCase
         $this->artisan('reorder:generate')->assertSuccessful();
 
         // One draft PO per business, scoped to that business's warehouse.
-        $this->assertSame(2, PurchaseOrder::count());
-        $this->assertSame(1, PurchaseOrder::where('warehouse_id', $warehouseA->id)->count());
-        $this->assertSame(1, PurchaseOrder::where('warehouse_id', $warehouseB->id)->count());
+        // The context is cleared when the run finishes, so verification counts
+        // must bypass the fail-closed business scope on purpose.
+        $this->assertSame(2, PurchaseOrder::withoutGlobalScope('business')->count());
+        $this->assertSame(1, PurchaseOrder::withoutGlobalScope('business')->where('warehouse_id', $warehouseA->id)->count());
+        $this->assertSame(1, PurchaseOrder::withoutGlobalScope('business')->where('warehouse_id', $warehouseB->id)->count());
     }
 
     public function test_reorder_generate_skips_business_without_warehouses(): void
@@ -63,8 +65,8 @@ class SchedulerTenantContextTest extends TestCase
 
         $this->artisan('reorder:generate')->assertSuccessful();
 
-        $this->assertSame(1, PurchaseOrder::count());
-        $this->assertSame(1, PurchaseOrder::where('warehouse_id', $warehouseB->id)->count());
+        $this->assertSame(1, PurchaseOrder::withoutGlobalScope('business')->count());
+        $this->assertSame(1, PurchaseOrder::withoutGlobalScope('business')->where('warehouse_id', $warehouseB->id)->count());
     }
 
     public function test_scheduled_run_clears_business_context_afterwards(): void

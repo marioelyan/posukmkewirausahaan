@@ -1,6 +1,6 @@
 # Multi-Business Open Decisions — Point of Sales
 
-- **Status:** PERENCANAAN / DOKUMENTASI ONLY — satu keputusan telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13). Item lain tetap perencanaan.
+- **Status:** PERENCANAAN / DOKUMENTASI ONLY — keputusan yang telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13) dan **Q4/UNIQUE-10 (nomor dokumen per business)** via register §13.20 (2026-10-13). Item lain tetap perencanaan.
 - **Basis:** audit `multi-business-tenant-audit.md` §14 + temuan tambahan pada 2026-10-10.
 - **Label:** **FAKTA**, **REKOMENDASI**, **ASUMSI**, **PERLU KEPUTUSAN**.
 - Dokumen terkait: `multi-business-backend-implementation-plan.md`, `multi-business-data-ownership-matrix.md`, `multi-business-security-test-plan.md`.
@@ -16,7 +16,7 @@
 | Q1 | Definisi transaksi "completed" | `payment_status='paid'` | Fase 6 | PERLU KEPUTUSAN |
 | Q2 | Owner global vs membership; super-admin tetap global | Membership `owner`; super-admin global | Fase 1-2 | PERLU KEPUTUSAN |
 | Q3 | Role berbeda per business | Ya, role di membership | Fase 1 | PERLU KEPUTUSAN |
-| Q4 | Master data terpisah penuh | Ya, terpisah penuh | Fase 4 | PERLU KEPUTUSAN |
+| Q4 | Master data terpisah penuh | Ya, terpisah penuh | Fase 4 | SELESAI (§13.14/§13.17 + UNIQUE-10 §13.20; sisa UNIQUE-11 deferred) |
 | Q5 | Setting global vs per business | Hybrid key-based | Fase 1-3 | PERLU KEPUTUSAN |
 | Q6 | Pembuatan business | Admin platform + self-service owner (fase lanjut) | Fase 8 | SELESAI (bagian admin platform; self-service deferred) |
 | Q7 | Outlet existing = satu business | Satu business default | Fase 3 | PERLU KEPUTUSAN |
@@ -57,8 +57,9 @@
 - **REKOMENDASI.** Produk/kategori/customer/supplier/unit/price list terpisah penuh per business.
 - **Alternatif.** Katalog bersama + override per business (kompleks; menambah kebocoran).
 - **Dampak.** POS, impor/ekspor, laporan.
-- **Status (2026-10-12):** composite unique per-business SELESAI untuk `products` (barcode/sku), `price_lists` (slug), `warehouses`/`outlets` (code), `customers` (member_code), `customer_vouchers` (code) dan `customer_segments` (slug); `units.code` tetap global (UNIQUE-04). Masih deferred: UNIQUE-10 (nomor dokumen + generator per business) dan UNIQUE-11 (kandidat menunggu evidence). Detail: register §13.14/§13.17.
-- **Blocking:** Fase 4 (sisa UNIQUE-10 doc-number).
+- **Status (2026-10-12):** composite unique per-business SELESAI untuk `products` (barcode/sku), `price_lists` (slug), `warehouses`/`outlets` (code), `customers` (member_code), `customer_vouchers` (code) dan `customer_segments` (slug); `units.code` tetap global (UNIQUE-04).
+- **Status (2026-10-13):** UNIQUE-10 (nomor dokumen per business) SELESAI — enam tabel dokumen (PO/GR/SR/ST + `sales_returns.code` + `stock_opnames.code`) mendapat `business_id` + trait + generator per business + swap composite kondisional (register §13.20). Format nomor tetap `PREFIX-YYYYMMDD-####` dengan urutan per business. Tetap deferred: UNIQUE-11 (kandidat menunggu evidence) dan bagian non-unik UNIQUE-10 (`payables.document_number`, `transactions.invoice`). Detail: register §13.14/§13.17/§13.20.
+- **Blocking:** — (UNIQUE-10 dituntaskan §13.20; UNIQUE-11 tetap kandidat menunggu evidence + approval).
 
 ### Q5 — Setting global vs per business
 - **FAKTA.** `settings` sudah punya `outlet_id` (`2026_09_14_000004`). Key belum diklasifikasi.
@@ -72,7 +73,7 @@
 - **Alternatif.** Self-service langsung (risiko spam/penyalahgunaan).
 - **Dampak.** Route onboarding, `registration.enabled`, `EnsureNotInstalled`.
 - **Status (2026-10-12):** bootstrap first-install SELESAI — setup wizard membuat business default + scope saat `multi_business.enabled=true`, admin setup (super-admin) memakai jalur platform (AUTH-01). Yang masih menunggu keputusan: pembuatan business **tambahan** (UI/rollout) dan self-service owner signup. *(dijawab 2026-10-13 — lihat KEPUTUSAN di bawah)*.
-- **KEPUTUSAN (2026-10-13):** **A. Admin platform only** — §13.19 register. Super-admin membuat business tambahan via dashboard (`dashboard/businesses*`, middleware `platform.admin`, `step_up`); provisioning via `BusinessProvisioner` (skeleton PUSAT + owner opsional, tanpa `assignUnscoped`); UI `Businesses/{Index,Create}` + item sidebar (tampil saat flag ON + super-admin). Self-service owner signup tetap fase lanjut. UNIQUE-10/11 tetap deferred.
+- **KEPUTUSAN (2026-10-13):** **A. Admin platform only** — §13.19 register. Super-admin membuat business tambahan via dashboard (`dashboard/businesses*`, middleware `platform.admin`, `step_up`); provisioning via `BusinessProvisioner` (skeleton PUSAT + owner opsional, tanpa `assignUnscoped`); UI `Businesses/{Index,Create}` + item sidebar (tampil saat flag ON + super-admin). Self-service owner signup tetap fase lanjut. UNIQUE-10 (dokumen) dituntaskan §13.20; UNIQUE-11 tetap deferred.
 - **Blocking:** Fase 8 (sisa: self-service owner signup + aktivasi flag/deployment; bagian admin-platform SELESAI §13.19).
 
 ### Q7 — Outlet existing = satu atau banyak business

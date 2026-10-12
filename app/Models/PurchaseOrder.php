@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrder extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $fillable = [
@@ -18,11 +20,13 @@ class PurchaseOrder extends Model
         'created_by',
         'ordered_at',
         'completed_at',
+        'business_id',
     ];
 
     protected $casts = [
         'ordered_at' => 'datetime',
         'completed_at' => 'datetime',
+        'business_id' => 'integer',
     ];
 
     public function supplier()
