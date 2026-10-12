@@ -25,6 +25,7 @@ class AuditLogService
         $resolvedActor = $actor ?? auth()->user();
 
         return AuditLog::create([
+            'business_id' => $this->resolveBusinessId(),
             'user_id' => $resolvedActor?->getAuthIdentifier(),
             'event' => $event,
             'module' => $module,
@@ -39,6 +40,23 @@ class AuditLogService
             'user_agent' => $request?->userAgent(),
             'created_at' => now(),
         ]);
+    }
+
+    /**
+     * Resolve the owning business for a new audit log.
+     *
+     * Stamped from the verified server-side context, never from the request
+     * payload. While tenancy is disabled (or no verified context exists) the
+     * column stays NULL so legacy behaviour is unchanged and unowned rows are
+     * treated as legacy by the business-scoped viewer.
+     */
+    private function resolveBusinessId(): ?int
+    {
+        if (! config('multi_business.enabled')) {
+            return null;
+        }
+
+        return app(BusinessContext::class)->businessId();
     }
 
     public function only(array $source, array $keys): array

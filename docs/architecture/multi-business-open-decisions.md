@@ -1,6 +1,6 @@
 # Multi-Business Open Decisions — Point of Sales
 
-- **Status:** PERENCANAAN / DOKUMENTASI ONLY — keputusan yang telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13), **Q4/UNIQUE-10 (nomor dokumen per business)** via register §13.20/§13.21 (2026-10-13), **Q11/UNIQUE-11 (idempotency token global)** via register §13.22 (2026-10-13), dan **pass status Q10–Q16** via register §13.23 (2026-10-13) — Q10/Q13/Q14/Q15/Q16 diformalkan sebagai SELESAI, **Q12 (`audit_logs.business_id`) tetap TERBUKA sebagai slice kode**. Q1–Q9 di tabel di bawah masih berstatus awal namun keputusannya sudah terwujud di register §13.14–§13.17 (§5).
+- **Status:** PERENCANAAN / DOKUMENTASI ONLY — keputusan yang telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13), **Q4/UNIQUE-10 (nomor dokumen per business)** via register §13.20/§13.21 (2026-10-13), **Q11/UNIQUE-11 (idempotency token global)** via register §13.22 (2026-10-13), **pass status Q10–Q16** via register §13.23 (2026-10-13), dan **Q12 (`audit_logs.business_id`)** diimplementasikan via register §13.24 (2026-10-13). Q1–Q9 di tabel di bawah masih berstatus awal namun keputusannya sudah terwujud di register §13.14–§13.17 (§5).
 - **Basis:** audit `multi-business-tenant-audit.md` §14 + temuan tambahan pada 2026-10-10.
 - **Label:** **FAKTA**, **REKOMENDASI**, **ASUMSI**, **PERLU KEPUTUSAN**.
 - Dokumen terkait: `multi-business-backend-implementation-plan.md`, `multi-business-data-ownership-matrix.md`, `multi-business-security-test-plan.md`.
@@ -24,7 +24,7 @@
 | Q9 | Data existing tanpa ownership jelas | Ke business default, ditandai | Fase 3 | PERLU KEPUTUSAN |
 | Q10 | Status modul DineIn | Hapus (modul sudah tidak ada) | — | SELESAI (§13.23 — modul dihapus; migrasi drop shim) |
 | Q11 | `client_uuid` unik | Global (keputusan §13.22) | — | SELESAI (§13.22 — global unique, docs-only) |
-| Q12 | `audit_logs.business_id` | Tambahkan (nullable) | Fase 2 | TERBUKA — slice kode (§13.23) |
+| Q12 | `audit_logs.business_id` | Tambahkan (nullable) | Fase 2 | SELESAI (§13.24 — kolom + stamp + scoping viewer) |
 | Q13 | Global scope vs eksplisit | Eksplisit dulu, global scope selektif | Fase 2 | SELESAI (§13.23 — trait global scope selektif fail-closed + eksplisit) |
 | Q14 | Strategi role Spatie teams vs membership | Membership dulu | Fase 1-2 | SELESAI (§13.23 — membership, `teams=false`) |
 | Q15 | Penanganan `warehouses.outlet_id IS NULL` | Business default + audit | Fase 3 | SELESAI (§13.23 — outlet_id nullable + backfill PUSAT + audit read-only) |
@@ -105,9 +105,9 @@
 - **Blocking:** —
 
 ### Q12 — `audit_logs.business_id`
-- **FAKTA.** Tabel `audit_logs` (`2026_05_02_120000`) **tidak** punya `business_id`; `AuditLogService::log()` menyimpan `user_id` + `module`/`auditable*` tetapi bukan business. Tidak ada scoping per business pada log audit.
-- **KEPUTUSAN (2026-10-13):** **TERBUKA — slice kode** (register §13.23, blocking Fase 2): tambah `business_id` **nullable** + index, stamp dari `BusinessContext` saat flag ON di `AuditLogService` (server-side, bukan payload), backfill konservatif (log lama tetap `NULL`), dan resolusi ownership eksplisit (lihat §13.23 untuk catatan ambiguitas: audit_logs tidak punya `outlet_id`/`warehouse_id`).
-- **Blocking:** Fase 2.
+- **FAKTA.** Tabel `audit_logs` (`2026_05_02_120000`) semula **tidak** punya `business_id`; `AuditLogService::log()` menyimpan `user_id` + `module`/`auditable*` tetapi bukan business; tidak ada scoping per business pada log audit.
+- **KEPUTUSAN (2026-10-13):** **SELESAI (§13.24)** — tambah `business_id` **nullable** + index (`2026_10_13_000003`), stamp dari `BusinessContext` saat flag ON (server-side) di `AuditLogService`, dan scoping viewer `AuditLogController` per business aktif (**termasuk super-admin**, fail-closed; log legacy `NULL` disembunyikan). Backfill otomatis tidak dilakukan; log lama tetap `NULL`.
+- **Blocking:** —
 
 ### Q13 — Global scope vs scoping eksplisit
 - **FAKTA.** Terwujud sebagai **global scope selektif**: trait `App\Models\Concerns\BelongsToBusiness` memasang global scope `business` yang **fail-closed** (flag ON tanpa context terverifikasi → `1 = 0`) + auto-stamp `business_id` di `creating` dari **server context**; master data business-owned memakai trait ini. Model finansial (`Payable`/`Receivable`) memakai global scope khusus (`FinancialOwnershipScope`); sisanya scoping **eksplisit** (mis. `scopeForBusiness`, `OutletAccessService::restrictToActiveBusiness`).

@@ -112,6 +112,7 @@ php artisan business:membership-backfill # dry-run
    - `2026_10_13_000001` (UNIQUE-10 dokumen): menambah `business_id` di enam tabel dokumen + swap unique global → composite **hanya** bila nol baris `NULL` (inert pada DB terisi → selesaikan di Fase 5).
    - `2026_10_13_000002` (sisa UNIQUE-10): `transactions.invoice` → **global** unique (guard: tidak ada invoice duplikat — di produksi invoice acak `TRX-*`, jadi umumnya auto-apply di Fase 1); `payables.document_number` → composite `(business_id, document_number)` (guard: seluruh baris sudah punya `business_id` **dan** tidak ada duplikat per business → pada DB terisi pre-backfill **tidak** swap, selesaikan di Fase 5).
    - `2026_10_12_000001` (settings): selalu mengganti unique menjadi `(key, business_id, outlet_id)`; duplikasi dicegah level aplikasi (upsert) — konsisten dengan catatan UNIQUE di register.
+   - `2026_10_13_000003` (Q12 audit logs): menambah `business_id` nullable + index di `audit_logs` (additif; baris lama tetap `NULL`). Log legacy `NULL` **disembunyikan** di viewer saat flag ON; **tidak ada backfill otomatis** (§13.24) — backfill hanya opsional via command terpisah bila diperlukan.
 3. Verifikasi `php artisan migrate:status` — semuanya `Ran`.
 4. `php artisan business:backfill` dry-run di read replica untuk memastikan schema tidak error (hasil dicatat sebagai baseline plan).
 

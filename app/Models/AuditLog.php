@@ -12,6 +12,7 @@ class AuditLog extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'business_id',
         'user_id',
         'event',
         'module',
@@ -28,6 +29,7 @@ class AuditLog extends Model
     ];
 
     protected $casts = [
+        'business_id' => 'integer',
         'user_id' => 'integer',
         'auditable_id' => 'integer',
         'before' => 'array',
@@ -35,6 +37,11 @@ class AuditLog extends Model
         'meta' => 'array',
         'created_at' => 'datetime',
     ];
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
 
     public function user()
     {
