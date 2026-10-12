@@ -2,7 +2,7 @@
 
 - **Status:** DRAFT — disiapkan, **BELUM dieksekusi**. Tidak ada data produksi yang diubah oleh dokumen ini.
 - **Prasyarat eksekusi:** izin eksplisit pemilik proyek + DBA + jendela perawatan + backup terverifikasi (lihat §2).
-- **Lingkup:** backfill `business_id` (master data, outlet/warehouse, blok CRM), settings per-business, membership, lalu **swap index unique global → composite** secara manual.
+- **Lingkup:** backfill `business_id` (master data, outlet/warehouse, blok CRM, tabel dokumen), settings per-business, membership, lalu **swap index unique global → composite** secara manual (termasuk `payables.document_number`; `transactions.invoice` global unique).
 - **Referensi:** register keputusan §13.14 (SETTINGS/UNIQUE/SCHED/AUTH), §13.15 (memberships), §13.16 (onboarding), §13.17 (UNIQUE-08/09); `multi-business-readonly-audit-queries.md`; `financial-ownership-audit-runbook.md` (pola audit yang sama).
 
 ---
@@ -14,7 +14,7 @@
 | Q7 | Seluruh instalasi existing = **satu business** (banyak branch) | satu `Business` default milik semua data legacy |
 | Q5 / ADR-04 C | Settings: resolusi `outlet → business → global`; `PLATFORM_KEYS` tetap global | `business:settings-backfill` |
 | AUTH-01/02/03 | Membership dari akses outlet; `owner`/`manager`/`staff`; super-admin **tanpa** membership (jalur platform) | `business:membership-backfill` |
-| Q4 / UNIQUE | Identifier milik business → composite `(business_id, X)`; `units.code` global; UNIQUE-10/11 tetap deferred | swap index manual §8 |
+| Q4 / UNIQUE | Identifier milik business → composite `(business_id, X)`; `units.code` global; `transactions.invoice` **global** (dibaca tanpa konteks business); UNIQUE-10 selesai (§13.20 + §13.21), hanya UNIQUE-11 yang deferred | swap index manual §8 |
 | FIN-01 | Apply **wajib** didahului audit read-only + dual confirmation | gate §13 |
 
 ## 2. Pra-syarat infrastruktur & approval
@@ -109,6 +109,8 @@ php artisan business:membership-backfill # dry-run
 2. `php artisan migrate --force` — migration bersifat **additive + data-guarded**:
    - `2026_10_10_160000` dst: menambah `business_id` nullable (semua baris lama tetap `NULL`).
    - `2026_10_12_000002` + `..._000003`: swap index unique ke composite **hanya** bila nol baris `NULL` (pada DB terisi tidak akan swap → index global dipertahankan). Ini **disengaja**: ø tidak ada constraint yang hilang secara diam-diam.
+   - `2026_10_13_000001` (UNIQUE-10 dokumen): menambah `business_id` di enam tabel dokumen + swap unique global → composite **hanya** bila nol baris `NULL` (inert pada DB terisi → selesaikan di Fase 5).
+   - `2026_10_13_000002` (sisa UNIQUE-10): `transactions.invoice` → **global** unique (guard: tidak ada invoice duplikat — di produksi invoice acak `TRX-*`, jadi umumnya auto-apply di Fase 1); `payables.document_number` → composite `(business_id, document_number)` (guard: seluruh baris sudah punya `business_id` **dan** tidak ada duplikat per business → pada DB terisi pre-backfill **tidak** swap, selesaikan di Fase 5).
    - `2026_10_12_000001` (settings): selalu mengganti unique menjadi `(key, business_id, outlet_id)`; duplikasi dicegah level aplikasi (upsert) — konsisten dengan catatan UNIQUE di register.
 3. Verifikasi `php artisan migrate:status` — semuanya `Ran`.
 4. `php artisan business:backfill` dry-run di read replica untuk memastikan schema tidak error (hasil dicatat sebagai baseline plan).
@@ -190,15 +192,38 @@ ALTER TABLE customer_vouchers DROP INDEX customer_vouchers_code_unique,
   ADD UNIQUE INDEX customer_vouchers_business_code_unique (business_id, code);
 ALTER TABLE customer_segments DROP INDEX customer_segments_slug_unique,
   ADD UNIQUE INDEX customer_segments_business_slug_unique (business_id, slug);
+-- UNIQUE-10 dokumen (migration 2026_10_13_000001, inert pada DB terisi)
+ALTER TABLE purchase_orders DROP INDEX purchase_orders_document_number_unique,
+  ADD UNIQUE INDEX purchase_orders_business_document_number_unique (business_id, document_number);
+ALTER TABLE goods_receivings DROP INDEX goods_receivings_document_number_unique,
+  ADD UNIQUE INDEX goods_receivings_business_document_number_unique (business_id, document_number);
+ALTER TABLE supplier_returns DROP INDEX supplier_returns_document_number_unique,
+  ADD UNIQUE INDEX supplier_returns_business_document_number_unique (business_id, document_number);
+ALTER TABLE stock_transfers DROP INDEX stock_transfers_document_number_unique,
+  ADD UNIQUE INDEX stock_transfers_business_document_number_unique (business_id, document_number);
+ALTER TABLE sales_returns DROP INDEX sales_returns_code_unique,
+  ADD UNIQUE INDEX sales_returns_business_code_unique (business_id, code);
+ALTER TABLE stock_opnames DROP INDEX stock_opnames_code_unique,
+  ADD UNIQUE INDEX stock_opnames_business_code_unique (business_id, code);
+-- Sisa UNIQUE-10 (migration 2026_10_13_000002): payables composite + transactions global unique.
+-- payables(): DROP tidak ada — legacy hanya index biasa (`payables_document_number_index`), biarkan untuk pencarian document_number.
+ALTER TABLE payables ADD UNIQUE INDEX payables_business_document_number_unique (business_id, document_number);
+ALTER TABLE transactions ADD UNIQUE INDEX transactions_invoice_unique (invoice);
 ```
 
 > Pada instalasi yang dikerjakan sejak awal (tabel kosong saat migrasi) swap sudah terjadi otomatis; jalankan Fase 5 hanya untuk instalasi legacy. `settings` sudah di-swap oleh migration 000001, tidak termasuk di sini.
+>
+> **`transactions.invoice`:** guardnya hanya "tidak ada invoice duplikat" (bukan `business_id NULL`), jadi pada produksi yang invoice-nya acak `TRX-*` unique ini **umumnya sudah terpasang otomatis di Fase 1**. Blok di atas adalah fallback bila Fase 1 melewatinya (terdapat duplikat lama); cek `SHOW INDEX FROM transactions` dulu sebelum menambah. **`payables`:** composite **tidak** auto-apply pre-backfill (guard `business_id NULL`), jadi swap manual di sini wajib setelah Fase 4.
 
 **Sebelum swap** jalankan (MySQL ≥ 8.0 dan InnoDB — gunakan `ALGORITHM=INPLACE, LOCK=NONE` bila memungkinkan):
 
 ```sql
 -- Sanity: bila ada baris dengan business_id NULL, jangan swap (STOP).
-SELECT COUNT(*) FROM products WHERE business_id IS NULL; -- dan semua tabel di atas → wajib 0
+SELECT COUNT(*) FROM products WHERE business_id IS NULL; -- dan semua tabel di atas (termasuk payables + 6 tabel dokumen) → wajib 0
+-- payables: pastikan juga tidak ada duplikat (business_id, document_number) sebelum composite.
+SELECT business_id, document_number, COUNT(*) c FROM payables GROUP BY business_id, document_number HAVING c > 1;
+-- transactions: pastikan tidak ada invoice duplikat sebelum ADD UNIQUE.
+SELECT invoice, COUNT(*) c FROM transactions GROUP BY invoice HAVING c > 1;
 ```
 
 Rollback swap: lihat §12 (baris Fase 5).
@@ -231,7 +256,10 @@ UNION ALL SELECT 'customer_vouchers',  COUNT(*) FROM customer_vouchers  WHERE bu
 SELECT business_id, barcode, COUNT(*) c FROM products GROUP BY business_id, barcode HAVING c > 1;
 SELECT business_id, slug, COUNT(*) c FROM customer_segments GROUP BY business_id, slug HAVING c > 1;
 SELECT business_id, code, COUNT(*) c FROM customer_vouchers GROUP BY business_id, code HAVING c > 1;
--- (lanjutkan untuk sku, price_lists.slug, warehouses.code, outlets.code, customers.member_code)
+SELECT business_id, document_number, COUNT(*) c FROM payables GROUP BY business_id, document_number HAVING c > 1;
+SELECT invoice, COUNT(*) c FROM transactions GROUP BY invoice HAVING c > 1;
+-- (lanjutkan untuk sku, price_lists.slug, warehouses.code, outlets.code, customers.member_code,
+--  dan document_number/code PO/GR/SR/ST/sales_returns/stock_opnames)
 
 -- 6.3 Membership
 SELECT COUNT(*) FROM business_user; -- bandingkan dengan jumlah akses outlet pemilik/manager/staff (tanpa super-admin)
@@ -254,7 +282,7 @@ SELECT COUNT(*) FROM business_user; -- bandingkan dengan jumlah akses outlet pem
 | 4.1 | Restore dari backup (stempel `business_id` dibalik via `UPDATE <tabel> SET business_id = NULL` hanya jika backup tidak tersedia — jangan manual bila ada backup). |
 | 4.2 | Restore `settings.business_id = NULL` pada baris yang diubah (backup) lalu hapus baris business-scoped yang dibuat oleh migrasi settings. |
 | 4.3 | Hapus baris `business_user` (backup). |
-| 5 | Balik index composite → global (daftar terbalik §8): `ALTER TABLE ... DROP INDEX <composite>, ADD UNIQUE INDEX <legacy> (<col>);` |
+| 5 | Balik index composite → global (daftar terbalik §8): `ALTER TABLE ... DROP INDEX <composite>, ADD UNIQUE INDEX <legacy> (<col>);` — untuk `payables`/`transactions` cukup `DROP INDEX payables_business_document_number_unique` / `DROP INDEX transactions_invoice_unique` (tidak ada legacy unique). |
 | 6+ | Bila ada anomali → restore backup + jalankan ulang verifikasi. |
 
 **Rehearsal wajib** pada restored copy sebelum eksekusi live: jalankan Fase 4–6, ukur durasi, verifikasi hasil identik.
@@ -276,4 +304,4 @@ SELECT COUNT(*) FROM business_user; -- bandingkan dengan jumlah akses outlet pem
 
 - Dokumen ini **tidak** mengubah data apa pun; hanya panduan yang menunggu approval.
 - Flag `multi_business.enabled` tetap `false` di produksi sampai keputusan terpisah.
-- **Bukan bagian runbook ini:** demo seeder di produksi (dilarang), UI pembuatan business tambahan (Q6), UNIQUE-10/11, dan perubahan `TenantOwnership` (verifikasi kepemilikan tetap via outlet, §13.17).
+- **Bukan bagian runbook ini:** demo seeder di produksi (dilarang), UI pembuatan business tambahan (Q6), UNIQUE-11, dan perubahan `TenantOwnership` (verifikasi kepemilikan tetap via outlet, §13.17).

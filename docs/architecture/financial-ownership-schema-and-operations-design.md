@@ -63,7 +63,7 @@ Existing indexes already include `payables.document_number`, `receivables.invoic
 | both | `(ownership_status)` | reconciliation/quarantine scans |
 | both | `(business_id, ownership_status)` | tenant reads excluding quarantine |
 
-**MySQL NULL caveat [REC]:** composite indexes with `business_id IS NULL` still index fine for reads, but any future **unique** constraint involving `business_id` treats NULLs as distinct. This matters for UNIQUE/Q4, not for these non-unique indexes. Backfill should precede any future uniqueness work.
+**MySQL NULL caveat [REC]:** composite indexes with `business_id IS NULL` still index fine for reads, but any future **unique** constraint involving `business_id` treats NULLs as distinct. This matters for UNIQUE/Q4, not for these non-unique indexes. Backfill should precede any future uniqueness work. *(Selesai: `payables.document_number` kini composite `(business_id, document_number)` dan `transactions.invoice` global unique — register §13.21.)*
 
 ### 1.4 Migration shape (proposed names, not created)
 

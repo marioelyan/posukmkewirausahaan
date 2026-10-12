@@ -16,7 +16,7 @@
 | Q1 | Definisi transaksi "completed" | `payment_status='paid'` | Fase 6 | PERLU KEPUTUSAN |
 | Q2 | Owner global vs membership; super-admin tetap global | Membership `owner`; super-admin global | Fase 1-2 | PERLU KEPUTUSAN |
 | Q3 | Role berbeda per business | Ya, role di membership | Fase 1 | PERLU KEPUTUSAN |
-| Q4 | Master data terpisah penuh | Ya, terpisah penuh | Fase 4 | SELESAI (§13.14/§13.17 + UNIQUE-10 §13.20; sisa UNIQUE-11 deferred) |
+| Q4 | Master data terpisah penuh | Ya, terpisah penuh | Fase 4 | SELESAI (§13.14/§13.17 + UNIQUE-10 §13.20/§13.21; sisa UNIQUE-11 deferred) |
 | Q5 | Setting global vs per business | Hybrid key-based | Fase 1-3 | PERLU KEPUTUSAN |
 | Q6 | Pembuatan business | Admin platform + self-service owner (fase lanjut) | Fase 8 | SELESAI (bagian admin platform; self-service deferred) |
 | Q7 | Outlet existing = satu business | Satu business default | Fase 3 | PERLU KEPUTUSAN |
@@ -58,8 +58,8 @@
 - **Alternatif.** Katalog bersama + override per business (kompleks; menambah kebocoran).
 - **Dampak.** POS, impor/ekspor, laporan.
 - **Status (2026-10-12):** composite unique per-business SELESAI untuk `products` (barcode/sku), `price_lists` (slug), `warehouses`/`outlets` (code), `customers` (member_code), `customer_vouchers` (code) dan `customer_segments` (slug); `units.code` tetap global (UNIQUE-04).
-- **Status (2026-10-13):** UNIQUE-10 (nomor dokumen per business) SELESAI — enam tabel dokumen (PO/GR/SR/ST + `sales_returns.code` + `stock_opnames.code`) mendapat `business_id` + trait + generator per business + swap composite kondisional (register §13.20). Format nomor tetap `PREFIX-YYYYMMDD-####` dengan urutan per business. Tetap deferred: UNIQUE-11 (kandidat menunggu evidence) dan bagian non-unik UNIQUE-10 (`payables.document_number`, `transactions.invoice`). Detail: register §13.14/§13.17/§13.20.
-- **Blocking:** — (UNIQUE-10 dituntaskan §13.20; UNIQUE-11 tetap kandidat menunggu evidence + approval).
+- **Status (2026-10-13):** UNIQUE-10 (nomor dokumen per business) SELESAI — enam tabel dokumen (PO/GR/SR/ST + `sales_returns.code` + `stock_opnames.code`) mendapat `business_id` + trait + generator per business + swap composite kondisional (register §13.20). Format nomor tetap `PREFIX-YYYYMMDD-####` dengan urutan per business. Sisa UNIQUE-10 juga SELESAI (register §13.21): `payables.document_number` = composite `(business_id, document_number)`, `transactions.invoice` = **global** unique (dibaca tanpa konteks business; per-business justru ambigu), plus validasi `TenantUnique` di `PayableController`. Tetap deferred: UNIQUE-11 (kandidat menunggu evidence). Detail: register §13.14/§13.17/§13.20/§13.21.
+- **Blocking:** — (UNIQUE-10 dituntaskan §13.20 + §13.21; UNIQUE-11 tetap kandidat menunggu evidence + approval).
 
 ### Q5 — Setting global vs per business
 - **FAKTA.** `settings` sudah punya `outlet_id` (`2026_09_14_000004`). Key belum diklasifikasi.

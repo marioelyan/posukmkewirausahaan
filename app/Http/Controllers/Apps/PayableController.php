@@ -12,6 +12,7 @@ use App\Rules\BelongsToActiveBusiness;
 use App\Services\BusinessContext;
 use App\Services\FinancialOwnershipService;
 use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -72,13 +73,24 @@ class PayableController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $rules = [
             'supplier_id' => ['nullable', 'exists:suppliers,id', new BelongsToActiveBusiness('suppliers')],
             'document_number' => ['nullable', 'string', 'max:100'],
             'total' => ['required', 'numeric', 'min:1'],
             'due_date' => ['nullable', 'date'],
             'note' => ['nullable', 'string'],
-        ]);
+        ];
+
+        // UNIQUE-10 (§13.21): mirror the composite `(business_id, document_number)`
+        // index as a validation rule so a duplicate document number is rejected
+        // with a field error (not a raw QueryException). Legacy mode keeps the
+        // historical rules — the DB constraint only appears after backfill, so
+        // the two layers stay in lockstep.
+        if (config('multi_business.enabled')) {
+            $rules['document_number'][] = TenantUnique::for('payables', 'document_number');
+        }
+
+        $data = $request->validate($rules);
 
         if (! ($data['document_number'] ?? null)) {
             $data['document_number'] = 'INV-'.Str::upper(Str::random(8));
