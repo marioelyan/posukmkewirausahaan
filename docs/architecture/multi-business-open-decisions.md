@@ -1,11 +1,11 @@
 # Multi-Business Open Decisions — Point of Sales
 
-- **Status:** PERENCANAAN / DOKUMENTASI ONLY — keputusan yang telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13), **Q4/UNIQUE-10 (nomor dokumen per business)** via register §13.20/§13.21 (2026-10-13), **Q11/UNIQUE-11 (idempotency token global)** via register §13.22 (2026-10-13), **pass status Q10–Q16** via register §13.23 (2026-10-13), dan **Q12 (`audit_logs.business_id`)** diimplementasikan via register §13.24 (2026-10-13). Q1–Q9 di tabel di bawah masih berstatus awal namun keputusannya sudah terwujud di register §13.14–§13.17 (§5).
+- **Status:** keputusan owner tercatat di register (§13: ID stabil `AUTH-*`/`SETTINGS-*`/`FIN-*`/`SCHED-*`/`UNIQUE-*`/`GOV-*`). **Terwujud/selesai:** Q2/Q3 (§13.14 AUTH), Q4/UNIQUE-10/11 (§13.20–§13.22), Q5 (§13.14 SETTINGS), Q6 (§13.19), Q7/Q9 (§13.13/§13.15/§13.16 FIN + backfill/bootstrap), Q8 (§13.14 SCHED), Q10 (§13.23), Q11 (§13.22), Q12 (§13.24), Q13 (§13.23), Q14 (§13.23), Q15 (§13.23), Q16 (§13.23). **Masih terbuka: Q1** — definisi transaksi "completed" (register §3.5 X2 = `needs clarification`).
 - **Basis:** audit `multi-business-tenant-audit.md` §14 + temuan tambahan pada 2026-10-10.
 - **Label:** **FAKTA**, **REKOMENDASI**, **ASUMSI**, **PERLU KEPUTUSAN**.
 - Dokumen terkait: `multi-business-backend-implementation-plan.md`, `multi-business-data-ownership-matrix.md`, `multi-business-security-test-plan.md`.
 
-> **Aturan.** Kecuali **Q6** (disetujui 2026-10-13, §13.19 register), tidak ada item di bawah ini berstatus "approved". Setiap item punya *default rekomendasi* yang dipakai **hanya sementara** agar perencanaan bisa dilanjutkan, dan *status penghambat* (blocking) untuk fase mana.
+> **Aturan.** Keputusan owner dipetakan ke ID stabil di register (§13). Q2–Q16 telah diputuskan & terwujud (kecuali butir operasional yang *deferred*: eksekusi runbook produksi, aktivasi flag, self-service owner signup). **Q1 masih terbuka** sebagai keputusan bisnis (register §3.5 X2). Item tanpa keputusan eksplisit memakai *default rekomendasi* hanya sementara.
 
 ---
 
@@ -13,15 +13,15 @@
 
 | ID | Pertanyaan singkat | Rekomendasi default | Menghambat | Status |
 |---|---|---|---|---|
-| Q1 | Definisi transaksi "completed" | `payment_status='paid'` | Fase 6 | PERLU KEPUTUSAN |
-| Q2 | Owner global vs membership; super-admin tetap global | Membership `owner`; super-admin global | Fase 1-2 | PERLU KEPUTUSAN |
-| Q3 | Role berbeda per business | Ya, role di membership | Fase 1 | PERLU KEPUTUSAN |
+| Q1 | Definisi transaksi "completed" | `payment_status='paid'` | Fase 6 | PERLU KEPUTUSAN (register §3.5 X2 `needs clarification`) |
+| Q2 | Owner global vs membership; super-admin tetap global | Membership `owner`; super-admin global | Fase 1-2 | SELESAI (§13.14 — AUTH-01 hybrid) |
+| Q3 | Role berbeda per business | Ya, role di membership | Fase 1 | SELESAI (§13.14 — AUTH-02 role per business) |
 | Q4 | Master data terpisah penuh | Ya, terpisah penuh | Fase 4 | SELESAI (§13.14/§13.17 + UNIQUE-10 §13.20/§13.21 + UNIQUE-11 §13.22) |
-| Q5 | Setting global vs per business | Hybrid key-based | Fase 1-3 | PERLU KEPUTUSAN |
+| Q5 | Setting global vs per business | Hybrid key-based | Fase 1-3 | SELESAI (§13.14 — SETTINGS-01..07 hierarki global→business→outlet) |
 | Q6 | Pembuatan business | Admin platform + self-service owner (fase lanjut) | Fase 8 | SELESAI (bagian admin platform; self-service deferred) |
-| Q7 | Outlet existing = satu business | Satu business default | Fase 3 | PERLU KEPUTUSAN |
-| Q8 | Background job di shared hosting | Sinkron + scheduler per menit | Fase 7 | PERLU KEPUTUSAN |
-| Q9 | Data existing tanpa ownership jelas | Ke business default, ditandai | Fase 3 | PERLU KEPUTUSAN |
+| Q7 | Outlet existing = satu business | Satu business default | Fase 3 | SELESAI (§13.13/§13.16 — FIN-01..05 + bootstrap/backfill) |
+| Q8 | Background job di shared hosting | Sinkron + scheduler per menit | Fase 7 | SELESAI (§13.14 — SCHED-01/02 BusinessTaskRunner, tanpa queue) |
+| Q9 | Data existing tanpa ownership jelas | Ke business default, ditandai | Fase 3 | SELESAI (§13.13/§13.15 — FIN-04 konteks wajib + karantina/audit) |
 | Q10 | Status modul DineIn | Hapus (modul sudah tidak ada) | — | SELESAI (§13.23 — modul dihapus; migrasi drop shim) |
 | Q11 | `client_uuid` unik | Global (keputusan §13.22) | — | SELESAI (§13.22 — global unique, docs-only) |
 | Q12 | `audit_logs.business_id` | Tambahkan (nullable) | Fase 2 | SELESAI (§13.24 — kolom + stamp + scoping viewer) |
@@ -36,22 +36,23 @@
 
 ### Q1 — Definisi transaksi "completed"
 - **FAKTA.** Tidak ada kolom `status`; hanya `payment_status` (`paid`, `unpaid`, `pending`, `pending_approval`, `failed`). Dashboard menghitung semua baris (`DashboardController.php:44`); shift benar memakai `paid` (`CashierShiftService.php:88,97`).
+- **STATUS (2026-10-13):** **masih terbuka** — keputusan bisnis (register §3.5 X2 = `needs clarification`). Default `payment_status='paid'` sudah dipakai shift (`CashierShiftService`), tetapi dashboard masih menghitung semua baris → definisi belum diformalkan di laporan.
 - **REKOMENDASI.** Completed = `payment_status='paid'`. `unpaid` = piutang (bukan omzet selesai). `pending`/`pending_approval` dikecualikan sampai final. `failed` dikecualikan.
 - **Alternatif.** Tambah kolom `status` terpisah dari pembayaran (lebih bersih untuk order lifecycle, tetapi migrasi lebih besar).
 - **Dampak.** Laporan omzet/laba, dashboard, sales report.
 - **Blocking:** Fase 6.
 
 ### Q2 — Owner & super-admin
-- **REKOMENDASI.** `Owner` adalah role **membership** bisnis, bukan role global. `super-admin` tetap global sebagai operator platform (existing `User::isSuperAdmin()` bypass).
-- **Alternatif.** `owner` dijadikan role Spatie global (ambigu lintas business).
+- **KEPUTUSAN (AUTH-01 = C hybrid, register §13.1; terwujud §13.14).** `Owner` adalah role **membership** bisnis, bukan role global; `super-admin` tetap global sebagai operator platform (`User::isSuperAdmin()` bypass). Diimplementasikan via `BusinessRoleCapabilities` + middleware `business.role` (`EnforceBusinessRoleCapability`) + provisioning membership (§13.15).
+- **Alternatif (ditolak).** `owner` dijadikan role Spatie global (ambigu lintas business).
 - **Dampak.** Model membership, policy, UI.
-- **Blocking:** Fase 1-2.
+- **Blocking:** —
 
 ### Q3 — Role berbeda per business
-- **REKOMENDASI.** Boleh berbeda; role disimpan di `business_user`.
-- **Alternatif.** Satu role global per user (tidak fleksibel untuk SaaS).
+- **KEPUTUSAN (AUTH-02 = A, register §13.1; terwujud §13.14).** Boleh berbeda; role disimpan di `business_user`. Penegakan via `business.role` + `BusinessRoleCapabilities` menutup residual permission global akibat `teams=false`.
+- **Alternatif (ditolak).** Satu role global per user (tidak fleksibel untuk SaaS).
 - **Dampak.** Evaluasi permission per konteks.
-- **Blocking:** Fase 1.
+- **Blocking:** —
 
 ### Q4 — Isolasi master data
 - **REKOMENDASI.** Produk/kategori/customer/supplier/unit/price list terpisah penuh per business.
@@ -62,11 +63,10 @@
 - **Blocking:** — (UNIQUE-10 §13.20/§13.21; UNIQUE-11 ditutup global §13.22).
 
 ### Q5 — Setting global vs per business
-- **FAKTA.** `settings` sudah punya `outlet_id` (`2026_09_14_000004`). Key belum diklasifikasi.
-- **REKOMENDASI.** Klasifikasi hybrid: `app_setup_completed`, versi, dan default platform = global; `store_name`, logo, gateway, PPN = per business/outlet.
-- **Alternatif.** Semua setting per business (duplikasi nilai platform).
+- **KEPUTUSAN (SETTINGS-01..07, register §13.3; terwujud §13.14).** Klasifikasi hybrid hierarki `global → business → outlet` (prioritas outlet > business > global): `PLATFORM_KEYS` (`app_setup_completed`, `setup_warehouse_id`) global; store profile/printer/wa/target per outlet; identitas legal (NPWP/NIB), pajak, loyalty, ambang diskon per business. `settings.business_id` (`2026_10_12_000001`); tulisan tenant tanpa konteks **fail closed** (`TenantSettingScopeException`); command `business:settings-backfill`.
+- **Alternatif (ditolak).** Semua setting per business (duplikasi nilai platform).
 - **Dampak.** Onboarding, setup wizard, `HandleInertiaRequests`.
-- **Blocking:** Fase 1-3.
+- **Blocking:** —
 
 ### Q6 — Pembuatan business
 - **REKOMENDASI.** Fase awal: hanya admin platform membuat business. Self-service signup owner ditambahkan belakangan dengan kontrol abuse.
@@ -77,22 +77,22 @@
 - **Blocking:** Fase 8 (sisa: self-service owner signup + aktivasi flag/deployment; bagian admin-platform SELESAI §13.19).
 
 ### Q7 — Outlet existing = satu atau banyak business
-- **REKOMENDASI.** Seluruh instalasi existing dianggap **satu business** (banyak branch) → business default.
-- **Alternatif.** Pemecahan per outlet (butuh pemisahan data manual yang berisiko).
+- **KEPUTUSAN (FIN-01..05, register §13.4; terwujud §13.13/§13.16).** Seluruh instalasi existing dianggap **satu business** (banyak branch) → business default via `business:backfill --create-default`; install baru di-bootstrap wizard (§13.16). Ownership finansial: auto hanya bila 100% terbukti, sisanya manual/karantina.
+- **Alternatif (ditolak).** Pemecahan per outlet (butuh pemisahan data manual yang berisiko).
 - **Dampak.** Seluruh backfill.
-- **Blocking:** Fase 3.
+- **Blocking:** — (eksekusi runbook produksi deferred, §13.18)
 
 ### Q8 — Background job di shared hosting
 - **FAKTA.** Tidak ada `app/Jobs`; scheduler ada di `routes/console.php`; `schedule:run` per menit.
-- **REKOMENDASI.** Tetap sinkron/scheduler; tidak mengasumsikan queue worker/Redis/WebSocket. Command wajib iterasi per business.
-- **Alternatif.** Queue worker (butuh infra tidak tersedia di shared hosting).
+- **KEPUTUSAN (SCHED-01 = C hybrid, SCHED-02; register §13.5; terwujud §13.14).** Tetap sinkron/scheduler tanpa queue worker/Redis/WebSocket. `BusinessTaskRunner` meng-enumerate active business → set context → jalankan → **selalu clear** (`finally`); di-wire ke `reorder:generate`, `crm:sync-segments`, `crm:generate-reminders`.
+- **Alternatif (ditolak).** Queue worker (butuh infra tidak tersedia di shared hosting).
 - **Dampak.** CRM, reorder, expire transaksi.
-- **Blocking:** Fase 7.
+- **Blocking:** —
 
 ### Q9 — Data existing tanpa ownership jelas
-- **REKOMENDASI.** Assign ke business default, tandai lewat `outlet:legacy-audit`/`outlet:audit`, rekonsiliasi stok.
+- **KEPUTUSAN (FIN-04 + karantina FIN-03/05, register §13.4; terwujud §13.13/§13.15).** Manual payable/receivable baru **wajib** konteks business (tanpa konteks → tolak); record unresolved **dikarantina** (tersimpan untuk audit, tak terlihat di tenant normal, tak dapat dimutasi). Data existing ditandai lewat `outlet:legacy-audit`/`outlet:audit` + `business:backfill`.
 - **Dampak.** Integritas backfill.
-- **Blocking:** Fase 3.
+- **Blocking:** — (eksekusi produksi deferred, §13.18)
 
 ### Q10 — Status modul DineIn
 - **FAKTA.** Modul DineIn **sudah dihapus penuh** dari kode (model, service, route, page, dan create-migration tidak ada lagi). Sisa satu berkas: `database/migrations/2026_10_11_000001_drop_dine_in_tables.php` — `dropIfExists` untuk `dine_order_items`/`dine_orders`/`dine_tables`/`dine_areas`, no-op pada install fresh, membersihkan install lama yang masih punya tabel.

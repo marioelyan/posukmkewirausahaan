@@ -1,0 +1,260 @@
+# Multi-Business — Progress & Handoff (referensi tugas berikutnya)
+
+> **Tujuan dokumen ini:** menjawab *"sudah sampai mana, kekurangannya apa, dan apa langkah berikutnya"* untuk sesi/AI berikutnya. Ditulis 2026-10-13. Semua angka & status di bawah **terverifikasi dari repo**, bukan asumsi.
+
+---
+
+## 0. TL;DR untuk AI berikutnya
+
+- **Semua slice KODE multi-business SELESAI & test hijau.** Objective "staging-ready" tercapai.
+- **Feature flag tetap `false`** (`MULTI_BUSINESS_ENABLED=false` di `config` default & `.env.example`). `.env` lokal `true` (untracked).
+- `development` = `5f8c2d1`, `main` = `d8a3fdd` (**belum tersentuh**).
+- **Yang tersisa BUKAN kode**, melainkan: (a) **keputusan bisnis Q1**, (b) **eksekusi operasional** (runbook backfill produksi → aktivasi flag → deploy), (c) **fitur fase lanjut** (self-service owner signup), (d) **cleanup opsional** (Q10 sisa migrasi DineIn).
+- **Jangan sentuh `main`** — push ke `main` = auto-deploy produksi. Kerja selalu lewat PR ke `development`.
+- **Jangan aktifkan flag di produksi** tanpa approval owner + DBA + runbook (`multi-business-backfill-production-runbook.md`).
+- Baca berurutan untuk konteks penuh: dokumen ini → `multi-business-open-decisions.md` → `multi-business-blocker-review-and-decision-register.md` (§13 Decision Log) → `multi-business-phase-4f-implementation-notes.md` → `multi-business-backfill-production-runbook.md`.
+
+---
+
+## 1. Snapshot status (per 2026-10-13)
+
+| Item | Nilai |
+|---|---|
+| Branch aktif | `development` (sinkron `origin/development`) |
+| `development` | `5f8c2d1` (Merge PR #9) |
+| `main` | `d8a3fdd` (tak tersentuh / belum ada deploy baru dari kerja ini) |
+| Remote | `github.com/marioelyan/posukmkewirausahaan` (fork) |
+| Feature flag | `MULTI_BUSINESS_ENABLED=false` |
+| Test suite | **747 passed (3161 assertions)** (lokal, SQLite in-memory) |
+| CI | PR terakhir PASS (~2m16s); job deploy = *skipping* (hanya `main`) |
+| Lint | `vendor/bin/pint` bersih |
+| Mutasi data produksi | **Nol** |
+
+### Riwayat PR (semua ter-merge)
+| PR | Isi |
+|---|---|
+| #1 | tenancy staging-ready (SETTINGS, UNIQUE, SCHED, AUTH, memberships, onboarding, UNIQUE-08/09, runbook) |
+| #2 | Q6-A admin-only business creation (UI + provisioning) |
+| #3 | audit staging-ready — sinkron status keputusan |
+| #4 | UNIQUE-10 per-business document numbers |
+| #5 | UNIQUE-10 residual (`payables.document_number` + `transactions.invoice`) |
+| #6 | UNIQUE-11 global idempotency token (docs-only) |
+| #7 | pass status Q10–Q16 (berbasis bukti) |
+| #8 | Q12 `audit_logs.business_id` ownership + viewer scoping |
+| #9 | sync status keputusan Q1–Q9 (docs-only) |
+
+---
+
+## 2. Yang SUDAH selesai (dengan bukti)
+
+### 2.1 Skema & tenancy
+- `businesses` + `business_user` (membership) + `business_id` pada outlet, master data, settings, payables/receivables, CRM blocks, dokumen (PO/GR/SR/ST, sales_returns, stock_opnames), `audit_logs`. (Migrasi §3.)
+- **Middleware** (`routes/web.php` grup dashboard): `business` → `business.required` → `business.role` (`ResolveBusinessContext`, `EnsureActiveBusiness`, `EnforceBusinessRoleCapability`). Tanpa konteks saat flag ON → **403 (fail-closed)**.
+- **Konteks**: `App\Services\BusinessContext` (`setActive`, `businessId`, `hasActiveBusiness`), switch via `Route::post('/dashboard/business', ...)` dan `/dashboard/outlet`.
+
+### 2.2 Keputusan owner — semua terwujud kecuali Q1
+| ID | Keputusan | Terwujud | Ringkas |
+|---|---|---|---|
+| AUTH-01/02/03 (Q2/Q3/Q14) | Hybrid membership + Spatie capability; role per business; `teams=false` | §13.14 | `BusinessRoleCapabilities` + `business.role`; owner/manager/staff |
+| UNIQUE-01..07 (Q4) | Per-business composite unique | §13.14 | identifier milik business |
+| UNIQUE-08/09 + CRM | Ownership `customer_campaigns`/`customer_segments` | §13.17 | global scope selektif fail-closed |
+| UNIQUE-10 (Q4) | Nomor dokumen per business | §13.20/§13.21 | PO/GR/SR/ST + returns/opname; `payables.document_number` composite; `transactions.invoice` **global** |
+| UNIQUE-11 (Q11) | Idempotency token **global** (docs-only) | §13.22 | `transactions.client_uuid` global; namespacing `customer_campaigns.context_key` |
+| SETTINGS-01..07 (Q5) | Hierarki `outlet → business → global`; `PLATFORM_KEYS` global; tulis tenant tanpa konteks fail-closed | §13.14 | `settings.business_id`; `TenantSettingScopeException` |
+| SCHED-01/02 (Q8) | Sinkron/scheduler, tanpa queue | §13.14 | `BusinessTaskRunner` enumerate active business → set/clear context |
+| FIN-01..05 (Q7/Q9/Q15) | Ownership finansial: 6 status + karantina + FIN-04 konteks wajib | §13.13 | `FinancialOwnershipService`; scope karantina |
+| Q6 | Admin platform membuat business (+ UI) | §13.19 | `BusinessAdminController`; self-service **deferred** |
+| Q7 | Instalasi existing = satu business default | §13.16 | bootstrap first-install + `business:backfill --create-default` |
+| Q10 | Modul DineIn dihapus | §13.23 | sisa 1 migrasi drop shim |
+| Q12 | `audit_logs.business_id` + scoping viewer | §13.24 | stamp dari `BusinessContext`; legacy NULL disembunyikan |
+| Q13 | Global scope selektif fail-closed (trait `BelongsToBusiness`) | §13.23 | eksplisit + fail-closed |
+| Q15 | `warehouses.outlet_id` nullable + backfill PUSAT + audit read-only | §13.23 | |
+| Q16 | Laporan scope per business aktif (termasuk super-admin), **tanpa agregasi lintas business** | §13.23 | `OutletAccessService::warehousesFor` + `restrictToActiveBusiness` |
+
+### 2.3 Onboarding & demo
+- **First-install wizard** `/setup` (`setup.notinstalled`): buat admin, profil toko, business default (saat flag ON), kategori, gudang utama. `Setting::app_setup_completed` mengunci.
+- **Demo seeder** (`seed:demo` / `DemoSeeder --force`, **dilarang di produksi**): outlet `MAL`/`TKB`/`PUT`; akun `arya@gmail.com` (super-admin), `manager@gmail.com`, `cashier@gmail.com` (password `password`); membership demo (manager→`manager`, cashier→`staff`).
+- **Commands backfill** (dry-run default, aman tanpa flag): `business:backfill`, `business:settings-backfill`, `business:membership-backfill`, `business:financial-ownership-backfill|assign|report`, `outlet:audit`, `outlet:legacy-audit`, `inventory:reconcile`.
+
+### 2.4 Dokumentasi tuntas
+Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matrix, security test plan, 8 catatan fase, runbook produksi (DRAFT), phase-4f notes. Tabel status Q1–Q9 sudah disinkronkan (PR #9).
+
+---
+
+## 3. Migrasi era multi-business (14 file, semua aditif/guarded)
+
+```
+2026_10_10_150216_create_businesses_table
+2026_10_10_150300_add_business_id_to_outlets_table
+2026_10_10_150736_create_business_user_table
+2026_10_10_160000_add_business_id_to_master_data_tables
+2026_10_11_000001_drop_dine_in_tables                 # Q10 — shim drop (no-op fresh install)
+2026_10_11_100001_add_business_id_to_payables_table    # FK RESTRICT
+2026_10_11_100002_add_business_id_to_receivables_table # FK RESTRICT
+2026_10_11_100003_add_ownership_status_to_financial_tables
+2026_10_12_000001_add_business_id_to_settings_table
+2026_10_12_000002_add_business_scoped_unique_indexes
+2026_10_12_000003_add_business_scope_to_crm_blocks
+2026_10_13_000001_scope_document_numbers_to_business
+2026_10_13_000002_add_unique_payable_document_number_and_transaction_invoice
+2026_10_13_000003_add_business_id_to_audit_logs_table
+```
+
+---
+
+## 4. KEKURANGAN / yang BELUM selesai
+
+### 4.1 Keputusan bisnis (butuh owner)
+- **Q1 — Definisi transaksi "completed"** *(satu-satunya keputusan yang benar-benar terbuka)*. Register §3.5 X2 = `needs clarification`.
+  - Fakta: tak ada kolom `status`; hanya `payment_status` (`paid/unpaid/pending/pending_approval/failed`). Shift memakai `paid` (`CashierShiftService`); dashboard menghitung **semua** baris (`DashboardController:44`).
+  - Opsi: (A) completed = `payment_status='paid'` (default, murah) vs (B) tambah kolom `status` lifecycle order terpisah (lebih bersih, migrasi lebih besar).
+  - **Dampak bila dibiarkan:** laporan omzet/laba bisa tidak konsisten dengan definisi bisnis. **Tidak memblokir** staging/aktivasi teknis.
+
+### 4.2 Operasional (deferred — butuh approval, bukan kode)
+- **Eksekusi runbook backfill produksi** — DRAFT, **belum dieksekusi**. Baca `multi-business-backfill-production-runbook.md`. Pra-syarat: read replica/restored copy, backup + uji restore, jendela perawatan, approval tertulis **owner + DBA**. Fase: 0 audit read-only → 1 deploy migrasi → 2 dry-run → 3 gate approval → 4 apply bertahap → 5 swap index manual (DBA) → 6 verifikasi → 7 aktivasi flag (keputusan terpisah).
+- **Aktivasi flag `MULTI_BUSINESS_ENABLED=true`** — keputusan terpisah, **setelah** backfill + smoke QA staging (`docs/testing-manual.md`).
+- **Deployment** ke produksi — via `main` (auto-deploy). Belum dilakukan untuk kerja ini.
+- **Self-service owner signup** (Q6 fase lanjut) — bagian admin-platform sudah selesai; signup mandiri belum.
+
+### 4.3 Cleanup opsional
+- **Q10 residu**: `database/migrations/2026_10_11_000001_drop_dine_in_tables.php`. Idempotent/no-op pada install fresh; disarankan dihapus **pasca-deploy** (jangan hapus sebelum jendela deploy bila masih membersihkan install lama).
+
+### 4.4 Residual teknis / risiko (perlu diketahui sebelum deploy)
+- **FK `restrictOnDelete`** pada `payables`/`receivables.business_id` (keputusan D4) — bisnis diarsipkan, bukan hard-delete. **Dicatat untuk veto owner** sebelum deploy (§13.13).
+- **`teams=false` residual**: role ditegakkan via membership + `business.role`; permission Spatie global tetap ada sebagai capability. Verifikasi sebelum aktivasi.
+- **`transactions.invoice` global unique** & **`transactions.client_uuid` global unique** — disengaja (idempotency lintas business via namespacing/gudang), bukan bug.
+- **`units.code` global** (satu-satunya identifier master data yang tetap global).
+- **`audit_logs.business_id` legacy = NULL** dan **disembunyikan** saat flag ON (fail-closed, **tanpa backfill otomatis**). Bila owner ingin histori terlihat, perlu command backfill terpisah (belum dibuat).
+- **Laporan lintas business tidak tersedia** (Q16 by design). Bila owner butuh laporan konsolidasi multi-business, itu **fitur baru**.
+- **Data existing tanpa ownership jelas** → dikarantina; perlu `business:financial-ownership-assign` manual saat apply.
+- **Permission cache stale** setelah seeder → logout + login (gotcha umum; lihat AGENTS.md).
+
+---
+
+## 5. Pra-syarat sebelum fase berikutnya (checklist ringkas)
+
+### Untuk mengaktifkan flag di staging (QA)
+```text
+[ ] php artisan migrate                       # schema multi-business
+[ ] business:backfill --create-default         # dry-run dulu, lalu --apply --confirm-legacy-ownership
+[ ] business:settings-backfill --apply         # (dry-run default: jalankan tanpa --apply untuk plan)
+[ ] business:membership-backfill --apply       # (dry-run default)
+[ ] business:financial-ownership-report --format=json --list   # baseline read-only
+[ ] business:financial-ownership-backfill (dry-run) → --apply --confirm-financial-ownership
+[ ] business:financial-ownership-assign ...    # untuk manual_required/ambiguous/dangling
+[ ] set MULTI_BUSINESS_ENABLED=true (staging) → smoke test (docs/testing-manual.md)
+```
+> Semua command backfill **bekerja tanpa flag ON** (bekerja terhadap kolom), jadi aman dijalankan bertahap.
+
+### Untuk produksi
+```text
+[ ] read replica / restored copy + backup terverifikasi
+[ ] approval owner + DBA (audit, apply, swap index)
+[ ] jendela perawatan + maintenance:down saat Fase 4
+[ ] rehearsal wajib pada restored copy (Fase 4–6)
+[ ] swap index manual (DBA) → verifikasi SHOW INDEX
+[ ] Fase 7 aktivasi = keputusan terpisah
+```
+
+---
+
+## 6. Peta file kunci
+
+### Kode inti
+| Area | File |
+|---|---|
+| Konteks bisnis | `app/Services/BusinessContext.php`, `BusinessHierarchyService.php`, `BusinessMembershipResolver.php` |
+| Akses outlet | `app/Services/OutletAccessService.php` (`warehousesFor`, `restrictToActiveBusiness`) |
+| Audit | `app/Services/AuditLogService.php`, `app/Models/AuditLog.php`, `app/Http/Controllers/Apps/AuditLogController.php` |
+| Finansial | `app/Services/FinancialOwnershipService.php`, `app/Support/Tenancy/FinancialOwnershipScope.php`, `TenantOwnership.php` |
+| Settings | `App\Services\...` + `TenantSettingScopeException`, `PLATFORM_KEYS` |
+| Scheduler | `BusinessTaskRunner` (enumerate active business) |
+| Middleware | `app/Http/Middleware/{ResolveBusinessContext,EnsureActiveBusiness,EnforceBusinessRoleCapability}.php` |
+| Admin business | `app/Http/Controllers/Apps/BusinessAdminController.php`, `BusinessContextController.php` |
+| Trait scope | `BelongsToBusiness` (global scope selektif fail-closed) |
+
+### Konfigurasi & rute
+- `config/multi_business.php` (`enabled`, `default_name`).
+- `routes/web.php`: grup dashboard `['auth','business','business.required','business.role']`; bisnis admin di luar `business.required` (super-admin only).
+- `routes/api.php`: `/api/v1` (Sanctum abilities `{module}-*`, `pos-access`).
+
+### Test (30 file di `tests/Feature/Business/`)
+Termasuk: `AuditLogBusinessScopeTest`, `ReportIsolationTest`, `MasterDataIsolationTest`, `SettingTenantScopeTest`, `DocumentNumberTenancyTest`, `FinancialOwnership*Test`, `SchedulerTenantContextTest`, `AuthzBusinessRoleEnforcementTest`, `TenantRouteBindingTest`, dll.
+
+### Dokumentasi
+- `docs/architecture/multi-business-open-decisions.md` — Q1–Q16 + status.
+- `docs/architecture/multi-business-blocker-review-and-decision-register.md` — risalah + **§13 Decision Log**.
+- `docs/architecture/multi-business-phase-4f-implementation-notes.md` — catatan FIN + daftar deferred.
+- `docs/architecture/multi-business-backfill-production-runbook.md` — runbook produksi (DRAFT).
+- `docs/architecture/multi-business-data-ownership-matrix.md`, `multi-business-security-test-plan.md`, `multi-business-tenant-audit.md`, `multi-business-readonly-audit-queries.md`.
+- `AGENTS.md` (root) — konvensi repo, arsitektur, gotcha.
+
+---
+
+## 7. Command cheat-sheet
+
+```bash
+# Dev
+composer run dev
+
+# Test
+php artisan test
+php artisan test --filter=AuditLogBusinessScopeTest
+
+# Backfill (dry-run default — aman tanpa flag)
+php artisan business:backfill
+php artisan business:backfill --create-default --apply --confirm-legacy-ownership
+php artisan business:settings-backfill
+php artisan business:membership-backfill
+php artisan business:financial-ownership-report --format=json --list
+php artisan business:financial-ownership-backfill           # dry-run
+php artisan business:financial-ownership-backfill --apply --confirm-financial-ownership
+php artisan business:financial-ownership-assign {table} {id} {business} --reason="..."
+php artisan outlet:audit
+php artisan outlet:legacy-audit
+php artisan inventory:reconcile [--fix]
+
+# Demo (JANGAN di produksi)
+php artisan seed:demo --force
+
+# Formatting
+vendor/bin/pint
+```
+
+---
+
+## 8. Gotcha lingkungan (dari pengalaman sesi ini)
+
+- **Push ke `main` = auto-deploy produksi.** Selalu PR ke `development`; rilis lewat `release/*`.
+- **`gh pr edit` gagal** (GraphQL "Projects (classic) is being deprecated", exit 1). Workaround: `gh api -X PATCH repos/marioelyan/posukmkewirausahaan/pulls/N --input <file.json>` — bangun JSON via PHP (`jq` **tidak** terpasang).
+- **`gh pr create`**: selalu pakai `--body-file` (backtick di body kena shell command substitution).
+- **Flags test**: `phpunit.xml` mem-*pin* `MULTI_BUSINESS_ENABLED=false`; test tenancy menyalakannya eksplisit + `withSession(['active_business_id' => $id])`.
+- **Test conventions**: `RefreshDatabase`; seed `PermissionSeeder→RoleSeeder→UserSeeder`; `markEmailAsVerified()` sebelum `actingAs`; `Product` wajib `tax_rate=0`; `PUSAT` = gudang `type='main'`.
+- **Demo seeder dilarang di produksi**; **email verification disabled**.
+- **Branch lokal bisa basi**: setelah merge PR, `git fetch --prune` lalu cek `git ls-remote --heads origin` untuk memastikan ref remote (tracking ref bisa tertinggal).
+
+---
+
+## 9. Saran task berikutnya (prioritas)
+
+1. **[Keputusan owner] Formalkan Q1** — pilih definisi "completed" (paid-only vs kolom `status`), lalu update register + implementasi laporan bila perlu.
+2. **[Dokumen/ops] Persetujuan runbook** — review & approval owner + DBA; siapkan akses read replica + jadwal jendela perawatan.
+3. **[Ops] Rehearsal + eksekusi runbook** pada restored copy, lalu Fase 4–6 live.
+4. **[Ops] Aktivasi flag di staging + smoke QA** (`docs/testing-manual.md`), baru kemudian produksi.
+5. **[Fitur, opsional] Self-service owner signup** (Q6 fase lanjut) — desain kontrol abuse.
+6. **[Cleanup, opsional] Hapus sisa migrasi drop DineIn** setelah deploy (Q10).
+7. **[Fitur, opsional] Laporan konsolidasi lintas business** bila owner butuh (saat ini by-design tidak ada).
+
+---
+
+## 10. Pertanyaan terbuka untuk owner (bila AI melanjutkan)
+
+1. **Q1**: definisi transaksi "completed" — `paid` saja atau kolom lifecycle terpisah?
+2. Apakah **FK `restrictOnDelete`** (bisnis diarsipkan, tak bisa hard-delete) disetujui? (§13.13 D4)
+3. Apakah owner butuh **laporan konsolidasi lintas business** (fitur baru) atau cukup per-business?
+4. Apakah **histori `audit_logs` legacy** perlu di-backfill agar terlihat setelah flag ON?
+5. Jadwal **jendela perawatan** & kesiapan **read replica/DBA** untuk eksekusi runbook.
+
+---
+
+*Dokumen ini adalah referensi kerja; keputusan resmi tetap di `multi-business-blocker-review-and-decision-register.md` §13.*
