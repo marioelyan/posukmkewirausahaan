@@ -7,25 +7,18 @@ use App\Models\PurchaseOrderItem;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class PurchaseOrderService
 {
     public function __construct(
         private readonly AuditLogService $auditLogService,
-        private readonly OutletAccessService $outletAccessService
+        private readonly OutletAccessService $outletAccessService,
+        private readonly DocumentNumberGenerator $documentNumberGenerator
     ) {}
 
     public function generateDocumentNumber(): string
     {
-        $prefix = 'PO-'.now()->format('Ymd').'-';
-        $last = PurchaseOrder::where('document_number', 'like', $prefix.'%')
-            ->orderByDesc('document_number')
-            ->value('document_number');
-
-        $next = $last ? (int) Str::afterLast($last, '-') + 1 : 1;
-
-        return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $this->documentNumberGenerator->next(PurchaseOrder::class, 'PO-');
     }
 
     public function createOrder(array $data, array $items, int $userId): PurchaseOrder

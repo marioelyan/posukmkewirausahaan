@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SupplierReturn extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $fillable = [
@@ -19,10 +21,12 @@ class SupplierReturn extends Model
         'notes',
         'returned_at',
         'created_by',
+        'business_id',
     ];
 
     protected $casts = [
         'returned_at' => 'datetime',
+        'business_id' => 'integer',
     ];
 
     public function supplier()

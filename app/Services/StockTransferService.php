@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class StockTransferService
@@ -17,19 +16,13 @@ class StockTransferService
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly OutletAccessService $outletAccessService,
-        private readonly StockMutationService $stockMutationService
+        private readonly StockMutationService $stockMutationService,
+        private readonly DocumentNumberGenerator $documentNumberGenerator
     ) {}
 
     public function generateDocumentNumber(): string
     {
-        $prefix = 'ST-'.now()->format('Ymd').'-';
-        $last = StockTransfer::where('document_number', 'like', $prefix.'%')
-            ->orderByDesc('document_number')
-            ->value('document_number');
-
-        $next = $last ? (int) Str::afterLast($last, '-') + 1 : 1;
-
-        return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $this->documentNumberGenerator->next(StockTransfer::class, 'ST-');
     }
 
     public function createDraft(array $data, array $items, int $userId): StockTransfer

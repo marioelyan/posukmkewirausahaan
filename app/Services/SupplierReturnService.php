@@ -9,7 +9,6 @@ use App\Models\SupplierReturnItem;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class SupplierReturnService
@@ -17,19 +16,13 @@ class SupplierReturnService
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly StockMutationService $stockMutationService,
-        private readonly OutletAccessService $outletAccessService
+        private readonly OutletAccessService $outletAccessService,
+        private readonly DocumentNumberGenerator $documentNumberGenerator
     ) {}
 
     public function generateDocumentNumber(): string
     {
-        $prefix = 'SR-'.now()->format('Ymd').'-';
-        $last = SupplierReturn::where('document_number', 'like', $prefix.'%')
-            ->orderByDesc('document_number')
-            ->value('document_number');
-
-        $next = $last ? (int) Str::afterLast($last, '-') + 1 : 1;
-
-        return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $this->documentNumberGenerator->next(SupplierReturn::class, 'SR-');
     }
 
     public function createReturn(array $data, array $items, int $userId): SupplierReturn
