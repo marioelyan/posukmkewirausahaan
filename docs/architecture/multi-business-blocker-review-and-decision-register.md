@@ -680,3 +680,20 @@ php artisan test --compact        (seluruh suite)
 - **Dampak:** **tidak ada perubahan kode/migrasi**. Satu-satunya konsekuensi teoretis: dua business yang kebetulan memakai `client_uuid` identik (praktis mustahil untuk UUID asli) → insert kedua gagal. Diterima; konsisten dengan keputusan `transactions.invoice` (token acak = global).
 - **Catatan lanjutan:** bila kelak `transactions.business_id` ditambahkan (mis. untuk Q12 `audit_logs.business_id`/Q13 scoping), konversi `client_uuid` ke composite `(business_id, client_uuid)` menjadi sepele.
 - **Batas:** flag tetap `false`; tanpa mutasi data; dokumen saja. PR disiapkan ke `development`.
+
+### 13.23 Pass status Q10–Q16 — audit bukti & formalisasi keputusan — 2026-10-13
+
+Audit berbasis bukti untuk sisa keputusan (Q10–Q16), tanpa mengubah perilaku. Hasil: **satu slice kode tersisa (Q12)**, satu terikat waktu (Q10, cleanup opsional), sisanya sudah terwujud.
+
+| Q | Bukti | Keputusan/Status |
+|---|---|---|
+| **Q10** DineIn | Modul **sudah dihapus penuh** (model/service/route/page/create-migration tidak ada). Sisa: `2026_10_11_000001_drop_dine_in_tables.php` (`dropIfExists`; no-op fresh install; membersihkan install lama). | **SELESAI** — modul dihapus; migrasi drop ditahan sebagai shim idempotent; penghapusan berkas **opsional pasca-deploy** (aman ditahan). |
+| **Q12** `audit_logs.business_id` | `audit_logs` (`2026_05_02_120000`) **tidak punya** `business_id`; `AuditLogService::log()` menyimpan `user_id`/`module`/`auditable*`, bukan business. Tidak ada scoping. | **TERBUKA — slice kode** (Fase 2): tambah `business_id` nullable + index; stamp dari `BusinessContext` saat flag ON (server-side); backfill konservatif (log lama tetap `NULL`). **Ambiguitas ownership:** `audit_logs` tidak punya `outlet_id`/`warehouse_id` → perlu aturan resolusi (mis. dari auditable/business aktif, sisanya `NULL` + audit). |
+| **Q13** global scope vs eksplisit | Trait `BelongsToBusiness` = global scope **fail-closed** (flag ON tanpa context → `1 = 0`) + auto-stamp `creating` dari server context; model finansial pakai `FinancialOwnershipScope`; sisanya eksplisit (`scopeForBusiness`, `restrictToActiveBusiness`). | **SELESAI** — eksplisit + global scope **selektif** via trait, opt-out `withoutGlobalScope`. |
+| **Q14** Spatie teams vs membership | `config/permission.php` → `teams=false`; per-business role via `BusinessUser` + middleware `business.role`/`EnforceBusinessRoleCapability`. | **SELESAI** — membership dulu; teams nonaktif. |
+| **Q15** `warehouses.outlet_id IS NULL` | `outlet_id` nullable + backfill `PUSAT`→outlet (`2026_09_14_000002`); `outlet:audit` (`--strict`) & `outlet:legacy-audit` (`--backfill` unambiguous) read-only; `OutletAccessService` legacy bypass terkontrol. | **SELESAI** — NULL = record legacy **ditandai lewat audit**, tidak dihapus/dipaksa. |
+| **Q16** laporan lintas business | `Controllers/Reports/*` men-scope via `OutletAccessService::warehousesFor()` → `restrictToActiveBusiness()` + active outlet. **Super-admin pun dibatasi ke business aktif.** Tidak ada agregasi lintas business. | **SELESAI** — isolasi per business aktif ditegakkan; **agregasi lintas business tidak disediakan** (fitur terpisah bila owner butuh). |
+
+- **Yang masih tersisa setelah pass ini:** slice kode **Q12** (`audit_logs.business_id`); Q10 cleanup (opsional, pasca-deploy); eksekusi runbook produksi (read replica + approval); self-service owner signup; aktivasi flag & deployment.
+- **Catatan doc:** tabel §1 `multi-business-open-decisions.md` untuk **Q1–Q9** masih berstatus "PERLU KEPUTUSAN" meski keputusannya sudah terwujud di §13.14–§13.17 — kandidat pembersihan dokumen terpisah (di luar lingkup pass ini).
+- **Batas:** tidak ada perubahan kode/migrasi; flag tetap `false`; tidak ada mutasi data. PR disiapkan ke `development`.

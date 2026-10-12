@@ -1,6 +1,6 @@
 # Multi-Business Open Decisions — Point of Sales
 
-- **Status:** PERENCANAAN / DOKUMENTASI ONLY — keputusan yang telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13), **Q4/UNIQUE-10 (nomor dokumen per business)** via register §13.20/§13.21 (2026-10-13), dan **Q11/UNIQUE-11 (idempotency token global)** via register §13.22 (2026-10-13). Item lain tetap perencanaan.
+- **Status:** PERENCANAAN / DOKUMENTASI ONLY — keputusan yang telah disetujui: **Q6 = A (admin platform only)** via register §13.19 (2026-10-13), **Q4/UNIQUE-10 (nomor dokumen per business)** via register §13.20/§13.21 (2026-10-13), **Q11/UNIQUE-11 (idempotency token global)** via register §13.22 (2026-10-13), dan **pass status Q10–Q16** via register §13.23 (2026-10-13) — Q10/Q13/Q14/Q15/Q16 diformalkan sebagai SELESAI, **Q12 (`audit_logs.business_id`) tetap TERBUKA sebagai slice kode**. Q1–Q9 di tabel di bawah masih berstatus awal namun keputusannya sudah terwujud di register §13.14–§13.17 (§5).
 - **Basis:** audit `multi-business-tenant-audit.md` §14 + temuan tambahan pada 2026-10-10.
 - **Label:** **FAKTA**, **REKOMENDASI**, **ASUMSI**, **PERLU KEPUTUSAN**.
 - Dokumen terkait: `multi-business-backend-implementation-plan.md`, `multi-business-data-ownership-matrix.md`, `multi-business-security-test-plan.md`.
@@ -22,13 +22,13 @@
 | Q7 | Outlet existing = satu business | Satu business default | Fase 3 | PERLU KEPUTUSAN |
 | Q8 | Background job di shared hosting | Sinkron + scheduler per menit | Fase 7 | PERLU KEPUTUSAN |
 | Q9 | Data existing tanpa ownership jelas | Ke business default, ditandai | Fase 3 | PERLU KEPUTUSAN |
-| Q10 | Status modul DineIn | Tentukan lanjut/hapus | Fase 4 | PERLU KEPUTUSAN |
+| Q10 | Status modul DineIn | Hapus (modul sudah tidak ada) | — | SELESAI (§13.23 — modul dihapus; migrasi drop shim) |
 | Q11 | `client_uuid` unik | Global (keputusan §13.22) | — | SELESAI (§13.22 — global unique, docs-only) |
-| Q12 | `audit_logs.business_id` | Tambahkan | Fase 2 | PERLU KEPUTUSAN |
-| Q13 | Global scope vs eksplisit | Eksplisit dulu, global scope selektif | Fase 2 | PERLU KEPUTUSAN |
-| Q14 | Strategi role Spatie teams vs membership | Membership dulu | Fase 1-2 | PERLU KEPUTUSAN |
-| Q15 | Penanganan `warehouses.outlet_id IS NULL` | Business default + audit | Fase 3 | PERLU KEPUTUSAN |
-| Q16 | Laporan lintas business (owner) | Boleh, hanya business miliknya | Fase 6 | PERLU KEPUTUSAN |
+| Q12 | `audit_logs.business_id` | Tambahkan (nullable) | Fase 2 | TERBUKA — slice kode (§13.23) |
+| Q13 | Global scope vs eksplisit | Eksplisit dulu, global scope selektif | Fase 2 | SELESAI (§13.23 — trait global scope selektif fail-closed + eksplisit) |
+| Q14 | Strategi role Spatie teams vs membership | Membership dulu | Fase 1-2 | SELESAI (§13.23 — membership, `teams=false`) |
+| Q15 | Penanganan `warehouses.outlet_id IS NULL` | Business default + audit | Fase 3 | SELESAI (§13.23 — outlet_id nullable + backfill PUSAT + audit read-only) |
+| Q16 | Laporan lintas business (owner) | Isolasi per business aktif; tanpa agregasi | Fase 6 | SELESAI (§13.23 — scoped via outlet access + business aktif) |
 
 ---
 
@@ -95,9 +95,9 @@
 - **Blocking:** Fase 3.
 
 ### Q10 — Status modul DineIn
-- **FAKTA.** Controller/page DineIn dihapus sebagian di working tree; migration & model masih ada.
-- **REKOMENDASI.** Putuskan sebelum Fase 4: lanjutkan (desain ownership) atau hapus (bersihkan migration pasca-deploy).
-- **Blocking:** Fase 4.
+- **FAKTA.** Modul DineIn **sudah dihapus penuh** dari kode (model, service, route, page, dan create-migration tidak ada lagi). Sisa satu berkas: `database/migrations/2026_10_11_000001_drop_dine_in_tables.php` — `dropIfExists` untuk `dine_order_items`/`dine_orders`/`dine_tables`/`dine_areas`, no-op pada install fresh, membersihkan install lama yang masih punya tabel.
+- **KEPUTUSAN (2026-10-13):** **hapus modul** — register §13.23. Migrasi drop dipertahankan sebagai **shim idempotent** sampai semua install ter-deploy; penghapusan berkas **opsional pasca-deploy** (nilai rendah, aman bila ditahan).
+- **Blocking:** —
 
 ### Q11 — `client_uuid` unik
 - **FAKTA.** Sudah **global unique** di DB (`2026_09_10_000001:12`); lookup idempotency business-scoped (`PosApiController.php:743,878`).
@@ -105,24 +105,29 @@
 - **Blocking:** —
 
 ### Q12 — `audit_logs.business_id`
-- **REKOMENDASI.** Tambahkan `business_id` (nullable saat transisi).
+- **FAKTA.** Tabel `audit_logs` (`2026_05_02_120000`) **tidak** punya `business_id`; `AuditLogService::log()` menyimpan `user_id` + `module`/`auditable*` tetapi bukan business. Tidak ada scoping per business pada log audit.
+- **KEPUTUSAN (2026-10-13):** **TERBUKA — slice kode** (register §13.23, blocking Fase 2): tambah `business_id` **nullable** + index, stamp dari `BusinessContext` saat flag ON di `AuditLogService` (server-side, bukan payload), backfill konservatif (log lama tetap `NULL`), dan resolusi ownership eksplisit (lihat §13.23 untuk catatan ambiguitas: audit_logs tidak punya `outlet_id`/`warehouse_id`).
 - **Blocking:** Fase 2.
 
 ### Q13 — Global scope vs scoping eksplisit
-- **REKOMENDASI.** Eksplisit dulu; global scope selektif setelah context terbukti selalu ada (termasuk command/API).
-- **Blocking:** Fase 2.
+- **FAKTA.** Terwujud sebagai **global scope selektif**: trait `App\Models\Concerns\BelongsToBusiness` memasang global scope `business` yang **fail-closed** (flag ON tanpa context terverifikasi → `1 = 0`) + auto-stamp `business_id` di `creating` dari **server context**; master data business-owned memakai trait ini. Model finansial (`Payable`/`Receivable`) memakai global scope khusus (`FinancialOwnershipScope`); sisanya scoping **eksplisit** (mis. `scopeForBusiness`, `OutletAccessService::restrictToActiveBusiness`).
+- **KEPUTUSAN (2026-10-13):** **SELESAI** — strategi = eksplisit + global scope **selektif via trait** (bukan global scope serampangan), dengan `withoutGlobalScope` sebagai opt-out terkontrol. Register §13.23.
+- **Blocking:** —
 
 ### Q14 — Spatie teams vs membership
-- **REKOMENDASI.** Membership role dulu; evaluasi teams jika perlu permission custom per business.
-- **Blocking:** Fase 1-2.
+- **FAKTA.** `config/permission.php` → `'teams' => false`. Per-business role via **membership** (`BusinessUser` + middleware `business.role`/`EnforceBusinessRoleCapability` + `BusinessRoleCapabilities`).
+- **KEPUTUSAN (2026-10-13):** **SELESAI** — membership dulu; Spatie teams tidak diaktifkan. Register §13.23.
+- **Blocking:** —
 
 ### Q15 — `warehouses.outlet_id IS NULL`
-- **REKOMENDASI.** Business default + ditandai audit; jangan hapus tanpa keputusan.
-- **Blocking:** Fase 3.
+- **FAKTA.** `outlet_id` **nullable** (`2026_09_14_000002`) + migrasi mem-backfill `PUSAT` ke outlet. Command read-only: `outlet:audit` (menghitung "warehouses without outlet", `--strict`) dan `outlet:legacy-audit` (klasifikasi record tanpa gudang; `--backfill` hanya memetakan mutasi stok yang unambiguous). `OutletAccessService` menangani `outlet_id` NULL lewat legacy single-outlet bypass terkontrol.
+- **KEPUTUSAN (2026-10-13):** **SELESAI** — `outlet_id` NULL = record legacy yang **ditandai lewat audit**, tidak dihapus/dipaksa; `PUSAT` di-backfill ke outlet. Register §13.23.
+- **Blocking:** —
 
 ### Q16 — Laporan lintas business
-- **REKOMENDASI.** Owner boleh menggabungkan **hanya** business miliknya; manager hanya business aktif.
-- **Blocking:** Fase 6.
+- **FAKTA.** Report controller (`app/Http/Controllers/Reports/{Sales,Profit,AdvancedSalesInsights}`) men-scope query lewat `OutletAccessService::warehousesFor()` yang memakai `restrictToActiveBusiness()` + active outlet. **Super-admin pun dibatasi ke business aktif.** Tidak ada agregasi lintas business.
+- **KEPUTUSAN (2026-10-13):** **SELESAI** — isolasi per business aktif sudah ditegakkan (selaras "manager hanya business aktif"). **Agregasi lintas business tidak disediakan**; bila owner kelak butuh menggabungkan business miliknya, itu fitur terpisah dengan kontrol eksplisit. Register §13.23.
+- **Blocking:** —
 
 ---
 
