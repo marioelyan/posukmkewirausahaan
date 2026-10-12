@@ -137,7 +137,7 @@ Format kolom sesuai permintaan. `QS` = status: `verified` | `needs clarification
 | **Q4.d** | `customers.member_code`, `customer_vouchers.code` | Unique global (member_code nullable) | `2026_05_05_000102:13`, `2026_05_05_000104:14` | Tabrakan kode antar business | A) composite per-business/outlet | A | Ya | Q4, Q7 | Sedang | Product owner | Composite index | `blocked` |
 | **Q4.e** | `customer_segments.slug` | Unique global; **tidak ada ownership** (`business_id`) | `2026_05_06_000110:14`, `CustomerSegmentController:205` | Segmen tanpa tenant → kebocoran | A) tentukan ownership dulu; B) biarkan global | Tentukan ownership sebelum index | Ya | Q4 (+ ownership segmen) | Sedang | Product owner | Ownership segmen jelas | `blocked` |
 | **Q4.f** | `document_number` (PO/GR/transfer/supplier_return/sales_return/stock_opname) | Unique global; nomor di-generate dari query tanpa scope business | `2026_05_04_000001:14`, `2026_05_04_000002:15`, `2026_06_22_000006:15`, `2026_05_05_000001:16`, `2026_05_02_000000:13`, `2026_05_01_231134:16` | Nomor lintas business (info minor), atau tabrakan bila di-scope tanpa index baru | A) biarkan global (aman tabrakan); B) per-business + composite | A (default), B hanya bila perlu sekuens terpisah | Ya | Q4, Q11 | Sedang | Product owner | Tidak ada tabrakan; sekuens sesuai kebijakan | `ready for approval` |
-| **Q4.g** | `transactions.client_uuid` (open-decisions Q11) | Lookup global; unique nullable | `2026_09_10_000001:12`, `PosApiController:743,878` | Idempotensi offline bisa tabrakan antar business | A) `(business_id, client_uuid)`; B) global | A bila multi-business aktif | Ya | Q4 | Sedang | Product owner | Sinkronisasi offline idempoten per business | `blocked` |
+| **Q4.g** | `transactions.client_uuid` (open-decisions Q11) | **Sudah global unique** (`uuid()->nullable()->unique()`); lookup idempotency business-scoped via gudang (`findSyncedTransaction`) | `2026_09_10_000001:12`, `PosApiController:743,878` | Idempotensi offline bisa tabrakan antar business | A) `(business_id, client_uuid)`; B) **global** | **B (global) — §13.22** | Ya | Q4 | Rendah | Product owner | Race double-insert tertutup (test); lookup tak bocor lintas tenant | `resolved (§13.22)` |
 | **Q4.h** | `settings(key, outlet_id)` | Unique komposit; tanpa `business_id` | `2026_09_14_000004:17-18` | Dua business tak punya default global terpisah | Lihat Q5 | Menunggu Q5 | Ya | Q5 | Sedang | Product owner | Unique sesuai resolusi Q5 | `blocked` |
 
 > **Catatan Q4:** menurunkan scope (global → per-business) **melemahkan** constraint, sehingga tidak menciptakan duplikat baru. Risiko sesungguhnya: `business_id` **NULL** pada composite unique (MySQL memperlakukan NULL distinct) → baris ber-`business_id` NULL bisa duplikat. Karena itu **backfill non-null wajib mendahului** composite index.
@@ -181,7 +181,7 @@ Q2 (owner vs super-admin)
  │     └── Q14 (model otorisasi: membership vs teams)
  └── X3 (audit_logs.business_id)
 
-Q4 ⇄ Q11 (client_uuid)  [keduanya soal scope constraint]
+Q4 ⇄ Q11 (client_uuid)  [keduanya soal scope constraint — Q11 DITUTUP global §13.22]
 Q5 ⇄ Q8 (job/scheduler perlu context)
 ```
 
@@ -433,7 +433,7 @@ php artisan test --compact        (seluruh suite)
 | **UNIQUE-08** (Q4.8) | **B — Per-business** | `(business_id, code)` | **Butuh kolom `business_id` baru** di `customer_vouchers` (saat ini tidak ada) + backfill. | Tinggi | FIN-01 + approval schema terpisah |
 | **UNIQUE-09** (Q4.9) | **B — Per-business** | `(business_id, slug)` | **Butuh kolom `business_id` baru** di `customer_segments` (saat ini tidak ada) + backfill. | Tinggi | FIN-01 + approval schema terpisah |
 | **UNIQUE-10** (Q4.10) | **B — Per-business** (semua jenis dokumen) | `(business_id, document_number)` / `(business_id, code)` per tabel | Ganti index unik global PO/GR/SR/ST; `sales_returns.code`, `stock_opnames.code`. **`payables.document_number` saat ini hanya index (tidak unik)**, `transactions.invoice` tidak unik → perlu keputusan penambahan constraint. Generator nomor harus di-scope per business. **DIIMPLEMENTASI §13.20** (2026-10-13); sisa constraint `payables.document_number` (composite per business) & `transactions.invoice` (**global** unique) **DIIMPLEMENTASI §13.21** (2026-10-13). | Tinggi: race/sequencing nomor per business + tabel non-unik. | FIN-01; desain generator |
-| **UNIQUE-11** (Q4.11) | **Prinsip**: terapkan per-business untuk identifier milik business; **jangan ubah kandidat tambahan tanpa evidence & approval terpisah.** | — | Belum ada perubahan. Kandidat spesifik (mis. `transactions.client_uuid` = open-decisions **Q11**, `customer_campaigns.context_key`) menunggu evidence + approval terpisah. | Sedang | evidence + approval terpisah |
+| **UNIQUE-11** (Q4.11) | **B — global unique** (idempotency token, bukan identifier business-owned) | — | **DITUTUSKAN §13.22** (2026-10-13): `transactions.client_uuid` sudah global unique + resolusi race + test; `customer_campaigns.context_key` global unique dengan namespacing per business. Tidak ada perubahan kode. | Sedang | evidence + approval |
 
 **Catatan UNIQUE (FAKTA):** pada MySQL, composite `(business_id, X)` menganggap `business_id IS NULL` sebagai distinct → **backfill non-null wajib mendahului** composite index.
 
@@ -472,7 +472,7 @@ php artisan test --compact        (seluruh suite)
 2. **SCHED-01 vs Q8 (open-decisions):** opsi "queue per business" berpotensi **bertentangan** dengan batasan open-decisions **Q8** (shared hosting tanpa queue worker/Redis). Perlu klarifikasi pada saat desain scheduler; tidak diselesaikan di sini.
 3. **UNIQUE-08 / UNIQUE-09:** `customer_vouchers` dan `customer_segments` **belum punya `business_id`** → B/C hanya dapat diimplementasikan setelah **approval schema terpisah**. *(— DISELESAIKAN §13.17: kolom `business_id` + swap composite unique, 2026-10-12.)*
 4. **UNIQUE-10:** `payables.document_number` (index, bukan unik) dan `transactions.invoice` (tidak unik) → penetapan constraint terpisah. *(Tabel dokumen PO/GR/SR/ST + `sales_returns.code` + `stock_opnames.code` — **DISELESAIKAN §13.20**; constraint `payables.document_number` = composite `(business_id, document_number)` dan `transactions.invoice` = **global** unique, bukan per-business, karena dibaca tanpa konteks business (PDF/share publik/portal) — **DISELESAIKAN §13.21**, 2026-10-13.)*
-5. **UNIQUE-11:** keputusan hanya berupa **prinsip**; kandidat spesifik (mis. `transactions.client_uuid` = open-decisions **Q11**, `customer_campaigns.context_key`) **menunggu evidence + approval terpisah**.
+5. **UNIQUE-11:** **DISELESAIKAN §13.22** (2026-10-13) — `transactions.client_uuid` **global unique** (sudah ada) & `customer_campaigns.context_key` global unique dengan namespacing per business. Tanpa perubahan kode.
 
 ### 13.7 Dampak test / acceptance (belum dijalankan)
 
@@ -571,7 +571,7 @@ php artisan test --compact        (seluruh suite)
   - Swap unique global → composite `(business_id, kolom)`: `products.barcode`/`sku`, `price_lists.slug`, `warehouses.code`, `outlets.code`, `customers.member_code`.
   - Migration `2026_10_12_000002_add_business_scoped_unique_indexes.php` — **data-guarded**: swap hanya bila kolom `business_id` tidak ada `NULL`, sehingga instalasi single-tenant legacy mempertahankan index global.
   - `TenantUnique` di-wire ke validasi web + API (products, warehouses, price_lists, outlets).
-  - UNIQUE-04 (`units.code`) tetap global; UNIQUE-08/09 (butuh kolom `business_id`) dan UNIQUE-11 tetap deferred (§13.6); UNIQUE-10 dituntaskan §13.20.
+  - UNIQUE-04 (`units.code`) tetap global; UNIQUE-08/09 (butuh kolom `business_id`) dituntaskan §13.17; UNIQUE-10 §13.20/§13.21; UNIQUE-11 ditutup global §13.22.
 - **SCHED (SCHED-01/02):**
   - `App\Support\Tenancy\BusinessTaskRunner` — enumerate active business, set context → execute → **selalu** clear (`finally`); operasi ringan inline (tanpa queue, sesuai batasan Q8 shared hosting).
   - Di-wire ke `reorder:generate`, `crm:sync-segments`, `crm:generate-reminders`; `customer_campaigns.context_key` di-namespace per business agar tidak bentrok lintas business (schema `business_id` campaigns/segments tetap deferred §13.6). Flag off = satu pass legacy tanpa konteks (tidak berubah).
@@ -582,7 +582,7 @@ php artisan test --compact        (seluruh suite)
 - **Phase-8-lite UI:**
   - Business switcher (`BusinessContextController::switch`, `BusinessSwitcher.jsx`, shared props `auth.currentBusiness`/`auth.businesses`) sudah ada. Residual yang ditutup: `HandleInertiaRequests` membagikan `auth.permissions` **per business** (role membership aktif) saat flag ON, agar gate UI sama dengan enforcement server. Super-admin & flag off memakai peta global legacy (tidak berubah).
 - **Test:** baru — `BusinessScopedUniquenessTest` (5), `SettingTenantScopeTest`, `StoreSettingsIsolationTest`, `BusinessSettingsBackfillTest`, `SchedulerTenantContextTest` (4 → 5 assertions), `AuthzBusinessRoleEnforcementTest` (5); plus perluasan `BusinessTenancyUiDemoTest` (3) dan penyesuaian fixture isolasi ke membership `manager`.
-- **Masih deferred (§13.6/§13.12/§13.13):** UNIQUE-11 (kandidat menunggu evidence), langkah swap index manual + eksekusi runbook produksi & backfill non-null (butuh read replica + approval), self-service owner signup, aktivasi flag & deployment. Sudah dituntaskan setelah slice ini: UNIQUE-08/09 + ownership CRM (§13.17), onboarding/bootstrap (§13.16), keputusan+UI Q6 admin-platform (§13.19), UNIQUE-10 dokumen (PO/GR/SR/ST + sales_returns/stock_opnames) (§13.20), dan sisa UNIQUE-10 `payables.document_number` + `transactions.invoice` (§13.21); runbook produksi tersedia sebagai DRAFT (§13.18).
+- **Masih deferred (§13.6/§13.12/§13.13):** langkah swap index manual + eksekusi runbook produksi & backfill non-null (butuh read replica + approval), self-service owner signup, aktivasi flag & deployment. Sudah dituntaskan setelah slice ini: UNIQUE-08/09 + ownership CRM (§13.17), onboarding/bootstrap (§13.16), keputusan+UI Q6 admin-platform (§13.19), UNIQUE-10 dokumen (PO/GR/SR/ST + sales_returns/stock_opnames) (§13.20), sisa UNIQUE-10 `payables.document_number` + `transactions.invoice` (§13.21), dan UNIQUE-11 (global, docs-only §13.22); runbook produksi tersedia sebagai DRAFT (§13.18).
 - **Batas keselamatan:** tidak ada migrasi/backfill pada data nyata, tidak ada aktivasi flag, tidak ada deployment. Semua perubahan inert saat `multi_business.enabled=false`.
 
 ### 13.15 Membership provisioning + demo readiness — 2026-10-12
@@ -614,20 +614,20 @@ php artisan test --compact        (seluruh suite)
   - Migration `2026_10_12_000003_add_business_scope_to_crm_blocks.php`:
     - `customer_vouchers.business_id` (nullable FK) + swap `code` unique global → composite `(business_id, code)` (UNIQUE-08).
     - `customer_segments.business_id` (nullable FK) + swap `slug` unique global → composite `(business_id, slug)` (UNIQUE-09).
-    - `customer_campaigns.business_id` (nullable FK) — **hanya ownership**; `context_key` tetap unique global (UNIQUE-11: kandidat menunggu evidence/approval terpisah).
+    - `customer_campaigns.business_id` (nullable FK) — **hanya ownership**; `context_key` tetap unique global (UNIQUE-11: ditutup **global** §13.22 — key di-namespace per business agar tak bentrok).
     - Swap **data-guarded** (sama seperti `2026_10_12_000002`): hanya dieksekusi saat nol baris `NULL`; instalasi legacy menyimpan index global sampai backfill + langkah swap manual dalam runbook produksi (konsekuensi terakui §"Catatan UNIQUE").
   - Model `CustomerSegment`, `CustomerCampaign`, `CustomerVoucher`: `BelongsToBusiness` + `business_id` fillable → read/`create` tenant-scoped saat flag ON + konteks aktif; inert saat flag off.
   - `CustomerVoucherController`: rule `Rule::unique(...)` → `TenantUnique::for(...)` agar validasi tidak membocorkan kode voucher business lain (konsisten ADR-03).
   - `BusinessBackfillCommand` + `BusinessDataScoper`: tabel `customer_segments`/`customer_campaigns`/`customer_vouchers` masuk daftar business-owned; command kini melewati tabel tanpa kolom `business_id` (aman di DB lama).
   - **Verifikasi kepemilikan** (`TenantOwnership`) **tidak diubah**: blok CRM tetap diverifikasi via `outlet_id` (sesuai ownership matrix), sementara `business_id` baru dipakai untuk scope read/create (`BelongsToBusiness`) dan index unique — baris orphan (outlet null) tetap fail closed.
 - **Test:** `BusinessScopedUniquenessTest` +5 (slug segmen & kode voucher: boleh lintas business, tolak duplikat dalam business — level DB; campaign mewarisi `business_id` dari konteks). `BusinessBackfillCommandTest` +1 (backfill men-stempel segmen & voucher). Fixture isolation test diperbarui: campaign diberi `business_id` eksplisit (perilaku produksi); verifikasi post-command memakai `withoutGlobalScope('business')` (konteks memang sudah di-clear).
-- **Masih deferred:** UNIQUE-11 (kandidat lain menunggu evidence, mis. `transactions.client_uuid`). UNIQUE-10 (nomor dokumen PO/GR/SR/ST) dan constraint `payables.document_number`/`transactions.invoice` menyusul di §13.20 dan §13.21.
+- **Masih deferred:** — (UNIQUE-10 dituntaskan §13.20/§13.21; UNIQUE-11 ditutup global §13.22).
 
 ### 13.18 Runbook backfill produksi — 2026-10-12
 
 - **Baru:** `docs/architecture/multi-business-backfill-production-runbook.md` — runbook bertahap untuk eksekusi produksi: Fase 0 audit read-only (query NULL per tabel + settings tenant + download perintah audit) → Fase 1 deploy & migrasi (additive/guarded) → Fase 2 planning dry-run (tiga command) → Fase 3 gate approval eksplisit (owner + DBA) → Fase 4 apply bertahap (backfill → settings → memberships, dual confirmation) → Fase 5 swap index manual ke composite (DDL MySQL per tabel, `units.code` dikecualikan) → Fase 6 verifikasi (nol NULL, duplikat per scope, smoke staging flag ON) → Fase 7 (deferred) aktivasi flag. Termasuk tabel rollback per fase + checklist approval.
 - **Status:** **DRAFT, belum dieksekusi.** Tidak ada data yang diubah. Menunggu (a) read replica/restored copy terotorisasi, (b) approval eksplisit owner + DBA. Dokumen ini mengunci referensi "runbook produksi" pada §13.15/§13.17.
-- **Batas:** flag tetap `false`; demo seeder dilarang di produksi; UNIQUE-11 dan UI Q6 di luar lingkup (UNIQUE-10 dituntaskan §13.20 + §13.21 dengan swap kondisional data-guarded, jadi tidak ada DDL manual tambahan untuk tabel dokumen/payables/transactions).
+- **Batas:** flag tetap `false`; demo seeder dilarang di produksi; UI Q6 di luar lingkup; UNIQUE-10 (§13.20/§13.21) dan UNIQUE-11 (§13.22, global docs-only) sudah ditutup, jadi tidak ada DDL manual tambahan untuk tabel dokumen/payables/transactions.
 
 ### 13.19 Q6 (keputusan A) — pembuatan business oleh platform admin — 2026-10-13
 
@@ -668,3 +668,15 @@ php artisan test --compact        (seluruh suite)
 - **Test:** `tests/Feature/Business/PayableAndTransactionUniquenessTest.php` +5 (11 assertions): invoice global unique di DB fresh (flag OFF); invoice tetap global lintas business saat flag ON (bukan per-business); `payables.document_number` per business (boleh lintas business, tolak dalam business yang sama); duplikat `business_id NULL` tetap diizinkan saat flag OFF (bukti composite tidak mengekang legacy); HTTP `payables.store` menolak duplikat via validasi field, bukan 500. Suite penuh **737 passed (3116 assertions)**.
 - **Analisis dampak:** audit `transactions.invoice` pada seeder/test — hanya `SampleDataSeeder` yang memakai `TRX-<random8>`; tidak ada test membuat dua `Transaction` dengan invoice sama dalam satu metode (`INV-PORTAL-PAY` baris 50/61 ada di dua tabel berbeda: `transactions` vs `receivables`). Tidak ada regresi suite.
 - **Batas:** flag tetap `false`; tidak ada data produksi yang disentuh; eksekusi runbook & swap di produksi tetap deferred. PR disiapkan ke `development`.
+
+### 13.22 UNIQUE-11 ditutup — idempotency token global (docs-only) — 2026-10-13
+
+- **Keputusan owner:** **B — global unique** (bukan komposite per-business). `client_uuid` adalah **token idempotency acak yang disuplai klien**, bukan identifier milik business; per-business justru menuntut kolom `business_id` baru di `transactions` (ownership tetap via warehouse) + backfill + stempel jalur checkout — biaya besar untuk manfaat praktis nol.
+- **Bukti (menggeser framing awal yang mengira ada gap):**
+  - `transactions.client_uuid` **sudah global unique** di DB (`2026_09_10_000001:12`: `uuid('client_uuid')->nullable()->unique()`).
+  - Race double-insert sudah ditangani: `syncOne` menangkap `UniqueConstraintViolationException` → resolve `duplicate`/`conflict` via fingerprint; test `PosTransactionConcurrencyTest` (`test_unique_violation_on_client_uuid_resolves_as_duplicate`, `test_client_uuid_unique_index_blocks_double_insert`).
+  - Lookup idempotency sudah **business-scoped** (via gudang) sehingga tidak membocorkan transaksi tenant lain; test `AuthorizationBoundaryIsolationTest::test_offline_sync_idempotency_lookup_is_business_scoped`.
+  - `customer_campaigns.context_key` global unique, tetapi **di-namespace per business** (`prefix-{businessId}-{date}` di `CrmAutomationService::scheduledContextKey`); key invoice-share memakai row id global (`invoice-share-transaction-{id}` / `-receivable-{id}`) → tak mungkin bentrok lintas business.
+- **Dampak:** **tidak ada perubahan kode/migrasi**. Satu-satunya konsekuensi teoretis: dua business yang kebetulan memakai `client_uuid` identik (praktis mustahil untuk UUID asli) → insert kedua gagal. Diterima; konsisten dengan keputusan `transactions.invoice` (token acak = global).
+- **Catatan lanjutan:** bila kelak `transactions.business_id` ditambahkan (mis. untuk Q12 `audit_logs.business_id`/Q13 scoping), konversi `client_uuid` ke composite `(business_id, client_uuid)` menjadi sepele.
+- **Batas:** flag tetap `false`; tanpa mutasi data; dokumen saja. PR disiapkan ke `development`.

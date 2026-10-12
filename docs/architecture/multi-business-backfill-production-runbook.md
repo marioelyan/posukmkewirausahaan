@@ -14,7 +14,7 @@
 | Q7 | Seluruh instalasi existing = **satu business** (banyak branch) | satu `Business` default milik semua data legacy |
 | Q5 / ADR-04 C | Settings: resolusi `outlet → business → global`; `PLATFORM_KEYS` tetap global | `business:settings-backfill` |
 | AUTH-01/02/03 | Membership dari akses outlet; `owner`/`manager`/`staff`; super-admin **tanpa** membership (jalur platform) | `business:membership-backfill` |
-| Q4 / UNIQUE | Identifier milik business → composite `(business_id, X)`; `units.code` global; `transactions.invoice` **global** (dibaca tanpa konteks business); UNIQUE-10 selesai (§13.20 + §13.21), hanya UNIQUE-11 yang deferred | swap index manual §8 |
+| Q4 / UNIQUE | Identifier milik business → composite `(business_id, X)`; `units.code` global; `transactions.invoice` **global** (dibaca tanpa konteks business); UNIQUE-10 selesai (§13.20 + §13.21); UNIQUE-11 ditutup **global** (docs-only, §13.22) | swap index manual §8 |
 | FIN-01 | Apply **wajib** didahului audit read-only + dual confirmation | gate §13 |
 
 ## 2. Pra-syarat infrastruktur & approval
@@ -304,4 +304,4 @@ SELECT COUNT(*) FROM business_user; -- bandingkan dengan jumlah akses outlet pem
 
 - Dokumen ini **tidak** mengubah data apa pun; hanya panduan yang menunggu approval.
 - Flag `multi_business.enabled` tetap `false` di produksi sampai keputusan terpisah.
-- **Bukan bagian runbook ini:** demo seeder di produksi (dilarang), UI pembuatan business tambahan (Q6), UNIQUE-11, dan perubahan `TenantOwnership` (verifikasi kepemilikan tetap via outlet, §13.17).
+- **Bukan bagian runbook ini:** demo seeder di produksi (dilarang), UI pembuatan business tambahan (Q6), dan perubahan `TenantOwnership` (verifikasi kepemilikan tetap via outlet, §13.17). UNIQUE-11 sudah ditutup **global** (docs-only, §13.22) sehingga tidak menghasilkan langkah DDL apa pun di runbook ini.
