@@ -169,6 +169,7 @@ After seeding, a default `PUSAT` warehouse is created and existing product stock
 - Config: `docs/configuration.md`
 - Feature index: `docs/feature-index.md`
 - Manual QA checklist (QRIS, ESC/POS, offline sync): `docs/testing-manual.md`
+- Multi-business staging/runbook: `docs/architecture/multi-business-backfill-production-runbook.md` + `docs/architecture/multi-business-blocker-review-and-decision-register.md`
 
 ## Test Conventions
 
