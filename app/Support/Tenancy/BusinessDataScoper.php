@@ -30,6 +30,9 @@ class BusinessDataScoper
         'suppliers',
         'units',
         'price_lists',
+        'customer_segments',
+        'customer_campaigns',
+        'customer_vouchers',
     ];
 
     /**

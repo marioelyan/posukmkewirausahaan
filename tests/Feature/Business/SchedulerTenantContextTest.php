@@ -93,8 +93,10 @@ class SchedulerTenantContextTest extends TestCase
         $keyA = 'overdue-'.$businessA->id.'-'.$today;
         $keyB = 'overdue-'.$businessB->id.'-'.$today;
 
-        $campaignA = CustomerCampaign::where('context_key', $keyA)->first();
-        $campaignB = CustomerCampaign::where('context_key', $keyB)->first();
+        // Context is cleared once the run is finished, so these verification
+        // reads must bypass the fail-closed business scope on purpose.
+        $campaignA = CustomerCampaign::withoutGlobalScope('business')->where('context_key', $keyA)->first();
+        $campaignB = CustomerCampaign::withoutGlobalScope('business')->where('context_key', $keyB)->first();
 
         $this->assertNotNull($campaignA);
         $this->assertNotNull($campaignB);

@@ -32,6 +32,9 @@ class BusinessBackfillCommand extends Command
         'suppliers',
         'units',
         'price_lists',
+        'customer_segments',
+        'customer_campaigns',
+        'customer_vouchers',
     ];
 
     public function handle(): int
@@ -147,6 +150,10 @@ class BusinessBackfillCommand extends Command
                 ->update(['business_id' => $target->id]);
 
             foreach ($this->businessOwned as $table) {
+                if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'business_id')) {
+                    continue;
+                }
+
                 DB::table($table)
                     ->whereNull('business_id')
                     ->update(['business_id' => $target->id]);
@@ -176,6 +183,10 @@ class BusinessBackfillCommand extends Command
         $plan = [];
 
         foreach (array_merge($this->businessOwned, ['outlets', 'warehouses']) as $table) {
+            if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'business_id')) {
+                continue;
+            }
+
             $query = DB::table($table);
             $pending = (clone $query)->whereNull('business_id')->count();
             $already = (clone $query)->whereNotNull('business_id')->count();

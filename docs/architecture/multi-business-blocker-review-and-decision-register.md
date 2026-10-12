@@ -582,7 +582,7 @@ php artisan test --compact        (seluruh suite)
 - **Phase-8-lite UI:**
   - Business switcher (`BusinessContextController::switch`, `BusinessSwitcher.jsx`, shared props `auth.currentBusiness`/`auth.businesses`) sudah ada. Residual yang ditutup: `HandleInertiaRequests` membagikan `auth.permissions` **per business** (role membership aktif) saat flag ON, agar gate UI sama dengan enforcement server. Super-admin & flag off memakai peta global legacy (tidak berubah).
 - **Test:** baru — `BusinessScopedUniquenessTest` (5), `SettingTenantScopeTest`, `StoreSettingsIsolationTest`, `BusinessSettingsBackfillTest`, `SchedulerTenantContextTest` (4 → 5 assertions), `AuthzBusinessRoleEnforcementTest` (5); plus perluasan `BusinessTenancyUiDemoTest` (3) dan penyesuaian fixture isolasi ke membership `manager`.
-- **Masih deferred (§13.6/§13.12/§13.13):** UNIQUE-08/09/10/11 + schema `business_id` untuk `customer_campaigns`/`customer_segments`, runbook produksi + backfill non-null (butuh read replica + approval), Fase 8 penuh (onboarding/rollout, keputusan Q6), aktivasi flag & deployment.
+- **Masih deferred (§13.6/§13.12/§13.13):** UNIQUE-10 (nomor dokumen + generator), UNIQUE-11 (kandidat menunggu evidence), langkah swap index manual + runbook produksi & backfill non-null (butuh read replica + approval), Fase 8 penuh (onboarding/rollout, keputusan Q6), aktivasi flag & deployment. UNIQUE-08/09 + ownership `customer_campaigns`/`customer_segments`/`customer_vouchers` kini SELESAI (§13.17).
 - **Batas keselamatan:** tidak ada migrasi/backfill pada data nyata, tidak ada aktivasi flag, tidak ada deployment. Semua perubahan inert saat `multi_business.enabled=false`.
 
 ### 13.15 Membership provisioning + demo readiness — 2026-10-12
@@ -606,3 +606,19 @@ php artisan test --compact        (seluruh suite)
 - **Dampak data:** install baru dengan flag ON kini punya 1 business aktif yang memiliki outlet/warehouse/master-data hasil wizard; super-admin tetap jalur platform (AUTH-01, tanpa membership). Install existing tidak tersentuh — tetap lewat `business:backfill --create-default --apply` + `business:membership-backfill --apply`.
 - **Test:** `SetupWizardTest` +3 (`setup bootstraps default business when tenancy enabled`, `setup creates no business when tenancy disabled`, `index returns primary warehouse when tenancy enabled`). Total 20 setup test.
 - **Keputusan Q6 yang masih tersisa:** UI/rollout pembuatan business **tambahan** dan self-service owner signup — bukan bagian dari bootstrap ini (fase lanjut dengan kontrol abuse, menunggu keputusan Anda).
+
+### 13.17 UNIQUE-08/09 + CRM ownership — 2026-10-12
+
+- **Dibuka kembali:** §13.6 menandai UNIQUE-08/09 "deferred, butuh approval schema terpisah". Karena owner memutuskan menuntaskan residual UNIQUE, kolom `business_id` untuk blok CRM sekarang diimplementasikan (keputusan = approval schema tersebut).
+- **Baru:**
+  - Migration `2026_10_12_000003_add_business_scope_to_crm_blocks.php`:
+    - `customer_vouchers.business_id` (nullable FK) + swap `code` unique global → composite `(business_id, code)` (UNIQUE-08).
+    - `customer_segments.business_id` (nullable FK) + swap `slug` unique global → composite `(business_id, slug)` (UNIQUE-09).
+    - `customer_campaigns.business_id` (nullable FK) — **hanya ownership**; `context_key` tetap unique global (UNIQUE-11: kandidat menunggu evidence/approval terpisah).
+    - Swap **data-guarded** (sama seperti `2026_10_12_000002`): hanya dieksekusi saat nol baris `NULL`; instalasi legacy menyimpan index global sampai backfill + langkah swap manual dalam runbook produksi (konsekuensi terakui §"Catatan UNIQUE").
+  - Model `CustomerSegment`, `CustomerCampaign`, `CustomerVoucher`: `BelongsToBusiness` + `business_id` fillable → read/`create` tenant-scoped saat flag ON + konteks aktif; inert saat flag off.
+  - `CustomerVoucherController`: rule `Rule::unique(...)` → `TenantUnique::for(...)` agar validasi tidak membocorkan kode voucher business lain (konsisten ADR-03).
+  - `BusinessBackfillCommand` + `BusinessDataScoper`: tabel `customer_segments`/`customer_campaigns`/`customer_vouchers` masuk daftar business-owned; command kini melewati tabel tanpa kolom `business_id` (aman di DB lama).
+  - **Verifikasi kepemilikan** (`TenantOwnership`) **tidak diubah**: blok CRM tetap diverifikasi via `outlet_id` (sesuai ownership matrix), sementara `business_id` baru dipakai untuk scope read/create (`BelongsToBusiness`) dan index unique — baris orphan (outlet null) tetap fail closed.
+- **Test:** `BusinessScopedUniquenessTest` +5 (slug segmen & kode voucher: boleh lintas business, tolak duplikat dalam business — level DB; campaign mewarisi `business_id` dari konteks). `BusinessBackfillCommandTest` +1 (backfill men-stempel segmen & voucher). Fixture isolation test diperbarui: campaign diberi `business_id` eksplisit (perilaku produksi); verifikasi post-command memakai `withoutGlobalScope('business')` (konteks memang sudah di-clear).
+- **Masih deferred:** UNIQUE-10 (nomor dokumen PO/GR/SR/ST + generator nomor per business), UNIQUE-11 (kandidat lain menunggu evidence, mis. `transactions.client_uuid`), dan kandidat penambahan constraint non-unik (`payables.document_number`, `transactions.invoice`).

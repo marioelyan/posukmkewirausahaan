@@ -5,6 +5,8 @@ namespace Tests\Feature\Business;
 use App\Models\Business;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\CustomerSegment;
+use App\Models\CustomerVoucher;
 use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\Warehouse;
@@ -126,5 +128,29 @@ class BusinessBackfillCommandTest extends TestCase
 
         $this->assertSame(0, Business::count());
         $this->assertNull($outlet->fresh()->business_id);
+    }
+
+    public function test_apply_also_maps_crm_blocks(): void
+    {
+        $segment = CustomerSegment::create([
+            'name' => 'VIP',
+            'slug' => 'vip',
+            'type' => CustomerSegment::TYPE_MANUAL,
+        ]);
+        $voucher = CustomerVoucher::create([
+            'customer_id' => Customer::create(['name' => 'Budi', 'no_telp' => 6281, 'address' => 'Jl'])->id,
+            'code' => 'VCR-1',
+            'name' => 'Diskon',
+            'discount_type' => CustomerVoucher::TYPE_FIXED_AMOUNT,
+            'discount_value' => 5000,
+            'minimum_order' => 0,
+        ]);
+
+        $this->artisan('business:backfill --create-default --apply --confirm-legacy-ownership')->assertSuccessful();
+
+        $business = Business::first();
+        $this->assertNotNull($business);
+        $this->assertSame($business->id, $segment->fresh()->business_id);
+        $this->assertSame($business->id, $voucher->fresh()->business_id);
     }
 }

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CustomerCampaign extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     public const TYPE_PROMO_BROADCAST = 'promo_broadcast';
@@ -32,6 +34,7 @@ class CustomerCampaign extends Model
     protected $fillable = [
         'name',
         'outlet_id',
+        'business_id',
         'type',
         'status',
         'channel',
@@ -49,6 +52,7 @@ class CustomerCampaign extends Model
         'processed_at' => 'datetime',
         'created_by' => 'integer',
         'outlet_id' => 'integer',
+        'business_id' => 'integer',
     ];
 
     public function creator()

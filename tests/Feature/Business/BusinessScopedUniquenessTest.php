@@ -4,9 +4,14 @@ namespace Tests\Feature\Business;
 
 use App\Models\Business;
 use App\Models\Category;
+use App\Models\Customer;
+use App\Models\CustomerCampaign;
+use App\Models\CustomerSegment;
+use App\Models\CustomerVoucher;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\BusinessContext;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
@@ -149,6 +154,62 @@ class BusinessScopedUniquenessTest extends TestCase
             ->assertJsonValidationErrors('code');
     }
 
+    public function test_same_segment_slug_is_allowed_across_businesses_at_db_level(): void
+    {
+        $this->segmentFor($this->businessA, 'vip');
+        $this->segmentFor($this->businessB, 'vip');
+
+        $this->assertSame(2, DB::table('customer_segments')->where('slug', 'vip')->count());
+    }
+
+    public function test_duplicate_segment_slug_is_rejected_within_same_business_at_db_level(): void
+    {
+        $this->segmentFor($this->businessA, 'vip');
+
+        $this->expectException(QueryException::class);
+        $this->segmentFor($this->businessA, 'vip');
+    }
+
+    public function test_same_voucher_code_is_allowed_across_businesses_at_db_level(): void
+    {
+        $customerA = $this->customerFor($this->businessA);
+        $customerB = $this->customerFor($this->businessB);
+
+        $this->voucherFor($customerA, 'VCR-SAME');
+        $this->voucherFor($customerB, 'VCR-SAME');
+
+        $this->assertSame(2, DB::table('customer_vouchers')->where('code', 'VCR-SAME')->count());
+    }
+
+    public function test_duplicate_voucher_code_is_rejected_within_same_business_at_db_level(): void
+    {
+        $customerA = $this->customerFor($this->businessA);
+
+        $this->voucherFor($customerA, 'VCR-DUP');
+
+        $this->expectException(QueryException::class);
+        $this->voucherFor($customerA, 'VCR-DUP');
+    }
+
+    public function test_campaign_inherits_business_id_from_context(): void
+    {
+        $context = app(BusinessContext::class);
+        $context->setActive($this->businessA);
+
+        try {
+            $campaign = CustomerCampaign::create([
+                'name' => 'Broadcast',
+                'type' => CustomerCampaign::TYPE_PROMO_BROADCAST,
+                'status' => CustomerCampaign::STATUS_DRAFT,
+                'channel' => CustomerCampaign::CHANNEL_INTERNAL,
+            ]);
+
+            $this->assertSame($this->businessA->id, (int) $campaign->business_id);
+        } finally {
+            $context->clear();
+        }
+    }
+
     private function categoryFor(Business $business, string $name): Category
     {
         return Category::create([
@@ -172,6 +233,41 @@ class BusinessScopedUniquenessTest extends TestCase
             'sell_price' => 2000,
             'stock' => 5,
             'tax_rate' => 0,
+        ]);
+    }
+
+    private function segmentFor(Business $business, string $slug): CustomerSegment
+    {
+        return CustomerSegment::create([
+            'business_id' => $business->id,
+            'name' => ucfirst($slug),
+            'slug' => $slug,
+            'type' => CustomerSegment::TYPE_MANUAL,
+        ]);
+    }
+
+    private function customerFor(Business $business): Customer
+    {
+        return Customer::create([
+            'business_id' => $business->id,
+            'name' => 'Pelanggan',
+            'no_telp' => random_int(62000000000, 62999999999),
+            'address' => 'Jl. Contoh',
+        ]);
+    }
+
+    private function voucherFor(Customer $customer, string $code): CustomerVoucher
+    {
+        return CustomerVoucher::create([
+            'customer_id' => $customer->id,
+            'business_id' => $customer->business_id,
+            'code' => $code,
+            'name' => 'Voucher',
+            'discount_type' => CustomerVoucher::TYPE_FIXED_AMOUNT,
+            'discount_value' => 10000,
+            'minimum_order' => 0,
+            'is_active' => true,
+            'is_used' => false,
         ]);
     }
 }

@@ -390,6 +390,7 @@ class ReportIsolationTest extends TestCase
         $campaignA = CustomerCampaign::create([
             'name' => 'Campaign A',
             'outlet_id' => $this->outletA->id,
+            'business_id' => $this->businessA->id,
             'type' => CustomerCampaign::TYPE_PROMO_BROADCAST,
             'status' => CustomerCampaign::STATUS_READY,
             'channel' => CustomerCampaign::CHANNEL_WHATSAPP_LINK,
@@ -397,6 +398,7 @@ class ReportIsolationTest extends TestCase
         CustomerCampaign::create([
             'name' => 'Campaign B',
             'outlet_id' => $this->outletB->id,
+            'business_id' => $this->businessB->id,
             'type' => CustomerCampaign::TYPE_PROMO_BROADCAST,
             'status' => CustomerCampaign::STATUS_READY,
             'channel' => CustomerCampaign::CHANNEL_WHATSAPP_LINK,

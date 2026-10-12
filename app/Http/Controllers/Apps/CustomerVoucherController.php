@@ -8,6 +8,7 @@ use App\Models\CustomerVoucher;
 use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
 use App\Services\OutletAccessService;
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -150,7 +151,7 @@ class CustomerVoucherController extends Controller
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('customer_vouchers', 'code')->ignore($voucher?->id),
+                TenantUnique::for('customer_vouchers', 'code', $voucher?->id),
             ],
             'name' => ['required', 'string', 'max:255'],
             'discount_type' => ['required', Rule::in([

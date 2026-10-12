@@ -57,7 +57,8 @@
 - **REKOMENDASI.** Produk/kategori/customer/supplier/unit/price list terpisah penuh per business.
 - **Alternatif.** Katalog bersama + override per business (kompleks; menambah kebocoran).
 - **Dampak.** POS, impor/ekspor, laporan.
-- **Blocking:** Fase 4.
+- **Status (2026-10-12):** composite unique per-business SELESAI untuk `products` (barcode/sku), `price_lists` (slug), `warehouses`/`outlets` (code), `customers` (member_code), `customer_vouchers` (code) dan `customer_segments` (slug); `units.code` tetap global (UNIQUE-04). Masih deferred: UNIQUE-10 (nomor dokumen + generator per business) dan UNIQUE-11 (kandidat menunggu evidence). Detail: register §13.14/§13.17.
+- **Blocking:** Fase 4 (sisa UNIQUE-10 doc-number).
 
 ### Q5 — Setting global vs per business
 - **FAKTA.** `settings` sudah punya `outlet_id` (`2026_09_14_000004`). Key belum diklasifikasi.
