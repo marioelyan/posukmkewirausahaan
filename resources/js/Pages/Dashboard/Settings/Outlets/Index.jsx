@@ -8,8 +8,8 @@ import toast from "react-hot-toast";
 
 const emptyForm = { name: "", code: "", address: "", phone: "", email: "", is_active: true, is_sales_enabled: true, warehouse_name: "", warehouse_code: "" };
 
-export default function Outlets({ outlets = [] }) {
-    const { flash } = usePage().props;
+export default function Outlets({ outlets = [], activeBusiness = null }) {
+    const { flash, multiBusinessEnabled } = usePage().props;
     const { can } = useAuthorization();
     const [showForm, setShowForm] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -50,6 +50,7 @@ export default function Outlets({ outlets = [] }) {
                 <div>
                     <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white"><IconBuildingStore size={28} className="text-primary-500" />Outlet</h1>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Buat outlet penjualan dan gudang operasionalnya.</p>
+                    {multiBusinessEnabled && activeBusiness && <span className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-950/40 dark:text-primary-300"><IconBuildingStore size={14} />Business: {activeBusiness.name}</span>}
                 </div>
                 {can("outlets-create") && <button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setErrors({}); setShowForm(true); }} className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"><IconPlus size={18} />Tambah Outlet</button>}
             </div>

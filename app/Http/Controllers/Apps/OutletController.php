@@ -26,7 +26,10 @@ class OutletController extends Controller
         $outlets = $this->outletAccessService->accessibleOutlets(request()->user())
             ->load(['warehouses' => fn ($query) => $query->orderBy('sort_order')->orderBy('code')]);
 
-        return Inertia::render('Dashboard/Settings/Outlets/Index', ['outlets' => $outlets]);
+        return Inertia::render('Dashboard/Settings/Outlets/Index', [
+            'outlets' => $outlets,
+            'activeBusiness' => app(BusinessContext::class)->business()?->only(['id', 'name']),
+        ]);
     }
 
     public function store(StoreOutletRequest $request): RedirectResponse

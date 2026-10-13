@@ -41,6 +41,7 @@ Dokumentasi ini ditujukan untuk developer yang ingin setup, memahami alur modul,
 ### Settings & Admin
 - `docs/features/settings-payments.md` — payment gateways, bank accounts, store profile, target
 - `docs/features/rbac-users-roles.md` — users, roles, permissions
+- `docs/features/business-membership.md` — business, anggota business, akses outlet per business
 - `docs/features/audit-logs.md` — audit trail
 
 ### Reports & Documents

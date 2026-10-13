@@ -56,7 +56,7 @@ dan diorkestrasi oleh `DemoSeeder` (dijalankan lewat `php artisan seed:demo` ata
 | `role` | Spatie RoleMiddleware | Proteksi route berbasis role |
 | `role_or_permission` | Spatie RoleOrPermissionMiddleware | Proteksi route role ATAU permission |
 | `active_shift` | EnsureActiveCashierShift | Wajibkan shift aktif untuk operasi POS (cart, hold, checkout) |
-| `step_up` | EnsureRecentPasswordConfirmation | Minta konfirmasi password untuk aksi sensitif (role/user CRUD, payment settings, bank accounts, payment confirmation) |
+| `step_up` | EnsureRecentPasswordConfirmation | Minta konfirmasi password untuk aksi sensitif (role/user CRUD, payment settings, bank accounts, payment confirmation, business & anggota CRUD). Setelah konfirmasi berhasil, request asli diteruskan ulang otomatis oleh `resources/js/Utils/stepUpReplay.js` (tidak perlu mengulang aksi) |
 | `bot.guard` | EnsureBotGuard | Honeypot + timer anti-bot di form login/register/forgot-password |
 | `registration.enabled` | EnsurePublicRegistrationEnabled | Matikan registrasi publik (default: off) |
 | `setup.notinstalled` | EnsureNotInstalled | Redirect ke `/setup` saat app_setup_completed=false |

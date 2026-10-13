@@ -17,7 +17,7 @@ import { useTour } from "@/Hooks/useTour";
 import i18n from "@/i18n";
 
 export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
-    const { auth, storeProfile } = usePage().props;
+    const { auth, storeProfile, multiBusinessEnabled } = usePage().props;
     const { start: startTour, isActive: tourActive } = useTour("dashboard");
     const menuNavigation = Menu();
 
@@ -90,8 +90,8 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
 
             {/* Right Section */}
             <div className="flex items-center gap-2">
-                <BusinessSwitcher business={auth?.currentBusiness} businesses={auth?.businesses} />
-                <OutletSwitcher outlet={auth?.currentOutlet} outlets={auth?.outlets} locked={auth?.outletLocked} />
+                <BusinessSwitcher business={auth?.currentBusiness} businesses={auth?.businesses} locked={auth?.outletLocked} />
+                <OutletSwitcher outlet={auth?.currentOutlet} outlets={auth?.outlets} locked={auth?.outletLocked} showIndicator={multiBusinessEnabled} />
                 {/* Tour Guide */}
                 <button
                     onClick={startTour}

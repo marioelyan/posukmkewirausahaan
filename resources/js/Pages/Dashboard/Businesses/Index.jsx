@@ -7,24 +7,28 @@ import {
     IconPencil,
     IconPlayerPause,
     IconPlayerPlay,
+    IconUsers,
 } from "@tabler/icons-react";
 import Button from "@/Components/Dashboard/Button";
 import Input from "@/Components/Dashboard/Input";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
 
 function StatusBadge({ status }) {
+    const { t } = useTranslation();
+
     if (status === "active") {
         return (
             <span className="inline-flex items-center rounded-full bg-success-100 px-2.5 py-1 text-xs font-medium text-success-700 dark:bg-success-900/50 dark:text-success-400">
-                Aktif
+                {t("business.status.active")}
             </span>
         );
     }
     if (status === "suspended") {
         return (
             <span className="inline-flex items-center rounded-full bg-warning-100 px-2.5 py-1 text-xs font-medium text-warning-700 dark:bg-warning-900/50 dark:text-warning-400">
-                Ditangguhkan
+                {t("business.status.suspended")}
             </span>
         );
     }
@@ -36,6 +40,7 @@ function StatusBadge({ status }) {
 }
 
 export default function Index({ businesses, multiBusinessEnabled }) {
+    const { t } = useTranslation();
     const [editing, setEditing] = useState(null);
     const rename = useForm({ name: "" });
     const statusForm = useForm({ status: "active" });
@@ -50,37 +55,44 @@ export default function Index({ businesses, multiBusinessEnabled }) {
         rename.patch(route("businesses.update", editing.id), {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success("Nama business diperbarui");
+                toast.success(t("business.renameSuccess"));
                 setEditing(null);
             },
-            onError: () => toast.error("Gagal memperbarui nama"),
+            onError: () => toast.error(t("business.renameError")),
         });
     };
 
     const toggleStatus = (business) => {
         const next = business.status === "active" ? "suspended" : "active";
-        const verb = next === "suspended" ? "menangguhkan" : "mengaktifkan";
+        const isSuspend = next === "suspended";
 
         Swal.fire({
-            title: `${verb.charAt(0).toUpperCase() + verb.slice(1)} business?`,
-            text: `Business "${business.name}" akan ${verb}.`,
+            title: isSuspend
+                ? t("business.status.suspendTitle")
+                : t("business.status.activateTitle"),
+            text: isSuspend
+                ? t("business.status.suspendText", { name: business.name })
+                : t("business.status.activateText", { name: business.name }),
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: next === "suspended" ? "#f59e0b" : "#10b981",
+            confirmButtonColor: isSuspend ? "#f59e0b" : "#10b981",
             cancelButtonColor: "#64748b",
-            confirmButtonText: "Ya",
-            cancelButtonText: "Batal",
+            confirmButtonText: t("common.labels.yes"),
+            cancelButtonText: t("common.buttons.cancel"),
         }).then((result) => {
             if (result.isConfirmed) {
                 statusForm.setData("status", next);
                 statusForm.patch(route("businesses.updateStatus", business.id), {
                     preserveScroll: true,
                     onSuccess: () =>
-                        toast.success(`Business ${verb}`, { icon: "✅" }),
-                    onError: () =>
-                        toast.error(
-                            "Tidak dapat mengubah status business ini"
+                        toast.success(
+                            isSuspend
+                                ? t("business.status.suspendSuccess")
+                                : t("business.status.activateSuccess"),
+                            { icon: "✅" }
                         ),
+                    onError: () =>
+                        toast.error(t("business.status.updateError")),
                 });
             }
         });
@@ -88,7 +100,7 @@ export default function Index({ businesses, multiBusinessEnabled }) {
 
     return (
         <DashboardLayout>
-            <Head title="Business" />
+            <Head title={t("business.title")} />
 
             <div className="mb-6">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -98,12 +110,12 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                 size={28}
                                 className="text-primary-500"
                             />
-                            Business
+                            {t("business.title")}
                         </h1>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                             {multiBusinessEnabled
-                                ? "Kelola business multi-tenant Anda."
-                                : "Business dikelola platform admin. Fitur multi-business belum diaktifkan."}
+                                ? t("business.subtitleEnabled")
+                                : t("business.subtitleDisabled")}
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -112,7 +124,7 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                             href={route("businesses.create")}
                             icon={<IconCirclePlus size={18} />}
                             className="bg-primary-500 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-600"
-                            label="Tambah Business"
+                            label={t("business.add")}
                         />
                     </div>
                 </div>
@@ -124,22 +136,22 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                         <thead className="bg-slate-50 dark:bg-slate-800/60">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                    Business
+                                    {t("business.columns.business")}
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                    Status
+                                    {t("business.columns.status")}
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                    Owner
+                                    {t("business.columns.owner")}
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                    Outlet
+                                    {t("business.columns.outlets")}
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                    Member
+                                    {t("business.columns.members")}
                                 </th>
                                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                    Aksi
+                                    {t("business.columns.actions")}
                                 </th>
                             </tr>
                         </thead>
@@ -150,9 +162,15 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                     className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
                                 >
                                     <td className="px-4 py-3">
-                                        <div className="font-medium text-slate-800 dark:text-slate-200">
+                                        <Link
+                                            href={route(
+                                                "businesses.show",
+                                                business.id
+                                            )}
+                                            className="font-medium text-slate-800 hover:text-primary-500 dark:text-slate-200"
+                                        >
                                             {business.name}
-                                        </div>
+                                        </Link>
                                         <div className="text-xs text-slate-400">
                                             {business.slug}
                                         </div>
@@ -172,7 +190,7 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                             </div>
                                         ) : (
                                             <span className="text-xs text-slate-400">
-                                                Platform
+                                                {t("business.platform")}
                                             </span>
                                         )}
                                     </td>
@@ -184,6 +202,15 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                                type="edit"
+                                                href={route(
+                                                    "businesses.show",
+                                                    business.id
+                                                )}
+                                                icon={<IconUsers size={15} />}
+                                                className="bg-primary-100 text-primary-700 hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-300"
+                                            />
                                             <Button
                                                 type="button"
                                                 icon={<IconPencil size={15} />}
@@ -224,8 +251,7 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                         colSpan={6}
                                         className="px-4 py-12 text-center text-sm text-slate-400"
                                     >
-                                        Belum ada business. Klik "Tambah
-                                        Business" untuk membuat business pertama.
+                                        {t("business.empty")}
                                     </td>
                                 </tr>
                             )}
@@ -245,14 +271,14 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                 size={20}
                                 className="text-primary-500"
                             />
-                            Ubah Nama Business
+                            {t("business.renameTitle")}
                         </h3>
                         <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
                             {editing.slug}
                         </p>
                         <Input
                             type="text"
-                            label="Nama Business"
+                            label={t("business.nameLabel")}
                             value={rename.data.name}
                             onChange={(e) =>
                                 rename.setData("name", e.target.value)
@@ -264,7 +290,7 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                 type="button"
                                 onClick={() => setEditing(null)}
                                 className="bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200"
-                                label="Batal"
+                                label={t("common.buttons.cancel")}
                             />
                             <Button
                                 type="submit"
@@ -272,8 +298,8 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                                 className="bg-primary-500 text-white hover:bg-primary-600"
                                 label={
                                     rename.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"
+                                        ? t("business.saving")
+                                        : t("common.buttons.save")
                                 }
                             />
                         </div>

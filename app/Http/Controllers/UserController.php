@@ -6,7 +6,9 @@ use App\Http\Requests\UserRequest;
 use App\Models\Outlet;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\OutletAccessService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -15,7 +17,8 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller
 {
     public function __construct(
-        private readonly AuditLogService $auditLogService
+        private readonly AuditLogService $auditLogService,
+        private readonly OutletAccessService $outletAccessService,
     ) {}
 
     /**
@@ -52,7 +55,7 @@ class UserController extends Controller
         // render view
         return Inertia::render('Dashboard/Users/Create', [
             'roles' => $roles,
-            'outlets' => Outlet::active()->orderBy('name')->get(['id', 'code', 'name']),
+            'outlets' => $this->outletOptions(),
         ]);
     }
 
@@ -113,7 +116,7 @@ class UserController extends Controller
         return Inertia::render('Dashboard/Users/Edit', [
             'roles' => $roles,
             'user' => $user,
-            'outlets' => Outlet::active()->orderBy('name')->get(['id', 'code', 'name']),
+            'outlets' => $this->outletOptions(),
         ]);
     }
 
@@ -262,6 +265,26 @@ class UserController extends Controller
             'avatar_changed' => $avatarChanged,
             'roles' => array_values($roles),
         ];
+    }
+
+    /**
+     * Outlets the actor may actually assign, scoped the same way
+     * {@see UserRequest} validates `outlet_ids` — so the form never offers a
+     * choice the server would reject. Under tenancy this also keeps outlets
+     * from other businesses out of the list.
+     *
+     * @return Collection<int, array{id: int, code: string, name: string}>
+     */
+    private function outletOptions(): Collection
+    {
+        return collect($this->outletAccessService->accessibleOutlets(request()->user()))
+            ->map(fn (Outlet $outlet) => [
+                'id' => $outlet->id,
+                'code' => $outlet->code,
+                'name' => $outlet->name,
+            ])
+            ->sortBy('name')
+            ->values();
     }
 
     private function outletAssignments(UserRequest $request): array
