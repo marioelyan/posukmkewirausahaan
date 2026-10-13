@@ -218,8 +218,8 @@ export default function Show({
                                                     <p
                                                         className={`text-sm font-bold ${
                                                             history.points_delta >= 0
-                                                                ? "text-emerald-600 dark:text-emerald-300"
-                                                                : "text-rose-600 dark:text-rose-300"
+                                                                ? "text-success-600 dark:text-success-300"
+                                                                : "text-danger-600 dark:text-danger-300"
                                                         }`}
                                                     >
                                                         {history.points_delta >= 0
@@ -294,7 +294,7 @@ export default function Show({
                                             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
                                                 segment.source === "manual"
                                                     ? "bg-primary-100 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300"
-                                                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                                    : "bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-300"
                                             }`}
                                         >
                                             {segment.name}

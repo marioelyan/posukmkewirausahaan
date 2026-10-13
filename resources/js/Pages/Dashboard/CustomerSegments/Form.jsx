@@ -6,7 +6,7 @@ import { IconArrowLeft, IconDeviceFloppy, IconUsersGroup } from "@tabler/icons-r
 function InputError({ message }) {
     if (!message) return null;
 
-    return <p className="mt-1 text-xs text-rose-500">{message}</p>;
+    return <p className="mt-1 text-xs text-danger-500">{message}</p>;
 }
 
 export default function Form({ mode = "create", segment = null }) {

@@ -1,4 +1,4 @@
-# Multi-Business Data Ownership Matrix — Point of Sales
+# Multi-Business Data Ownership Matrix — KasirnyaKWU
 
 - **Status:** PERENCANAAN / DOKUMENTASI ONLY. Tidak ada perubahan skema, data, atau kode.
 - **Basis:** `database/migrations/` + model + controller yang diverifikasi pada 2026-10-10.

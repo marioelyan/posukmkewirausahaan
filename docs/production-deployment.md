@@ -1,6 +1,6 @@
 # Production Deployment
 
-Panduan menyiapkan dan menjalankan Point of Sales di produksi. Kembali ke indeks: `docs/README.md`.
+Panduan menyiapkan dan menjalankan KasirnyaKWU di produksi. Kembali ke indeks: `docs/README.md`.
 
 > **Ringkas.** Produksi = **shared hosting DewaBiz** (panel DirectAdmin Evo), `posukmkewirausahaan.web.id`,
 > **tanpa SSH/terminal**. Deploy = **manual per rilis** (build package → upload → artisan via cron).

@@ -63,7 +63,7 @@ export default function Payment({
 
         if (source.managed_by_environment) {
             return (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
+                <p className="text-xs text-warning-600 dark:text-warning-400">
                     Secret dikelola oleh environment dan tidak bisa diubah dari dashboard.
                 </p>
             );
@@ -106,7 +106,7 @@ export default function Payment({
                         membuka halaman transaksi.
                     </p>
                     {!canUpdatePaymentSettings && (
-                        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+                        <div className="mb-4 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-900/60 dark:bg-warning-950/30 dark:text-warning-300">
                             Anda hanya memiliki akses lihat. Perubahan payment settings memerlukan permission update dan konfirmasi password ulang.
                         </div>
                     )}
@@ -395,7 +395,7 @@ export default function Payment({
                             {webhookWarnings.map((warning) => (
                                 <div
                                     key={warning}
-                                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                    className="rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-900/60 dark:bg-warning-950/30 dark:text-warning-300"
                                 >
                                     {warning}
                                 </div>

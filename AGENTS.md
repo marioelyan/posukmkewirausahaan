@@ -1,4 +1,4 @@
-# AGENTS.md — Point of Sales
+# AGENTS.md — KasirnyaKWU
 
 Open-source POS system (200+ stars). Laravel 13 + Inertia 3.0 + React 19.
 

@@ -279,7 +279,7 @@ export default function Form({ mode = "create", member = null }) {
                                     ))}
                                 </select>
                                 {errors.loyalty_tier && (
-                                    <p className="mt-1 text-xs text-rose-500">
+                                    <p className="mt-1 text-xs text-danger-500">
                                         {errors.loyalty_tier}
                                     </p>
                                 )}
@@ -315,7 +315,7 @@ export default function Form({ mode = "create", member = null }) {
                                     ))}
                                 </select>
                                 {errors.province_id && (
-                                    <p className="mt-1 text-xs text-rose-500">
+                                    <p className="mt-1 text-xs text-danger-500">
                                         {errors.province_id}
                                     </p>
                                 )}
@@ -341,7 +341,7 @@ export default function Form({ mode = "create", member = null }) {
                                     ))}
                                 </select>
                                 {errors.regency_id && (
-                                    <p className="mt-1 text-xs text-rose-500">
+                                    <p className="mt-1 text-xs text-danger-500">
                                         {errors.regency_id}
                                     </p>
                                 )}
@@ -369,7 +369,7 @@ export default function Form({ mode = "create", member = null }) {
                                     ))}
                                 </select>
                                 {errors.district_id && (
-                                    <p className="mt-1 text-xs text-rose-500">
+                                    <p className="mt-1 text-xs text-danger-500">
                                         {errors.district_id}
                                     </p>
                                 )}
@@ -395,7 +395,7 @@ export default function Form({ mode = "create", member = null }) {
                                     ))}
                                 </select>
                                 {errors.village_id && (
-                                    <p className="mt-1 text-xs text-rose-500">
+                                    <p className="mt-1 text-xs text-danger-500">
                                         {errors.village_id}
                                     </p>
                                 )}

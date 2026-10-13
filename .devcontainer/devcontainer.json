@@ -1,5 +1,5 @@
 {
-  "name": "Dikasir POS - Laravel 13 + React 19",
+  "name": "KasirnyaKWU - Laravel 13 + React 19",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",

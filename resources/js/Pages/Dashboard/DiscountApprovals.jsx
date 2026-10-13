@@ -21,7 +21,7 @@ export default function DiscountApprovals({ pendingTransactions }) {
             <div className="space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <IconAlertCircle size={28} className="text-amber-500" />
+                        <IconAlertCircle size={28} className="text-warning-600 dark:text-warning-400" />
                         Approval Diskon
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">

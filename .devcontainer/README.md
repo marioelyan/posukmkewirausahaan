@@ -1,6 +1,6 @@
 # Dev Container
 
-Lingkungan dev lengkap untuk Dikasir POS: **PHP 8.3 + Composer**, **Node 24**, dan **MySQL 8**.
+Lingkungan dev lengkap untuk KasirnyaKWU: **PHP 8.3 + Composer**, **Node 24**, dan **MySQL 8**.
 
 - `devcontainer.json` - definisi environment (extensions, ports, post-create).
 - `docker-compose.yml` - service `app` (PHP) + `db` (MySQL 8, db `point_of_sales`).

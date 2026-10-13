@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-cache-v2';
+const CACHE_NAME = 'kasirnyakwu-cache-v1';
 const MASTER_API_PATTERNS = ['/products', '/customers', '/pricing', '/categories', '/warehouses'];
 
 self.addEventListener('install', (event) => {

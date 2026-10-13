@@ -1,5 +1,6 @@
 import { Head } from "@inertiajs/react";
 import PublicLayout from "@/Layouts/PublicLayout";
+import { BRAND } from "@/config/brand";
 import {
     IconShoppingCart,
     IconBuildingWarehouse,
@@ -20,7 +21,7 @@ const modules = [
     {
         icon: IconShoppingCart,
         title: "POS & Transaksi",
-        desc: "Inti dari Dikasir — kasir yang cepat, fleksibel, dan bisa diandalkan setiap hari.",
+        desc: `Inti dari ${BRAND.name} — kasir yang cepat, fleksibel, dan bisa diandalkan setiap hari.`,
         screenshot: "/screenshots/02-pos-checkout.png",
         features: [
             "Pencarian produk via barcode / keyword",
@@ -152,7 +153,7 @@ const modules = [
 export default function Features() {
     return (
         <PublicLayout active="/fitur">
-            <Head title="Fitur Lengkap — Dikasir" />
+            <Head title={`Fitur Lengkap — ${BRAND.name}`} />
 
             {/* Header */}
             <section className="pt-20 pb-14 px-6 bg-gradient-to-b from-primary-50 dark:from-primary-950/40 to-transparent">
@@ -205,7 +206,7 @@ export default function Features() {
                                         <li key={f} className="flex items-start gap-2.5">
                                             <IconCheck
                                                 size={18}
-                                                className="text-emerald-500 mt-0.5 shrink-0"
+                                                className="text-success-500 mt-0.5 shrink-0"
                                             />
                                             <span className="text-sm text-slate-700 dark:text-slate-300">
                                                 {f}

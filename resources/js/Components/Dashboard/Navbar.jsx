@@ -15,13 +15,15 @@ import Menu from "@/Utils/Menu";
 import Notification from "@/Components/Dashboard/Notification";
 import { useTour } from "@/Hooks/useTour";
 import i18n from "@/i18n";
+import { BRAND } from "@/config/brand";
+import { BrandMark } from "@/Components/BrandLogo";
 
 export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
     const { auth, storeProfile, multiBusinessEnabled } = usePage().props;
     const { start: startTour, isActive: tourActive } = useTour("dashboard");
     const menuNavigation = Menu();
 
-    const storeName = storeProfile?.name || "KASIR";
+    const storeName = storeProfile?.name || BRAND.name;
     const storeInitial = storeName?.charAt(0)?.toUpperCase() || "K";
 
     // Get current page title
@@ -71,9 +73,11 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
 
                 {/* Mobile Logo */}
                 <div className="md:hidden flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">{storeInitial}</span>
-                    </div>
+                    <BrandMark
+                        size={28}
+                        label={storeInitial}
+                        rounded="rounded-lg"
+                    />
                     <span className="text-lg font-bold text-slate-800 dark:text-white">
                         {storeName}
                     </span>
@@ -115,7 +119,7 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
                         <IconSun
                             size={20}
                             strokeWidth={1.5}
-                            className="text-amber-500"
+                            className="text-warning-600 dark:text-warning-400"
                         />
                     ) : (
                         <IconMoon size={20} strokeWidth={1.5} />

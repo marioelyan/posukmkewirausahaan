@@ -1,13 +1,14 @@
 import { Link } from "@inertiajs/react";
 import {
-    IconShoppingCart,
     IconBrandGithub,
     IconStar,
     IconArrowRight,
 } from "@tabler/icons-react";
+import { BRAND } from "@/config/brand";
+import { BrandMark } from "@/Components/BrandLogo";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
-const DOCS_URL = `${GITHUB_URL}/blob/main/docs/getting-started.md`;
+const GITHUB_URL = BRAND.github;
+const DOCS_URL = BRAND.docs;
 
 export const NAV_LINKS = [
     { label: "Fitur", href: "/fitur" },
@@ -23,11 +24,9 @@ export default function PublicLayout({ children, active = "" }) {
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
                 <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                            <IconShoppingCart size={20} className="text-white" />
-                        </div>
+                        <BrandMark size={36} rounded="rounded-xl" />
                         <span className="text-lg font-bold text-slate-900 dark:text-white">
-                            Dikasir
+                            {BRAND.name}
                         </span>
                     </Link>
 
@@ -54,7 +53,7 @@ export default function PublicLayout({ children, active = "" }) {
                             rel="noopener noreferrer"
                             className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
                         >
-                            <IconStar size={15} className="text-amber-400" />
+                            <IconStar size={15} className="text-warning-400" />
                             Star
                         </a>
                         <Link
@@ -82,15 +81,13 @@ export default function PublicLayout({ children, active = "" }) {
             <footer className="py-10 px-6 border-t border-slate-200 dark:border-slate-800">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                            <IconShoppingCart size={16} className="text-white" />
-                        </div>
+                        <BrandMark size={32} rounded="rounded-lg" />
                         <div>
                             <div className="font-semibold text-slate-700 dark:text-slate-300">
-                                Dikasir
+                                {BRAND.name}
                             </div>
                             <div className="text-xs text-slate-500">
-                                Sistem kasir open source untuk UMKM
+                                {BRAND.tagline}
                             </div>
                         </div>
                     </div>
@@ -112,12 +109,12 @@ export default function PublicLayout({ children, active = "" }) {
                             GitHub
                         </a>
                         <a href={`${GITHUB_URL}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" className="hover:text-primary-500 transition-colors">
-                            Lisensi MIT
+                            Lisensi {BRAND.license}
                         </a>
                     </div>
 
                     <p className="text-sm text-slate-500">
-                        © {new Date().getFullYear()} Dibuat oleh Arya Dwi Putra
+                        © {new Date().getFullYear()} Dibuat oleh {BRAND.credit}
                     </p>
                 </div>
             </footer>

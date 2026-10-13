@@ -32,7 +32,7 @@ export default function ListBox({ selected, data, setSelected, label, errors }) 
                 </Listbox.Options>
             </Listbox>
             {errors && (
-                <small className='text-xs text-red-500'>{errors}</small>
+                <small className='text-xs text-danger-500'>{errors}</small>
             )}
         </div>
     )

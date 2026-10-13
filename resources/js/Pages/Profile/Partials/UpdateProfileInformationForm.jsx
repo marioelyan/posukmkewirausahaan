@@ -39,9 +39,9 @@ export default function UpdateProfileInformation({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+                <h2 className="text-lg font-medium text-slate-900 dark:text-white">Profile Information</h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     Update your account's profile information and email address.
                 </p>
             </header>
@@ -83,11 +83,11 @@ export default function UpdateProfileInformation({ className = '' }) {
                     <InputLabel htmlFor="avatar" value="Avatar" />
 
                     <div className="flex items-center gap-4 mt-2">
-                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                        <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
                             {preview ? (
                                 <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                             ) : (
-                                <span className="text-lg font-semibold text-gray-600">
+                                <span className="text-lg font-semibold text-slate-600 dark:text-slate-300">
                                     {user.name?.charAt(0)?.toUpperCase() || '?'}
                                 </span>
                             )}
@@ -118,7 +118,7 @@ export default function UpdateProfileInformation({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">Saved.</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">Saved.</p>
                     </Transition>
                 </div>
             </form>

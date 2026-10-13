@@ -1,4 +1,4 @@
-# Audit Arsitektur SaaS Multi-Business (Tenant) — Point of Sales
+# Audit Arsitektur SaaS Multi-Business (Tenant) — KasirnyaKWU
 
 Kembali ke indeks dokumentasi: `docs/README.md`
 

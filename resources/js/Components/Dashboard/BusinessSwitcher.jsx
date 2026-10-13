@@ -8,7 +8,7 @@ export default function BusinessSwitcher({ business = null, businesses = [], loc
 
     if (businesses.length >= 2) {
         return (
-            <label className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 dark:border-indigo-800 dark:bg-indigo-950/40">
+            <label className="flex items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 dark:border-primary-800 dark:bg-primary-950/40">
                 <IconBuildings size={18} className="shrink-0 text-primary-500" />
                 <select
                     value={business?.id || ""}
@@ -39,7 +39,7 @@ export default function BusinessSwitcher({ business = null, businesses = [], loc
 
     return (
         <div
-            className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 dark:border-indigo-800 dark:bg-indigo-950/40"
+            className="flex items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 dark:border-primary-800 dark:bg-primary-950/40"
             title={business.name}
         >
             <IconBuildings size={18} className="shrink-0 text-primary-500" />

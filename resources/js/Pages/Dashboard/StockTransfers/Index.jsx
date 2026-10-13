@@ -14,9 +14,9 @@ const formatDateTime = (value) => {
 const statusBadge = (status) => {
     const styles = {
         draft: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-        in_transit: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
-        completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
-        cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
+        in_transit: "bg-warning-100 text-warning-700 dark:bg-warning-950/40 dark:text-warning-400",
+        completed: "bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-400",
+        cancelled: "bg-danger-100 text-danger-700 dark:bg-danger-950/40 dark:text-danger-400",
     };
     const labels = { draft: "Draft", in_transit: "In Transit", completed: "Selesai", cancelled: "Batal" };
     return (

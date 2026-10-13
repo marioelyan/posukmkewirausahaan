@@ -149,7 +149,7 @@ export default function Print({ transaction }) {
         pending:
             "bg-warning-100 text-warning-700 dark:bg-warning-900/50 dark:text-warning-400",
         unpaid:
-            "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+            "bg-warning-100 text-warning-700 dark:bg-warning-900/40 dark:text-warning-400",
         partial:
             "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-400",
         failed: "bg-danger-100 text-danger-700 dark:bg-danger-900/50 dark:text-danger-400",
@@ -484,7 +484,7 @@ export default function Print({ transaction }) {
                                     href={route("pdf.transactions.shipping", transaction.invoice)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition-colors w-full sm:w-auto"
+                                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-success-600 hover:bg-success-700 text-sm font-semibold text-white transition-colors w-full sm:w-auto"
                                 >
                                     <IconPrinter size={18} />
                                     PDF Resi
@@ -653,7 +653,7 @@ export default function Print({ transaction }) {
                                             {transaction.payment_method ===
                                                 "pay_later" &&
                                                 transaction.receivable && (
-                                                    <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                                                    <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400">
                                                         Jatuh tempo:{" "}
                                                         {transaction.receivable
                                                             ?.due_date || "-"}
@@ -747,7 +747,7 @@ export default function Print({ transaction }) {
                                                                 }
                                                             </p>
                                                             {hasPromo && (
-                                                                <p className="text-xs font-medium text-rose-500 dark:text-rose-400">
+                                                                <p className="text-xs font-medium text-danger-500 dark:text-danger-400">
                                                                     {item.pricing_group_label ||
                                                                         item.pricing_rule_name ||
                                                                         "Promo aktif"}

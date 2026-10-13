@@ -19,6 +19,8 @@ import {
     IconBuildingStore,
 } from "@tabler/icons-react";
 import Notification from "@/Components/Dashboard/Notification";
+import { BrandMark } from "@/Components/BrandLogo";
+import { BRAND } from "@/config/brand";
 import { useTour } from "@/Hooks/useTour";
 import i18n from "@/i18n";
 import {
@@ -127,21 +129,16 @@ export default function POSLayout({ children }) {
 
                     {/* Logo */}
                     <Link href={route("dashboard")} className="flex items-center gap-2">
-                        <div className="w-9 h-9 flex items-center justify-center overflow-hidden">
-                            {storeProfile?.logo ? (
-                                <img
-                                    src={storeProfile.logo}
-                                    alt={storeProfile?.name || "Store"}
-                                    className="w-full h-full object-contain"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-primary-600 text-white font-bold text-sm">
-                                    {(storeProfile?.name || "K").charAt(0)}
-                                </div>
-                            )}
-                        </div>
+                        <BrandMark
+                            size={36}
+                            logoSrc={storeProfile?.logo || null}
+                            label={(storeProfile?.name || BRAND.name)
+                                .charAt(0)
+                                .toUpperCase()}
+                            rounded="rounded-lg"
+                        />
                         <span className="hidden sm:block text-lg font-bold text-slate-800 dark:text-white">
-                            {storeProfile?.name || "KASIR"}
+                            {storeProfile?.name || BRAND.name}
                         </span>
                     </Link>
 
@@ -247,7 +244,7 @@ export default function POSLayout({ children }) {
                         title={darkMode ? "Light Mode" : "Dark Mode"}
                     >
                         {darkMode ? (
-                            <IconSun size={20} className="text-amber-500" />
+                            <IconSun size={20} className="text-warning-600 dark:text-warning-400" />
                         ) : (
                             <IconMoon size={20} className="text-slate-500" />
                         )}
@@ -263,7 +260,7 @@ export default function POSLayout({ children }) {
                         {activeCashierShift && (
                             <Link
                                 href={route("cashier-shifts.show", activeCashierShift.id)}
-                                className="hidden lg:flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
+                                className="hidden lg:flex items-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 transition hover:bg-success-100 dark:bg-success-950/40 dark:text-success-300 dark:hover:bg-success-950/60"
                             >
                                 <IconWallet size={16} />
                                 <span>
@@ -293,13 +290,13 @@ export default function POSLayout({ children }) {
             </header>
 
             {!isOnline && (
-                <div className="bg-amber-500 text-white text-center text-xs font-medium py-1 px-4">
+                <div className="bg-warning-500 text-white text-center text-xs font-medium py-1 px-4">
                     Transaksi disimpan offline — akan dikirim saat online kembali
                 </div>
             )}
 
             {isOnline && pendingSyncCount > 0 && (
-                <div className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 text-center text-xs font-medium py-1 px-4">
+                <div className="bg-warning-100 dark:bg-warning-900/40 text-warning-800 dark:text-warning-200 text-center text-xs font-medium py-1 px-4">
                     {pendingSyncCount} transaksi menunggu sinkronisasi
                 </div>
             )}

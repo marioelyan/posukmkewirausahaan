@@ -52,17 +52,17 @@ const coverageStatusConfig = {
     critical: {
         label: "Kritis",
         className:
-            "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+            "bg-danger-100 text-danger-700 dark:bg-danger-950/50 dark:text-danger-300",
     },
     low: {
         label: "Rendah",
         className:
-            "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+            "bg-warning-100 text-warning-700 dark:bg-warning-950/50 dark:text-warning-300",
     },
     healthy: {
         label: "Sehat",
         className:
-            "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+            "bg-success-100 text-success-700 dark:bg-success-950/50 dark:text-success-300",
     },
     no_movement: {
         label: "Tidak Bergerak",
@@ -75,17 +75,17 @@ const promoStatusConfig = {
     active: {
         label: "Aktif",
         className:
-            "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+            "bg-success-100 text-success-700 dark:bg-success-950/50 dark:text-success-300",
     },
     scheduled: {
         label: "Terjadwal",
         className:
-            "bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300",
+            "bg-accent-100 text-accent-700 dark:bg-accent-950/50 dark:text-accent-300",
     },
     expired: {
         label: "Berakhir",
         className:
-            "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+            "bg-warning-100 text-warning-700 dark:bg-warning-950/50 dark:text-warning-300",
     },
     inactive: {
         label: "Nonaktif",
@@ -247,7 +247,7 @@ export default function Insights({
                     {
                         label: "Omzet",
                         data: hourChartData.map((item) => item.revenue_total),
-                        backgroundColor: "#3b82f6",
+                        backgroundColor: "#456faf",
                         borderRadius: 8,
                     },
                 ],
@@ -283,8 +283,8 @@ export default function Insights({
                     {
                         label: "Omzet",
                         data: dayChartData.map((item) => item.revenue_total),
-                        borderColor: "#10b981",
-                        backgroundColor: "rgba(16, 185, 129, 0.15)",
+                        borderColor: "#1f9d6b",
+                        backgroundColor: "rgba(31, 157, 107, 0.15)",
                         fill: true,
                         tension: 0.35,
                     },
@@ -393,14 +393,14 @@ export default function Insights({
                         value={formatCurrency(summary?.profit_total ?? 0)}
                         description={`Rata-rata ${formatCurrency(summary?.average_order ?? 0)}`}
                         icon={IconCoin}
-                        gradient="from-emerald-500 to-emerald-700"
+                        gradient="from-success-500 to-success-700"
                     />
                     <SummaryCard
                         title="Item Terjual"
                         value={(summary?.items_sold ?? 0).toLocaleString("id-ID")}
                         description={`Diskon manual ${formatCurrency(summary?.manual_discount_total ?? 0)}`}
                         icon={IconPackage}
-                        gradient="from-amber-500 to-amber-700"
+                        gradient="from-warning-500 to-warning-700"
                     />
                     <SummaryCard
                         title="Kasir Aktif di Filter"
@@ -525,7 +525,7 @@ export default function Insights({
                         value={(repeatSummary.active_customers ?? 0).toLocaleString("id-ID")}
                         description={`${repeatSummary.new_customers ?? 0} pelanggan baru`}
                         icon={IconUsers}
-                        gradient="from-sky-500 to-sky-700"
+                        gradient="from-accent-500 to-accent-700"
                     />
                     <SummaryCard
                         title="Repeat Rate"
@@ -551,7 +551,7 @@ export default function Insights({
                         ).toLocaleString("id-ID")}
                         description={`${stockCoverageSummary.window_days ?? 0} hari jendela analisa`}
                         icon={IconClock}
-                        gradient="from-rose-500 to-rose-700"
+                        gradient="from-danger-500 to-danger-700"
                     />
                 </div>
 
@@ -789,7 +789,7 @@ export default function Insights({
                                             <span
                                                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                                                     item.is_loyalty_member
-                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                                                        ? "bg-success-100 text-success-700 dark:bg-success-950/50 dark:text-success-300"
                                                         : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                                                 }`}
                                             >

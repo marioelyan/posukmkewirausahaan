@@ -161,7 +161,7 @@ export default function Index({
                                     placeholder="0"
                                 />
                                 {errors?.opening_cash && (
-                                    <p className="mt-2 text-xs text-rose-500">{errors.opening_cash}</p>
+                                    <p className="mt-2 text-xs text-danger-500">{errors.opening_cash}</p>
                                 )}
                             </div>
                             <div>
@@ -207,18 +207,18 @@ export default function Index({
 
                 {activeShift && (
                     <div data-tour="shifts-active" className="grid gap-4 md:grid-cols-4">
-                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/30">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                        <div className="rounded-2xl border border-success-200 bg-success-50 p-4 dark:border-success-900/50 dark:bg-success-950/30">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-success-700 dark:text-success-300">
                                 Shift Aktif
                             </p>
-                            <p className="mt-2 text-lg font-semibold text-emerald-900 dark:text-emerald-100">
+                            <p className="mt-2 text-lg font-semibold text-success-900 dark:text-success-100">
                                 {activeShift.user?.name}
                             </p>
-                            <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-300">
+                            <p className="mt-1 text-sm text-success-700 dark:text-success-300">
                                 {activeShift.warehouse?.name || formatDateTime(activeShift.opened_at)}
                             </p>
                             {activeShift.warehouse && (
-                                <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                                <p className="text-xs text-success-600 dark:text-success-400">
                                     {activeShift.warehouse.code}
                                 </p>
                             )}
@@ -267,7 +267,7 @@ export default function Index({
                             <button
                                 type="button"
                                 onClick={() => setCashModal("in")}
-                                className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-4 py-2.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                                className="inline-flex items-center gap-2 rounded-xl border border-success-200 px-4 py-2.5 text-sm font-medium text-success-700 transition-colors hover:bg-success-50 dark:border-success-900/50 dark:text-success-300 dark:hover:bg-success-950/30"
                             >
                                 <IconCashBanknote size={18} />
                                 <span>Kas Masuk</span>
@@ -275,7 +275,7 @@ export default function Index({
                             <button
                                 type="button"
                                 onClick={() => setCashModal("out")}
-                                className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-50 dark:border-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                                className="inline-flex items-center gap-2 rounded-xl border border-danger-200 px-4 py-2.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50 dark:border-danger-900/50 dark:text-danger-300 dark:hover:bg-danger-950/30"
                             >
                                 <IconCashBanknote size={18} />
                                 <span>Kas Keluar</span>
@@ -343,8 +343,8 @@ export default function Index({
                                     type="submit"
                                     className={`flex-1 rounded-xl py-2.5 text-sm font-medium text-white transition-colors ${
                                         cashModal === "in"
-                                            ? "bg-emerald-500 hover:bg-emerald-600"
-                                            : "bg-rose-500 hover:bg-rose-600"
+                                            ? "bg-success-500 hover:bg-success-600"
+                                            : "bg-danger-500 hover:bg-danger-600"
                                     }`}
                                 >
                                     Simpan
@@ -433,9 +433,9 @@ export default function Index({
                                             <span
                                                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                                                     shift.status === "open"
-                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                                        ? "bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-400"
                                                         : shift.status === "force_closed"
-                                                          ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                                                          ? "bg-danger-100 text-danger-700 dark:bg-danger-950/40 dark:text-danger-400"
                                                           : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                                                 }`}
                                             >
