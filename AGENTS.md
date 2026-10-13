@@ -4,7 +4,7 @@ Open-source POS system (200+ stars). Laravel 13 + Inertia 3.0 + React 19.
 
 ## Important: This Repo
 
-**Remote:** `git@github.com:aryadwiputra/point-of-sales.git`
+**Remote:** `https://github.com/marioelyan/posukmkewirausahaan.git` (SSH: `git@github.com:marioelyan/posukmkewirausahaan.git`)
 
 **Branch structure:**
 - `main` — production. Protected. PR only from `development`.
