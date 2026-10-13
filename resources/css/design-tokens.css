@@ -162,6 +162,61 @@
   --border-subtle: var(--color-slate-900);
 }
 
+/* === Role accents (sidebar identity) ===
+   The sidebar paints its identity surfaces (active item, section label, role
+   badge) from these variables, so the visual identity can follow the active
+   business membership role while the rest of the UI keeps the brand palette.
+
+   Only the sidebar consumes them: `data-role` is set on the sidebar root, so
+   the variables resolve to the brand navy everywhere else. Defaults mirror
+   `primary`, so an unresolved role (legacy single-tenant install) renders
+   exactly as before. Values are RGB triplets, matching the palette above. */
+:root,
+[data-role="owner"],
+[data-role="super-admin"] {
+  --role-accent-50: var(--color-primary-50);
+  --role-accent-100: var(--color-primary-100);
+  --role-accent-200: var(--color-primary-200);
+  --role-accent-300: var(--color-primary-300);
+  --role-accent-400: var(--color-primary-400);
+  --role-accent-500: var(--color-primary-500);
+  --role-accent-600: var(--color-primary-600);
+  --role-accent-700: var(--color-primary-700);
+  --role-accent-800: var(--color-primary-800);
+  --role-accent-900: var(--color-primary-900);
+  --role-accent-950: var(--color-primary-950);
+}
+
+/* Manager: analog blue. */
+[data-role="manager"] {
+  --role-accent-50: var(--color-accent-50);
+  --role-accent-100: var(--color-accent-100);
+  --role-accent-200: var(--color-accent-200);
+  --role-accent-300: var(--color-accent-300);
+  --role-accent-400: var(--color-accent-400);
+  --role-accent-500: var(--color-accent-500);
+  --role-accent-600: var(--color-accent-600);
+  --role-accent-700: var(--color-accent-700);
+  --role-accent-800: var(--color-accent-800);
+  --role-accent-900: var(--color-accent-900);
+  --role-accent-950: var(--color-accent-950);
+}
+
+/* Staff (POS): harmonized teal, tuned to sit next to the brand navy. */
+[data-role="staff"] {
+  --role-accent-50: 239 250 247;
+  --role-accent-100: 215 242 236;
+  --role-accent-200: 176 229 219;
+  --role-accent-300: 127 210 196;
+  --role-accent-400: 75 184 168;
+  --role-accent-500: 25 158 140;
+  --role-accent-600: 18 126 112;
+  --role-accent-700: 15 102 89;
+  --role-accent-800: 13 82 73;
+  --role-accent-900: 11 67 61;
+  --role-accent-950: 5 38 31;
+}
+
 /* === Base Styles === */
 html {
   font-family: var(--font-family-sans);

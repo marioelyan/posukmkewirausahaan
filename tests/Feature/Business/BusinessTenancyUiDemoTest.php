@@ -200,6 +200,102 @@ class BusinessTenancyUiDemoTest extends TestCase
             );
     }
 
+    public function test_shared_business_role_is_platform_admin_for_super_admin(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.businessRole', 'super-admin')
+            );
+    }
+
+    public function test_shared_business_role_matches_the_membership_role(): void
+    {
+        $owner = User::where('email', 'manager@gmail.com')->firstOrFail();
+        $this->member($owner, $this->businessA, BusinessUser::ROLE_OWNER);
+
+        $this->actingAs($owner)
+            ->withSession(['active_business_id' => $this->businessA->id])
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.businessRole', BusinessUser::ROLE_OWNER)
+            );
+
+        $staff = User::where('email', 'cashier@gmail.com')->firstOrFail();
+        $this->member($staff, $this->businessA, BusinessUser::ROLE_STAFF);
+
+        $this->actingAs($staff)
+            ->withSession(['active_business_id' => $this->businessA->id])
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.businessRole', BusinessUser::ROLE_STAFF)
+            );
+    }
+
+    public function test_shared_business_role_follows_the_active_membership_per_business(): void
+    {
+        $user = User::where('email', 'cashier@gmail.com')->firstOrFail();
+        $this->member($user, $this->businessA, BusinessUser::ROLE_MANAGER);
+        $this->member($user, $this->businessB, BusinessUser::ROLE_STAFF);
+
+        $this->actingAs($user)
+            ->withSession(['active_business_id' => $this->businessA->id])
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.businessRole', BusinessUser::ROLE_MANAGER)
+            );
+
+        $this->actingAs($user)
+            ->withSession(['active_business_id' => $this->businessB->id])
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.businessRole', BusinessUser::ROLE_STAFF)
+            );
+    }
+
+    public function test_dashboard_fails_closed_without_a_membership(): void
+    {
+        $user = User::where('email', 'manager@gmail.com')->firstOrFail();
+
+        // Tenancy is on and the user is neither a super-admin nor a member of
+        // the selected business: `business.required` must stop the request
+        // before any layout role could be handed to the sidebar.
+        $this->actingAs($user)
+            ->withSession(['active_business_id' => $this->businessA->id])
+            ->get(route('dashboard'))
+            ->assertForbidden();
+    }
+
+    public function test_shared_business_role_falls_back_to_the_spatie_role_when_tenancy_disabled(): void
+    {
+        config()->set('multi_business.enabled', false);
+
+        $manager = User::where('email', 'manager@gmail.com')->firstOrFail();
+
+        $this->actingAs($manager)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.businessRole', 'manager')
+            );
+
+        $cashier = User::where('email', 'cashier@gmail.com')->firstOrFail();
+
+        $this->actingAs($cashier)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('auth.businessRole', 'staff')
+            );
+    }
+
     private function member(User $user, Business $business, string $role): void
     {
         BusinessUser::create([

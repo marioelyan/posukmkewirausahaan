@@ -255,7 +255,16 @@
             "reports": "Laporan",
             "operations": "Operasional",
             "userManagement": "Manajemen User",
-            "settings": "Pengaturan"
+            "settings": "Pengaturan",
+            "kasir": "Kasir",
+            "customers": "Pelanggan",
+            "other": "Lainnya"
+        },
+        "roles": {
+            "owner": "Pemilik",
+            "manager": "Manajer",
+            "staff": "Staf",
+            "superAdmin": "Super Admin"
         },
         "items": {
             "dashboard": "Dashboard",

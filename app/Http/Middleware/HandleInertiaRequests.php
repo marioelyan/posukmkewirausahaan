@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Business;
+use App\Models\BusinessUser;
 use App\Models\CashierShift;
 use App\Models\Outlet;
 use App\Models\Payable;
@@ -11,6 +12,7 @@ use App\Models\ProductBatch;
 use App\Models\Receivable;
 use App\Models\Setting;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\BusinessContext;
 use App\Services\BusinessMembershipResolver;
 use App\Services\CashierShiftService;
@@ -28,6 +30,12 @@ use Inertia\Middleware;
 class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
+
+    /**
+     * Layout role reported for the platform super-admin, who has no business
+     * membership and keeps the explicit platform path (AUTH-01).
+     */
+    private const ROLE_PLATFORM_ADMIN = 'super-admin';
 
     public function version(Request $request): ?string
     {
@@ -255,11 +263,14 @@ class HandleInertiaRequests extends Middleware
             ];
         }
 
+        $authorization = $this->resolveAuthorization($request);
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                'permissions' => $this->resolvePermissions($request),
+                'permissions' => $authorization['permissions'],
+                'businessRole' => $authorization['role'],
                 'super' => $request->user() ? $request->user()->isSuperAdmin() : false,
                 'completedTours' => $request->user()?->completed_tours ?? [],
                 'currentOutlet' => $activeOutlet?->only(['id', 'code', 'name']),
@@ -299,39 +310,88 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Share the capability map the UI gates on.
+     * Resolve the authorization payload the UI gates and lays itself out on.
+     *
+     * Two values are derived here, from the SAME source on purpose so they can
+     * never drift apart:
+     *
+     *  - `permissions` — the capability map (already used by the menu);
+     *  - `role`        — the sidebar's layout role, one of
+     *                    `owner|manager|staff`, `super-admin`, or `null`.
      *
      * With tenancy enabled the server enforces the ACTIVE membership's business
-     * role (AUTH-02/03 via the `business.role` middleware), so the shared map
-     * must match it — otherwise the menu would offer actions that 403. A
-     * non-super member therefore sees only the capabilities of their role in
-     * the active business. Super-admins keep the explicit platform path and
-     * the flag-off path keeps the legacy global map byte-for-byte.
+     * role (AUTH-02/03 via the `business.role` middleware), so both values must
+     * match it — otherwise the menu would offer actions that 403. A non-super
+     * member therefore sees only their role's capabilities and layout.
+     * Super-admins keep the explicit platform path (AUTH-01) and the flag-off
+     * path keeps the legacy global map, with a cosmetic role derived from the
+     * Spatie role so the role-aware sidebar works before tenancy is switched on.
      *
-     * @return array<string, true>|Collection
+     * @return array{permissions: array<string, true>|Collection, role: ?string}
      */
-    private function resolvePermissions(Request $request)
+    private function resolveAuthorization(Request $request): array
     {
         $user = $request->user();
 
         if (! $user) {
-            return [];
+            return ['permissions' => [], 'role' => null];
         }
 
-        if (! config('multi_business.enabled') || $user->isSuperAdmin()) {
-            return $user->getPermissions();
+        // Platform super-admin: global grants, platform-only layout.
+        if ($user->isSuperAdmin()) {
+            return [
+                'permissions' => $user->getPermissions(),
+                'role' => self::ROLE_PLATFORM_ADMIN,
+            ];
         }
 
-        $context = app(BusinessContext::class);
-        $membership = $context->hasActiveBusiness() ? $context->membership() : null;
+        if (config('multi_business.enabled')) {
+            $context = app(BusinessContext::class);
+            $membership = $context->hasActiveBusiness() ? $context->membership() : null;
 
-        if (! $membership) {
-            // Tenancy enabled without a verified membership: fail closed, the
-            // same way the server-side capability check does.
-            return [];
+            if (! $membership) {
+                // Tenancy enabled without a verified membership: fail closed,
+                // the same way the server-side capability check does.
+                return ['permissions' => [], 'role' => null];
+            }
+
+            return [
+                'permissions' => collect(app(BusinessRoleCapabilities::class)->permissionsFor($membership->role))
+                    ->mapWithKeys(fn (string $name) => [$name => true]),
+                'role' => $membership->role,
+            ];
         }
 
-        return collect(app(BusinessRoleCapabilities::class)->permissionsFor($membership->role))
-            ->mapWithKeys(fn (string $name) => [$name => true]);
+        // Legacy single-tenant install: the global map wins and the layout role
+        // falls back to the user's Spatie role.
+        return [
+            'permissions' => $user->getPermissions(),
+            'role' => $this->legacyLayoutRole($user),
+        ];
+    }
+
+    /**
+     * Cosmetic Spatie-role → layout-role mapping for the tenancy-off install.
+     *
+     * Purely presentational: it only decides how the sidebar is arranged and
+     * never widens or narrows a capability. Unknown roles map to `null`, which
+     * keeps the menu capability-driven exactly as before.
+     */
+    private function legacyLayoutRole(User $user): ?string
+    {
+        foreach ($user->getRoleNames() as $name) {
+            $mapped = match ($name) {
+                'manager' => BusinessUser::ROLE_MANAGER,
+                'cashier' => BusinessUser::ROLE_STAFF,
+                'owner' => BusinessUser::ROLE_OWNER,
+                default => null,
+            };
+
+            if ($mapped !== null) {
+                return $mapped;
+            }
+        }
+
+        return null;
     }
 }
