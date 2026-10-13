@@ -2,83 +2,102 @@
 
 Panduan menyiapkan dan menjalankan Point of Sales di produksi. Kembali ke indeks: `docs/README.md`.
 
+> **Ringkas.** Produksi = **shared hosting DewaBiz** (panel DirectAdmin Evo), `posukmkewirausahaan.web.id`,
+> **tanpa SSH/terminal**. Deploy = **manual per rilis** (build package → upload → artisan via cron).
+> Tidak ada pipeline auto-deploy. Workflow SSH lama sudah dihapus dari repo.
+
 ## 1. Prasyarat Runtime
 
 | Komponen | Versi | Catatan |
 |----------|-------|---------|
-| PHP | **8.4** | `php8.4 artisan ...` dipakai di VPS dan CI |
-| Node.js | 22 (build CI) / **24.15** (VPS) | `PUPPETEER_SKIP_DOWNLOAD=true` untuk semua `npm ci`/`npm run build` |
+| PHP | **8.4** | Dipilih dari panel DewaBiz; versi yang sama dipakai CI |
+| Node.js | 22 (laptop/CI saja) | **Tidak ada di server** — aset frontend dibangun sebelum upload |
 | npm | sesuai package-lock | npm adalah package manager resmi (`package-lock.json` dikomit) |
-| Composer | 2.x | |
-| MySQL | 8.x | DB produksi (strict mode) |
-| Cron | — | wajib untuk scheduler (`schedule:run` tiap menit) |
-| Supervisor / systemd / PM2 | — | queue worker + WhatsApp service |
+| Composer | 2.x | **Hanya di laptop/CI** — server tidak punya Composer, jadi `vendor/` ikut di package |
+| MySQL | 8.x | DB produksi (strict mode), dibuat dari panel |
+| Cron | — | panel DewaBiz; wajib untuk scheduler `schedule:run` tiap menit |
+| Queue worker / Supervisor / systemd / PM2 | — | **Tidak tersedia di shared hosting** — lihat §5–§6 |
 
-## 2. Dua Jalur Deploy
+`PUPPETEER_SKIP_DOWNLOAD=true` wajib di semua `npm ci`/`npm run build` (di laptop maupun CI).
 
-### 2a. VPS — otomatis via GitHub Actions (default)
+## 2. Jalur Deploy — manual via panel DewaBiz
 
-`.github/workflows/deploy.yml` menjalankan **CI** (validate Composer, `npm run build`,
-`php artisan test --compact` di PHP 8.4 / Node 22 / SQLite in-memory) pada setiap push/PR,
-lalu **deploy otomatis ke `main`** via SSH.
+`.github/workflows/ci.yml` **hanya** menjalankan CI (validate Composer, `npm run build`,
+`php artisan test --compact` di PHP 8.4 / Node 22 / SQLite in-memory) pada setiap push/PR.
+**Tidak ada job deploy.** Workflow lama (`appleboy/ssh-action`, SSH ke VPS `dikasir.web.id`)
+sudah dihapus: shared hosting tidak punya SSH, jadi workflow itu tidak mungkin jalan.
 
-**Secrets GitHub yang harus diset** (repo → Settings → Secrets and variables → Actions):
+Setiap rilis = satu package manual:
 
-| Secret | Isi |
-|--------|-----|
-| `SSH_HOST` | Host VPS (mis. `dikasir.web.id`) |
-| `SSH_USERNAME` | User SSH deploy |
-| `SSH_PRIVATE_KEY` | Private key SSH (tanpa passphrase) |
-| `DEPLOY_PATH` | Path absolut checkout aplikasi di VPS |
-| `SSH_PORT` (opsional) | Port SSH, default `22` |
+1. **Build package (di laptop).** `./scripts/deploy-build.sh` menghasilkan
+   `deploy-package-YYYYMMDD.zip` di root repo: `composer install --no-dev` (jadi `vendor/` ikut),
+   `npm ci` + `npm run build` (`public/build`), tanpa `.env`, `node_modules`, tests, atau symlink.
+   Script ini menolak menimpa file dengan tanggal sama — hapus manual kalau mau rebuild.
+2. **Backup dulu.** Export DB (phpMyAdmin) + copy `storage/app`.
+3. **Upload + ekstrak.** Isi ZIP ke direktori app via **File Manager** atau **FTP** panel.
+   Ini menimpa file lama, tapi **tidak menghapus** file yang sudah dihapus di repo —
+   controller/route/view yang dipensiunkan harus dibersihkan manual.
+4. **Permission:** pastikan `storage/` dan `bootstrap/cache/` writable.
+5. **Jalankan artisan** — tidak ada terminal, jadi lewat **Cron panel sekali-jalan**
+   (`php artisan <cmd>`, lalu hapus cron-nya):
+   `migrate --force` → `storage:link` → `config:cache` → `view:cache` → `scramble:cache`.
+   `route:cache` sengaja **tidak** dijalankan (ada route closure; pasti gagal).
+6. **Smoke test** — `docs/testing-manual.md`. Untuk perubahan perilaku, cek juga
+   `docs/feature-index.md` dan release notes.
+7. **Selalu catat perubahan yang mengubah angka** (mis. definisi omzet `completed` = `paid`)
+   di release notes sebelum deploy.
 
-Skrip deploy di VPS: `git pull --ff-only` → `composer install --no-dev` → `npm ci` +
-`npm run build` → `php8.4 artisan migrate --force` → `storage:link` →
-`config:cache` + `view:cache` + `scramble:cache` → `queue:restart`. `route:cache`
-sengaja **tidak** dijalankan (ada route closure; `route:cache` akan gagal).
+### Checklist per rilis
 
-> VPS harus punya Node 24.15 + PHP 8.4 di PATH sesuai AGENTS.md. Jika version manager
-> (nvm) dipakai, pastikan `nvm use default` aktif di shell non-interaktif SSH.
+```
+[ ] php artisan test --compact                 # di laptop, hijau dulu
+[ ] vendor/bin/pint                            # formatting
+[ ] tag rilis vX.Y.Z dari branch development   # + bump APP_VERSION
+[ ] ./scripts/deploy-build.sh                  # -> deploy-package-YYYYMMDD.zip
+[ ] backup DB + storage/app
+[ ] upload + extract ZIP via panel (File Manager / FTP)
+[ ] pastikan storage/ & bootstrap/cache/ writable
+[ ] cron sekali-jalan: migrate --force, storage:link, config:cache, view:cache, scramble:cache
+[ ] smoke test docs/testing-manual.md
+[ ] hapus cron sekali-jalan
+[ ] rapi-kan file yang sudah dipensiunkan (extract tidak menghapusnya)
+```
 
-### 2b. Shared hosting — package manual
-
-`./scripts/deploy-build.sh` membuat `deploy/deploy-package-YYYYMMDD.zip` (staging
-tervalidasi; tidak mengandung `.env`, node_modules, tests, symlink). Langkah manual:
-
-1. Buat `.env` produksi **terpisah** (jangan dari repo, jangan masuk ZIP).
-2. Upload + ekstrak isi ZIP via File Manager/FTP.
-3. Pastikan `storage/` dan `bootstrap/cache/` writable.
-4. Jalankan via Cron/terminal: `php artisan migrate --force` lalu `php artisan storage:link`.
+> **Kalau nanti pindah ke host bershell (VPS):** jalur otomatis baru masuk akal —
+> `git pull --ff-only` + artisan via SSH, atau (tetap di shared hosting) CI build →
+> upload FTP → cron worker ber-flag. Belum dipakai; keputusan 2026-10-13: manual dulu.
 
 ## 3. Environment Checklist Produksi
 
-Salin `.env.example`, isi, lalu set nilai produksi:
+Salin `.env.example`, isi, lalu set nilai produksi. `.env` produksi **dibuat di server**,
+bukan dari repo, dan tidak boleh ikut masuk ZIP.
 
 | Variable | Nilai produksi | Alasan |
 |----------|----------------|--------|
 | `APP_ENV` | `production` | |
 | `APP_DEBUG` | `false` | Jangan bocorkan stack trace |
-| `APP_URL` | `https://dikasir.web.id` | Webhook Midtrans/Xendit, invoice publik, portal pelanggan |
+| `APP_URL` | `https://posukmkewirausahaan.web.id` | Webhook Midtrans/Xendit, invoice publik, portal pelanggan |
 | `APP_VERSION` | `vX.Y.Z` | Bump saat release (lihat AGENTS.md) |
 | `SESSION_SECURE_COOKIE` | `true` | Cookie sesi hanya via HTTPS |
-| `SANCTUM_STATEFUL_DOMAINS` | `dikasir.web.id` | Hapus entri `localhost` di produksi |
-| `SCRAMBLE_DOCS_TOKEN` | token acak | Mengunci `/docs/api` & `/docs/api.json` (kirim via header `X-Docs-Token` atau `?token=`) |
-| `MULTI_BUSINESS_ENABLED` | `false` | **Jangan** aktifkan sampai backfill tenant + membership selesai |
-| `WA_SERVICE_URL` / `WA_SERVICE_TOKEN` | URL + secret | Harus cocok dengan `.env` service WhatsApp |
+| `SANCTUM_STATEFUL_DOMAINS` | `posukmkewirausahaan.web.id` | Hapus entri `localhost` di produksi |
+| `DB_HOST` | `localhost` | Socket lokal; `127.0.0.1` ditolak (access denied) |
+| `SCRAMBLE_DOCS_TOKEN` | token acak | Mengunci `/docs/api` & `/docs/api.json` (header `X-Docs-Token` atau `?token=`) |
+| `MULTI_BUSINESS_ENABLED` | `true` saat go-live | Default repo `false`. Keputusan owner 2026-10-13: jalur **fresh install** (tanpa backfill legacy) — lihat `docs/architecture/multi-business-backfill-production-runbook.md` |
+| `WA_SERVICE_URL` / `WA_SERVICE_TOKEN` | URL + secret | Harus cocok dengan `.env` service WhatsApp (kalau service-nya jalan) |
 | `MIDTRANS_IS_PRODUCTION` / `XENDIT_IS_PRODUCTION` | `true` | Aktifkan mode produksi gateway |
 | `XENDIT_CALLBACK_TOKEN` | token webhook | Verifikasi callback Xendit |
 | `AUTH_PUBLIC_REGISTRATION` | `false` (default) | Registrasi publik dimatikan |
 
-Setelah deploy pertama: buka root URL → instalasi pertama otomatis mengarahkan ke
-`/setup` (buat admin, profil toko, kategori, warehouse utama). Setelah selesai, arahkan
-ke login. Lihat `docs/getting-started.md`.
+Setelah deploy ke instalasi kosong: buka root URL → otomatis mengarah ke
+`/setup` (buat admin, profil toko, kategori, warehouse utama, dan business default saat
+flag tenancy ON). Setelah selesai, arahkan ke login. Lihat `docs/getting-started.md`.
 
 ## 4. Scheduler (wajib)
 
-Tambahkan ke crontab (JALAN SETIAP MENIT):
+Tambahkan lewat **Cron panel DewaBiz** (JALAN SETIAP MENIT):
 
 ```
-* * * * * cd /path/aplikasi && php8.4 artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /path/aplikasi && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 Jadwal terdaftar di `routes/console.php`:
@@ -90,40 +109,29 @@ Jadwal terdaftar di `routes/console.php`:
 | 02:00 | `reorder:generate` | Draft PO dari stok menipis |
 | setiap jam | `transactions:expire` | Kedaluwarsa transaksi hold/offline |
 
-## 5. Queue Worker + Failed Jobs
+Command scheduler dijalankan per-business lewat `BusinessTaskRunner` saat tenancy ON
+(enumerate business aktif → set context → clear di `finally`).
 
-`QUEUE_CONNECTION=database` (default). Jalankan worker dengan supervisor/systemd:
+## 5. Queue Worker
+
+`QUEUE_CONNECTION=database` (default) dan aplikasi dirancang **sinkron/tanpa worker**
+di shared hosting (keputusan SCHED-01/02). Karena itu:
+
+- **Shared hosting: tidak ada queue worker.** Job yang butuh eksekusi harus sinkron;
+  scheduler ditangani cron §4.
+- **Kalau nanti pindah ke VPS** (supervisor/systemd):
 
 ```
-php8.4 artisan queue:work database --sleep=3 --tries=3 --max-time=3600
+php artisan queue:work database --sleep=3 --tries=3 --max-time=3600
 ```
 
-Product key: `QUEUE_FAILED_DRIVER=database` agar job gagal tersimpan di `failed_jobs`.
+`QUEUE_FAILED_DRIVER=database` agar job gagal tersimpan di `failed_jobs`.
 
-Contoh systemd unit `pos-queue.service`:
+## 6. WhatsApp Service
 
-```ini
-[Unit]
-Description=POS Queued Jobs
-After=network.target
-
-[Service]
-User=www-data
-WorkingDirectory=/path/aplikasi
-ExecStart=/usr/bin/php8.4 artisan queue:work database --sleep=3 --tries=3 --max-time=3600
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Setelah deploy, `php8.4 artisan queue:restart` (sudah ada di workflow) membuat worker
-memuat kode terbaru.
-
-## 6. WhatsApp Service (opsional)
-
-`whatsapp-service/` adalah service Node terpisah (port 3001). Jalankan via PM2:
+`whatsapp-service/` adalah service Node terpisah (port 3001) yang **tidak bisa jalan di
+shared hosting** (butuh proses long-running + Node). Di produksi sekarang service ini
+tidak aktif; fitur CRM auto-send baru jalan kalau service-nya di-host terpisah (VPS).
 
 ```bash
 cd whatsapp-service
@@ -132,30 +140,28 @@ pm2 start server.js --name wa-service
 pm2 save && pm2 startup
 ```
 
-Pastikan `WA_SERVICE_TOKEN` cocok antara `.env` aplikasi dan service. CRM auto-send
-membutuhkan `wa_enabled=true` + perangkat tersambung (Settings → WhatsApp).
-
 ## 7. Pasca-Deploy / Perawatan
 
+Lewat cron sekali-jalan (tidak ada terminal):
+
 ```bash
-php8.4 artisan about                 # status aplikasi
-php8.4 artisan scramble:cache        # warm cache OpenAPI (sudah di workflow)
-php8.4 artisan inventory:reconcile   # cek selisih stok global vs pivot (read-only)
-php8.4 artisan inventory:reconcile --fix  # sejajarkan (hanya setelah audit)
+php artisan about                 # status aplikasi
+php artisan scramble:cache        # warm cache OpenAPI
+php artisan inventory:reconcile   # cek selisih stok global vs pivot (read-only)
+php artisan inventory:reconcile --fix  # sejajarkan (hanya setelah audit)
 ```
 
 ## 8. Backup & Rollback
 
-- **DB:** `mysqldump -u user -p point_of_sales > backup-$(date +%F).sql`
-- **File:** idempotent `storage/app` (logo, import, export) — simpan bersama backup DB.
-- **Rollback release:** deploy kembali tag/revisi sebelumnya (VPS: `git checkout <tag>`;
-  shared hosting: ekstrak package sebelumnya). Jangan lupa `config:cache` + `view:cache`
-  ulang.
-- **Migrasi:** selalu `migrate --force` di produksi; uji dulu di staging/CI.
+- **DB:** export dari phpMyAdmin (atau `mysqldump` kalau disediakan host): `backup-YYYY-MM-DD.sql`
+- **File:** `storage/app` (logo, import, export) — simpan bersama backup DB.
+- **Rollback:** ekstrak ulang package/tag sebelumnya, lalu `config:cache` + `view:cache` ulang.
+- **Migrasi:** selalu `migrate --force` di produksi; uji dulu di CI/staging lokal.
+  Migrasi tenancy era multi-business bersifat aditif/guarded.
 
 ## 9. Keamanan Singkat
 
-- HTTPS wajib (certbot/cloudflare). `SESSION_SECURE_COOKIE=true` + `SESSION_SAME_SITE=lax`.
+- HTTPS wajib. `SESSION_SECURE_COOKIE=true` + `SESSION_SAME_SITE=lax`.
 - `APP_DEBUG=false`, `LOG_LEVEL=warning` di produksi bila perlu.
 - `SCRAMBLE_DOCS_TOKEN` diisi agar dokumentasi API tidak terbuka publik.
 - Rate limiter API 120 req/menit per user/IP (`app/Providers/AppServiceProvider.php`).

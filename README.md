@@ -131,13 +131,13 @@ Semua endpoint (kecuali `auth/login`, `auth/register`, webhooks) memerlukan **Be
 
 ```bash
 # 1. Login → dapat token
-curl -X POST https://dikasir.web.id/api/v1/auth/login \
+curl -X POST https://posukmkewirausahaan.web.id/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"password"}'
 # → {"token": "1|abc123...", "user": {...}}
 
 # 2. Panggil API dengan token
-curl https://dikasir.web.id/api/v1/products \
+curl https://posukmkewirausahaan.web.id/api/v1/products \
   -H "Authorization: Bearer 1|abc123..."
 ```
 
@@ -153,7 +153,7 @@ curl https://dikasir.web.id/api/v1/products \
 | Supplier | `suppliers` | CRUD |
 | POS | `pos/shift`, `pos/products`, `pos/cart`, `pos/hold`, `pos/checkout`, `pos/transactions` | Alur kasir lengkap (mobile) |
 
-Base URL: `https://dikasir.web.id/api/v1` (dev: `http://localhost:8000/api/v1`)
+Base URL: `https://posukmkewirausahaan.web.id/api/v1` (dev: `http://localhost:8000/api/v1`)
 
 ### Per Modul
 

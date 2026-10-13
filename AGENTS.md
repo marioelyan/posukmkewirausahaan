@@ -20,7 +20,7 @@ Open-source POS system (200+ stars). Laravel 13 + Inertia 3.0 + React 19.
 
 - **Backend**: Laravel 13 (composer.json requires PHP ^8.3; CI tests on PHP 8.4)
 - **Frontend**: Inertia.js 3.0 + React 19, Vite 5
-- **CI**: `.github/workflows/deploy.yml` uses PHP 8.4 + Node 22 for build, Node 24.15 on deploy VPS
+- **CI**: `.github/workflows/ci.yml` validates + tests on PHP 8.4 + Node 22 (SQLite in-memory). No deploy job.
 - **Styling**: Tailwind CSS 3 (custom theme in `tailwind.config.js`)
 - **Auth/RBAC**: Spatie Laravel Permission + Laravel Breeze
 - **REST API**: Sanctum token-based at `/api/v1`; Scramble docs at `/docs/api`, spec at `/docs/api.json`; protect with `SCRAMBLE_DOCS_TOKEN`
@@ -31,9 +31,10 @@ Open-source POS system (200+ stars). Laravel 13 + Inertia 3.0 + React 19.
 
 ## CI / Deploy
 
-- **CI validates and tests** — `.github/workflows/deploy.yml` validates Composer, runs `npm run build`, and executes `php artisan test --compact` with PHP 8.4, Node 22, and SQLite. Run `php artisan test` locally before every PR.
-- **Push to `main` auto-deploys to production** (`dikasir.web.id` via SSH). Never push directly to `main` — use the release process below.
-- Deploy VPS uses Node 24.15 + PHP 8.4 (`php8.4 artisan migrate --force`).
+- **CI validates and tests** — `.github/workflows/ci.yml` validates Composer, runs `npm run build`, and executes `php artisan test --compact` with PHP 8.4, Node 22, and SQLite. Run `php artisan test` locally before every PR.
+- **No automatic deploy.** Production is shared hosting DewaBiz (DirectAdmin Evo panel), `posukmkewirausahaan.web.id`, with **no SSH/terminal**. Pushing to `main` runs CI only. Deploy is manual: `./scripts/deploy-build.sh` → upload/extract via panel (File Manager/FTP) → artisan via panel cron. See `docs/production-deployment.md`.
+- Still never push directly to `main`: `main` is the release line, work goes through PRs to `development`.
+- The server has no Composer and no Node — `vendor/` and `public/build` must be built locally/CI and shipped inside the package.
 - npm is the package manager of record (`package-lock.json` committed, `bun.lock` gitignored). CI/deploy run `npm ci`. Don't switch to bun/yarn lockfiles.
 
 ## Developer Commands

@@ -1,10 +1,15 @@
-name: CI / Deploy
+name: CI
 
-# Validates, builds, and tests the application on every push and pull request,
-# then deploys to production (dikasir.web.id) when `main` is pushed.
+# Validates, builds, and tests the application on every push and pull request.
 #
 # CI follows AGENTS.md: Composer validation, `npm run build`, and
 # `php artisan test --compact` on PHP 8.4 + Node 22 + SQLite (in-memory).
+#
+# CATATAN DEPLOY: tidak ada job deploy di sini.
+# Produksi berjalan di shared hosting DewaBiz (panel DirectAdmin Evo,
+# posukmkewirausahaan.web.id) TANPA SSH/terminal, jadi deploy dilakukan manual
+# lewat package: `scripts/deploy-build.sh` -> upload panel/FTP -> artisan via cron.
+# Lihat docs/production-deployment.md.
 
 on:
   push:
@@ -69,43 +74,3 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
-
-  deploy:
-    name: Deploy to production (dikasir.web.id)
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: test
-    runs-on: ubuntu-latest
-    env:
-      APP_ENV: production
-    steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script_stop: true
-          script: |
-            set -euo pipefail
-            cd "${{ secrets.DEPLOY_PATH }}"
-
-            # VPS runs PHP 8.4 and Node 24.15 (see AGENTS.md).
-            php8.4 artisan down --retry=30 2>/dev/null || true
-
-            git fetch origin
-            git checkout main
-            git pull --ff-only origin main
-
-            composer install --no-dev --optimize-autoloader --no-interaction --no-progress
-            PUPPETEER_SKIP_DOWNLOAD=true npm ci
-            PUPPETEER_SKIP_DOWNLOAD=true npm run build
-
-            php8.4 artisan migrate --force
-            php8.4 artisan storage:link 2>/dev/null || true
-            php8.4 artisan config:cache
-            php8.4 artisan view:cache
-            php8.4 artisan scramble:cache
-            php8.4 artisan queue:restart 2>/dev/null || true
-
-            php8.4 artisan up

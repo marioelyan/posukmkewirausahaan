@@ -10,7 +10,7 @@
 - **Feature flag tetap `false`** (`MULTI_BUSINESS_ENABLED=false` di `config` default & `.env.example`). `.env` lokal `true` (untracked).
 - `development` = `92bf141` (Merge PR #9), `main` = `d8a3fdd` (**belum tersentuh**).
 - **Yang tersisa:** (a) **eksekusi operasional** (runbook backfill produksi → aktivasi flag → deploy), (b) **fitur fase lanjut** (self-service owner signup), (c) **cleanup opsional** (Q10 sisa migrasi DineIn). **Implementasi kode Q1 sudah SELESAI (PR #11)** — lihat §4.1.
-- **Jangan sentuh `main`** — push ke `main` = auto-deploy produksi. Kerja selalu lewat PR ke `development`.
+- **Jangan sentuh `main`** — `main` = jalur rilis. Kerja selalu lewat PR ke `development`. (Deploy produksi **manual** via panel DewaBiz — tidak ada auto-deploy; lihat `docs/production-deployment.md`.)
 - **Jangan aktifkan flag di produksi** tanpa approval owner + DBA + runbook (`multi-business-backfill-production-runbook.md`).
 - Baca berurutan untuk konteks penuh: dokumen ini → `multi-business-open-decisions.md` → `multi-business-blocker-review-and-decision-register.md` (§13 Decision Log) → `multi-business-phase-4f-implementation-notes.md` → `multi-business-backfill-production-runbook.md`.
 
@@ -120,7 +120,7 @@ Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matri
 
 ### 4.2 Operasional (deferred — butuh approval, bukan kode)
 - **Aktivasi flag `MULTI_BUSINESS_ENABLED=true`** — **Jalur A (fresh install):** tidak perlu backfill. Ikuti `multi-business-backfill-production-runbook.md` §0 dan §13.26 (deploy → `migrate` → `/setup wizard`).
-- **Deployment** ke produksi — via `main` (auto-deploy). Siapkan release branch + tag (`vX.Y.Z`), pastikan `APP_VERSION` konsisten. Gunakan jalur fresh-install.
+- **Deployment** ke produksi — **manual**: merge rilis ke `main` → tag `vX.Y.Z` (+ `APP_VERSION`) → `./scripts/deploy-build.sh` → upload/extract via panel DewaBiz → artisan via cron. Tidak ada auto-deploy. Gunakan jalur fresh-install.
 - **Self-service owner signup** (Q6 fase lanjut) — bagian admin-platform sudah selesai; signup mandiri belum.
 - **Eksekusi runbook backfill produksi** — **Jalur B (existing):** DRAFT (referensi); berdasarkan keputusan owner (2026-10-13) **tidak berlaku** (§13.26).
 - **Self-service owner signup** (Q6 fase lanjut) — bagian admin-platform sudah selesai; signup mandiri belum.
@@ -145,7 +145,7 @@ Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matri
 **Jalur A (fresh install) — siap go-live:**
 - [x] Keputusan owner lengkap (**§13.26**).
 - [x] Kode + test hijau (754 passed, 3253 assertions); Q1 terimplementasi (PR #11).
-- [ ] Siapkan release `release/X.Y.Z` dari `development`; periksa `APP_VERSION`; tag; **konfirmasi go-live merge ke `main`** (auto-deploy).
+- [ ] Siapkan release `release/X.Y.Z` dari `development`; periksa `APP_VERSION`; tag; go-live = merge ke `main` lalu **deploy manual** (package → panel → cron).
 - [ ] Go-live: `MULTI_BUSINESS_ENABLED=true` → `php artisan migrate --force` → `php artisan storage:link` → root → `/setup wizard` → smoke test `docs/testing-manual.md`.
 
 **Jalur B (existing) — TIDAK DIJALANKAN saat ini (draft hanya referensi).**
@@ -242,7 +242,7 @@ vendor/bin/pint
 
 ## 8. Gotcha lingkungan (dari pengalaman sesi ini)
 
-- **Push ke `main` = auto-deploy produksi.** Selalu PR ke `development`; rilis lewat `release/*`.
+- **Tidak ada auto-deploy.** `main` = jalur rilis; deploy produksi manual via panel DewaBiz (package + cron). Selalu PR ke `development`.
 - **`gh pr edit` gagal** (GraphQL "Projects (classic) is being deprecated", exit 1). Workaround: `gh api -X PATCH repos/marioelyan/posukmkewirausahaan/pulls/N --input <file.json>` — bangun JSON via PHP (`jq` **tidak** terpasang).
 - **`gh pr create`**: selalu pakai `--body-file` (backtick di body kena shell command substitution).
 - **Flags test**: `phpunit.xml` mem-*pin* `MULTI_BUSINESS_ENABLED=false`; test tenancy menyalakannya eksplisit + `withSession(['active_business_id' => $id])`.
