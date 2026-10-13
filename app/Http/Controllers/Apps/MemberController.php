@@ -71,7 +71,7 @@ class MemberController extends Controller
 
         $memberRevenue = (int) $this->scopeTransactionsToBusiness(
             Transaction::query()->whereIn('customer_id', (clone $summaryQuery)->pluck('id'))
-        )->sum('grand_total');
+        )->completed()->sum('grand_total');
 
         $repeatMembers = (clone $summaryQuery)
             ->where('loyalty_transaction_count', '>', 1)
@@ -281,6 +281,7 @@ class MemberController extends Controller
     private function buildStats(Customer $customer)
     {
         return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
+            ->completed()
             ->selectRaw('
                 COUNT(*) as total_transactions,
                 SUM(grand_total) as total_spent,

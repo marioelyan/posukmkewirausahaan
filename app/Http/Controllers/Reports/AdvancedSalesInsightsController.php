@@ -143,7 +143,9 @@ class AdvancedSalesInsightsController extends Controller
                 if ($filters['include_legacy']) {
                     $q->orWhereNull('transactions.warehouse_id');
                 }
-            });
+            })
+            // Completed sales only (register §13.25).
+            ->where('transactions.payment_status', Transaction::PAYMENT_STATUS_PAID);
     }
 
     protected function detailMetricsQuery(array $filters)
@@ -162,7 +164,9 @@ class AdvancedSalesInsightsController extends Controller
                 if ($filters['include_legacy']) {
                     $q->orWhereNull('t.warehouse_id');
                 }
-            });
+            })
+            // Completed sales only (register §13.25).
+            ->where('t.payment_status', Transaction::PAYMENT_STATUS_PAID);
     }
 
     private function warehouseStockSubquery($warehouseIds)
