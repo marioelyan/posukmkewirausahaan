@@ -248,7 +248,7 @@ Q5 ⇄ Q8 (job/scheduler perlu context)
 
 ## 7. Open questions untuk pemilik keputusan
 
-> **UPDATE 2026-10-13 (lanjutan):** SELURUH pertanyaan di bawah kini **sudah diputuskan** (lihat §13). Q7→FIN-01..05 §13.13; Q2/Q3/Q14→AUTH §13.14; Q9→FIN-04 §13.13; Q7.a→`business_id` payables/receivables §13.13; Q15→FIN-05 karantina §13.13; Q4/Q4.e→UNIQUE §13.14/§13.17/§13.20/§13.21; Q5→SETTINGS §13.14; Q5.g/Q8→SCHED §13.14; X1→GOV-01 §13.9; **butir 13 (X2 / Q1)**→**§13.25** (completed = `payment_status='paid'`). Implementasi kode Q1 (filter di dashboard/laporan) masih tertunda.
+> **UPDATE 2026-10-13 (lanjutan):** SELURUH pertanyaan di bawah kini **sudah diputuskan** (lihat §13). Q7→FIN-01..05 §13.13; Q2/Q3/Q14→AUTH §13.14; Q9→FIN-04 §13.13; Q7.a→`business_id` payables/receivables §13.13; Q15→FIN-05 karantina §13.13; Q4/Q4.e→UNIQUE §13.14/§13.17/§13.20/§13.21; Q5→SETTINGS §13.14; Q5.g/Q8→SCHED §13.14; X1→GOV-01 §13.9; **butir 13 (X2 / Q1)**→**§13.25** (completed = `payment_status='paid'`). Implementasi kode Q1 (filter di dashboard/laporan + test, PR #11) **SELESAI**.
 
 Tanpa jawaban yang diasumsikan:
 
@@ -697,7 +697,7 @@ Audit berbasis bukti untuk sisa keputusan (Q10–Q16), tanpa mengubah perilaku. 
 | **Q16** laporan lintas business | `Controllers/Reports/*` men-scope via `OutletAccessService::warehousesFor()` → `restrictToActiveBusiness()` + active outlet. **Super-admin pun dibatasi ke business aktif.** Tidak ada agregasi lintas business. | **SELESAI** — isolasi per business aktif ditegakkan; **agregasi lintas business tidak disediakan** (fitur terpisah bila owner butuh). |
 
 - **Yang masih tersisa setelah pass ini:** Q12 diimplementasikan di §13.24; Q10 cleanup (opsional, pasca-deploy); eksekusi runbook produksi (read replica + approval); self-service owner signup; aktivasi flag & deployment.
-- **Catatan doc:** tabel §1 `multi-business-open-decisions.md` Q1–Q9 telah disinkronkan (2026-10-13): **Q2/Q3/Q5/Q7/Q8/Q9 → SELESAI** (bukti §13.13/§13.14/§13.15/§13.16). **Q1** kemudian **diputuskan = A** di §13.25 (completed = `paid`); implementasi kode tertunda.
+- **Catatan doc:** tabel §1 `multi-business-open-decisions.md` Q1–Q9 telah disinkronkan (2026-10-13): **Q2/Q3/Q5/Q7/Q8/Q9 → SELESAI** (bukti §13.13/§13.14/§13.15/§13.16). **Q1** diputuskan = A di §13.25 (completed = `paid`) dan **diimplementasikan (PR #11)**.
 - **Batas:** tidak ada perubahan kode/migrasi; flag tetap `false`; tidak ada mutasi data. PR disiapkan ke `development`.
 
 ### 13.24 Q12 `audit_logs.business_id` — ownership + scoping viewer — 2026-10-13
@@ -725,9 +725,14 @@ Audit berbasis bukti untuk sisa keputusan (Q10–Q16), tanpa mengubah perilaku. 
 
 - **Konsekuensi:** transaksi `failed` dan `pending_approval` ikut terhitung omzet di dashboard & laporan → **overstate**. Ini diperlakukan sebagai **bug perilaku** yang perlu diperbaiki, bukan sekadar preferensi.
 - **Alternatif yang ditolak:** (A′) `paid`+`unpaid` (akrual) — ditolak demi konsistensi kas; (B) tambah kolom lifecycle `status` terpisah — ditolak (belum ada modul void/refund per transaksi; migrasi besar tak sepadan).
-- **Implementasi (KODE, belum dikerjakan — task terpisah):**
-  1. Tambahkan filter final-state pada agregasi omzet: `where('payment_status', 'paid')` di `DashboardController` (revenue/hari/bulan/trend/top-customer), `SalesReportController`, `ProfitReportController`; dan `MemberController` (belanja member) sesuai keputusan.
-  2. Konsisten dengan `CashierShiftService` (jangan duplikasi definisi — pertimbangkan scope/helper bersama, mis. `Transaction::scopeCompleted()`).
-  3. Tambah test regresi: transaksi `failed`/`pending`/`pending_approval`/`unpaid` **tidak** masuk omzet dashboard & laporan; `paid` masuk.
-- **Dampak analitik:** angka historis di dashboard/laporan akan berubah (turun) setelah perbaikan bila ada baris non-`paid`. Perlu dicatat di release notes bila menyentuh produksi.
-- **Batas:** entri ini **docs-only**; tidak ada perubahan kode/migrasi pada PR ini; flag tetap `false`.
+- **Implementasi (KODE — SELESAI, PR #11):**
+  1. Helper bersama `Transaction::scopeCompleted()` + konstanta `Transaction::PAYMENT_STATUS_PAID` (`app/Models/Transaction.php`) — satu definisi "completed", tidak diduplikasi.
+  2. Filter diterapkan pada agregasi omzet/laba:
+     - `DashboardController`: `totalTransactions`, `totalRevenue`, `totalProfit`, `averageOrder`, `todayTransactions`, `todaySales`, `todayProfit`, `currentMonthSales`, `revenueTrend`, `topProducts`, `topCustomers`, `topLocations`, `recentlySoldProductIds` (feed `recentTransactions` & `setupChecklist` sengaja **tidak** difilter — bukan metrik omzet).
+     - `SalesReportController::applyFilters()` dan `ProfitReportController::applyFilters()` — baris daftar **dan** total ikut terfilter agar konsisten.
+     - `AdvancedSalesInsightsController`: `applyTransactionFilters()` + `detailMetricsQuery()` (top produk/margin/kasir) — agar laporan keluarga yang sama tidak saling berbeda.
+     - `MemberController` (`member_revenue` + `buildStats`) dan `CustomerController::buildStats` (belanja/`total_spent` pelanggan).
+  3. Test regresi: `tests/Feature/Reports/CompletedTransactionScopeTest.php` (7 test) memverifikasi `failed`/`pending`/`pending_approval`/`unpaid` **tidak** masuk omzet dashboard, sales/profit/insights report, dan member revenue; `paid` masuk; feed aktivitas tetap menampilkan non-`paid`.
+- **Sisa permukaan teragregasi (belum difilter — follow-up opsional):** `CashierShiftService`/`CashierShiftResource` (rekap shift/drawer; sisi kas sudah `paid`), serta daftar riwayat ("recent transactions", riwayat pelanggan) yang memang *activity feed*, bukan omzet.
+- **Dampak analitik:** angka historis di dashboard/laporan berubah (turun) bila ada baris non-`paid`. Catat di release notes bila menyentuh produksi.
+- **Batas:** perubahan kode + test (tanpa migrasi); flag tetap `false`; `main` tidak disentuh.

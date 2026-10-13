@@ -9,7 +9,7 @@
 - **Semua slice KODE multi-business SELESAI & test hijau.** Objective "staging-ready" tercapai.
 - **Feature flag tetap `false`** (`MULTI_BUSINESS_ENABLED=false` di `config` default & `.env.example`). `.env` lokal `true` (untracked).
 - `development` = `92bf141` (Merge PR #9), `main` = `d8a3fdd` (**belum tersentuh**).
-- **Yang tersisa:** (a) **implementasi kode Q1** (keputusan sudah diambil = A; filter status di dashboard/laporan), (b) **eksekusi operasional** (runbook backfill produksi → aktivasi flag → deploy), (c) **fitur fase lanjut** (self-service owner signup), (d) **cleanup opsional** (Q10 sisa migrasi DineIn).
+- **Yang tersisa:** (a) **eksekusi operasional** (runbook backfill produksi → aktivasi flag → deploy), (b) **fitur fase lanjut** (self-service owner signup), (c) **cleanup opsional** (Q10 sisa migrasi DineIn). **Implementasi kode Q1 sudah SELESAI (PR #11)** — lihat §4.1.
 - **Jangan sentuh `main`** — push ke `main` = auto-deploy produksi. Kerja selalu lewat PR ke `development`.
 - **Jangan aktifkan flag di produksi** tanpa approval owner + DBA + runbook (`multi-business-backfill-production-runbook.md`).
 - Baca berurutan untuk konteks penuh: dokumen ini → `multi-business-open-decisions.md` → `multi-business-blocker-review-and-decision-register.md` (§13 Decision Log) → `multi-business-phase-4f-implementation-notes.md` → `multi-business-backfill-production-runbook.md`.
@@ -52,7 +52,7 @@
 - **Middleware** (`routes/web.php` grup dashboard): `business` → `business.required` → `business.role` (`ResolveBusinessContext`, `EnsureActiveBusiness`, `EnforceBusinessRoleCapability`). Tanpa konteks saat flag ON → **403 (fail-closed)**.
 - **Konteks**: `App\Services\BusinessContext` (`setActive`, `businessId`, `hasActiveBusiness`), switch via `Route::post('/dashboard/business', ...)` dan `/dashboard/outlet`.
 
-### 2.2 Keputusan owner — semua sudah diputuskan; Q1 implementasi tertunda
+### 2.2 Keputusan owner — semua sudah diputuskan & terwujud (Q1 terimplementasi)
 | ID | Keputusan | Terwujud | Ringkas |
 |---|---|---|---|
 | AUTH-01/02/03 (Q2/Q3/Q14) | Hybrid membership + Spatie capability; role per business; `teams=false` | §13.14 | `BusinessRoleCapabilities` + `business.role`; owner/manager/staff |
@@ -105,16 +105,18 @@ Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matri
 ## 4. KEKURANGAN / yang BELUM selesai
 
 ### 4.1 Keputusan bisnis
-- **Q1 — Definisi transaksi "completed": DIPUTUSKAN = A (§13.25, 2026-10-13).** `completed` = `payment_status='paid'`; `unpaid` (piutang) bukan omzet selesai; `pending`/`pending_approval`/`failed` dikecualikan.
-  - **Implementasi KODE BELUM dikerjakan** (task terpisah, jalur "koreksi presisi"):
-    - `app/Http/Controllers/DashboardController.php` — agregasi omzet baris **48, 54, 65, 67** (total/today/month/trend) dan **167** (top customers) perlu filter `payment_status='paid'`.
-    - `app/Http/Controllers/Reports/SalesReportController.php` — baris **56** (`SUM(grand_total)`).
-    - `app/Http/Controllers/Reports/ProfitReportController.php` — baris **54**.
-    - `app/Http/Controllers/Apps/MemberController.php` — baris **74** (belanja member), sesuaikan.
-    - Sudah benar: `app/Services/CashierShiftService.php` (baris 106, 115).
-  - **Saran:** buat helper/scope bersama (mis. `Transaction::scopeCompleted()`) agar definisi tak terduplikasi; tambah test regresi (non-`paid` tidak masuk omzet).
-  - **Catatan:** angka historis dashboard/laporan bisa **turun** setelah perbaikan; cantumkan di release notes.
-  - **Tidak memblokir** staging/aktivasi teknis, tetapi memperbaiki akurasi laporan (saat ini `failed`/`pending_approval` ikut terhitung omzet).
+- **Q1 — Definisi transaksi "completed": DIPUTUSKAN = A (§13.25) dan SUDAH DIIMPLEMENTASIKAN (PR #11).** `completed` = `payment_status='paid'`; `unpaid` (piutang) bukan omzet selesai; `pending`/`pending_approval`/`failed` dikecualikan.
+  - **Implementasi (selesai):**
+    - `app/Models/Transaction.php` — `scopeCompleted()` + konstanta `PAYMENT_STATUS_PAID` (satu definisi bersama).
+    - `app/Http/Controllers/DashboardController.php` — `totalTransactions/totalRevenue/totalProfit/averageOrder/todayTransactions/todaySales/todayProfit/currentMonthSales/revenueTrend/topProducts/topCustomers/topLocations/recentlySoldProductIds`. Feed `recentTransactions` & `setupChecklist` sengaja **tidak** difilter (bukan omzet).
+    - `app/Http/Controllers/Reports/SalesReportController.php` & `ProfitReportController.php` — `applyFilters()` (daftar **dan** total konsisten).
+    - `app/Http/Controllers/Reports/AdvancedSalesInsightsController.php` — `applyTransactionFilters()` + `detailMetricsQuery()`.
+    - `app/Http/Controllers/Apps/MemberController.php` (`member_revenue` + `buildStats`) & `CustomerController::buildStats`.
+    - Sudah benar sebelumnya: `app/Services/CashierShiftService.php` (kas, baris 106/115).
+  - **Test:** `tests/Feature/Reports/CompletedTransactionScopeTest.php` (7 test) — non-`paid` tidak masuk omzet dashboard/sales/profit/insights/member; `paid` masuk; feed aktivitas tetap menampilkan semua.
+  - **Sisa (follow-up opsional):** rekap shift (`CashierShiftService`/`CashierShiftResource`) & daftar riwayat — bukan metrik omzet.
+  - **Catatan:** angka historis dashboard/laporan berubah (**turun**) bila ada baris non-`paid`; cantumkan di release notes.
+  - **Tidak memblokir** staging/aktivasi teknis.
 
 ### 4.2 Operasional (deferred — butuh approval, bukan kode)
 - **Eksekusi runbook backfill produksi** — DRAFT, **belum dieksekusi**. Baca `multi-business-backfill-production-runbook.md`. Pra-syarat: read replica/restored copy, backup + uji restore, jendela perawatan, approval tertulis **owner + DBA**. Fase: 0 audit read-only → 1 deploy migrasi → 2 dry-run → 3 gate approval → 4 apply bertahap → 5 swap index manual (DBA) → 6 verifikasi → 7 aktivasi flag (keputusan terpisah).
@@ -249,7 +251,7 @@ vendor/bin/pint
 
 ## 9. Saran task berikutnya (prioritas)
 
-1. **[Kode] Implementasi Q1 (keputusan sudah = A)** — filter `payment_status='paid'` di agregasi omzet `DashboardController` (48,54,65,67,167), `SalesReportController` (56), `ProfitReportController` (54), `MemberController` (74); helper/scope bersama + test regresi. (Lihat §4.1.)
+1. ~~**[Kode] Implementasi Q1** — filter `payment_status='paid'` + test regresi.~~ **SELESAI (PR #11)** — lihat §4.1.
 2. **[Dokumen/ops] Persetujuan runbook** — review & approval owner + DBA; siapkan akses read replica + jadwal jendela perawatan.
 3. **[Ops] Rehearsal + eksekusi runbook** pada restored copy, lalu Fase 4–6 live.
 4. **[Ops] Aktivasi flag di staging + smoke QA** (`docs/testing-manual.md`), baru kemudian produksi.
@@ -262,7 +264,7 @@ vendor/bin/pint
 
 ## 10. Pertanyaan terbuka untuk owner (bila AI melanjutkan)
 
-1. ~~**Q1**: definisi transaksi "completed"~~ — **SUDAH DIPUTUSKAN = A** (§13.25). Sisa: implementasi kode (task #1 §9).
+1. ~~**Q1**: definisi transaksi "completed"~~ — **DIPUTUSKAN = A & SUDAH DIIMPLEMENTASIKAN** (§13.25, PR #11).
 2. Apakah **FK `restrictOnDelete`** (bisnis diarsipkan, tak bisa hard-delete) disetujui? (§13.13 D4)
 3. Apakah owner butuh **laporan konsolidasi lintas business** (fitur baru) atau cukup per-business?
 4. Apakah **histori `audit_logs` legacy** perlu di-backfill agar terlihat setelah flag ON?

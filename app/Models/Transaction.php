@@ -10,11 +10,29 @@ class Transaction extends Model
 {
     use HasFactory;
 
+    /**
+     * Payment settled. Business definition of a completed sale for revenue and
+     * profit reporting (register §13.25): completed === payment_status 'paid'.
+     * `unpaid` (credit), `pending`, `pending_approval`, and `failed` are not
+     * completed and must not count as revenue.
+     */
+    public const PAYMENT_STATUS_PAID = 'paid';
+
     protected static function booted(): void
     {
         static::creating(function ($transaction) {
             $transaction->access_token = (string) Str::uuid();
         });
+    }
+
+    /**
+     * Limit to completed (paid) transactions. Use this scope on every revenue,
+     * profit, or sales-count aggregation so reporting matches the cashier shift
+     * summary, which already counts only paid settlements.
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where($query->qualifyColumn('payment_status'), self::PAYMENT_STATUS_PAID);
     }
 
     protected $fillable = [

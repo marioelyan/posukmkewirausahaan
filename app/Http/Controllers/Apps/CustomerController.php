@@ -476,6 +476,7 @@ class CustomerController extends Controller
     private function buildStats(Customer $customer)
     {
         return $this->scopeTransactionsToBusiness(Transaction::where('customer_id', $customer->id))
+            ->completed()
             ->selectRaw('
                 COUNT(*) as total_transactions,
                 SUM(grand_total) as total_spent,
