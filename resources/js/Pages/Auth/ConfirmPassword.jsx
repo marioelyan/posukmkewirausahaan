@@ -8,6 +8,7 @@ import {
     IconEyeOff,
     IconLoader2,
 } from "@tabler/icons-react";
+import { replayPendingStepUp } from "@/Utils/stepUpReplay";
 
 export default function ConfirmPassword({ challenge = null }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -32,7 +33,14 @@ export default function ConfirmPassword({ challenge = null }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route("password.confirm"));
+        post(route("password.confirm"), {
+            onSuccess: () => {
+                // The step-up middleware redirected the original sensitive
+                // request here; re-issue it now that the password is fresh so
+                // the user does not have to repeat the action.
+                replayPendingStepUp();
+            },
+        });
     };
 
     return (

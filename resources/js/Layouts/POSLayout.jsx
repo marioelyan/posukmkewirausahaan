@@ -16,6 +16,7 @@ import {
     IconArrowsMaximize,
     IconArrowsMinimize,
     IconQuestionMark,
+    IconBuildingStore,
 } from "@tabler/icons-react";
 import Notification from "@/Components/Dashboard/Notification";
 import { useTour } from "@/Hooks/useTour";
@@ -26,7 +27,7 @@ import {
 } from "@/Utils/offlineDb";
 
 export default function POSLayout({ children }) {
-    const { auth, storeProfile, activeCashierShift, appVersion } = usePage().props;
+    const { auth, storeProfile, activeCashierShift, appVersion, multiBusinessEnabled } = usePage().props;
     const { darkMode, themeSwitcher } = useTheme();
     const { start: startTour, isActive: tourActive } = useTour("pos");
     const [pendingSyncCount, setPendingSyncCount] = useState(0);
@@ -35,6 +36,14 @@ export default function POSLayout({ children }) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Outlet/warehouse context: show only when outlet context is meaningful
+    // (multi-business enabled or more than one accessible outlet) so legacy
+    // single-outlet installs keep their current header.
+    const currentOutlet = auth?.currentOutlet;
+    const shiftWarehouse = activeCashierShift?.warehouse;
+    const showOutletContext =
+        !!currentOutlet && (multiBusinessEnabled === true || (auth?.outlets?.length ?? 0) > 1);
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -135,6 +144,31 @@ export default function POSLayout({ children }) {
                             {storeProfile?.name || "KASIR"}
                         </span>
                     </Link>
+
+                    {/* Outlet / Warehouse Context */}
+                    {showOutletContext && (
+                        <div
+                            className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-800"
+                            title={
+                                shiftWarehouse?.name
+                                    ? `${currentOutlet.name} — Gudang ${shiftWarehouse.name}`
+                                    : currentOutlet.name
+                            }
+                        >
+                            <IconBuildingStore
+                                size={16}
+                                className="shrink-0 text-primary-500"
+                            />
+                            <span className="max-w-40 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
+                                {currentOutlet.code} · {currentOutlet.name}
+                            </span>
+                            {shiftWarehouse?.code && (
+                                <span className="hidden lg:inline text-xs text-slate-500 dark:text-slate-400">
+                                    Gudang {shiftWarehouse.code}
+                                </span>
+                            )}
+                        </div>
+                    )}
 
                     {/* Divider */}
                     <div className="hidden md:block w-px h-8 bg-slate-200 dark:bg-slate-700" />

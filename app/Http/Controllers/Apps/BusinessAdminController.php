@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Apps;
 
 use App\Http\Controllers\Controller;
 use App\Models\Business;
+use App\Models\BusinessUser;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Support\Tenancy\BusinessProvisioner;
@@ -65,6 +66,87 @@ class BusinessAdminController extends Controller
 
         return Inertia::render('Dashboard/Businesses/Create', [
             'users' => $users,
+        ]);
+    }
+
+    /**
+     * C1 — business detail + membership management.
+     *
+     * Lists the business membership (role/status) and the outlet access each
+     * member currently has. Candidate users exclude super-admins (they use the
+     * platform path) and existing members.
+     */
+    public function show(Business $business): Response
+    {
+        $business->loadCount(['outlets', 'memberships']);
+
+        $members = $business->memberships()
+            ->with([
+                'user:id,name,email,avatar',
+                'user.outlets',
+                'defaultOutlet:id,code,name',
+            ])
+            ->orderBy('id')
+            ->get()
+            ->map(function (BusinessUser $member) use ($business) {
+                $outletIds = $member->user
+                    ? $member->user->outlets
+                        ->where('business_id', $business->id)
+                        ->pluck('id')
+                        ->map(fn ($id) => (int) $id)
+                        ->values()
+                        ->all()
+                    : [];
+
+                return [
+                    'id' => $member->id,
+                    'user' => $member->user?->only(['id', 'name', 'email', 'avatar']),
+                    'role' => $member->role,
+                    'status' => $member->status,
+                    'default_outlet' => $member->defaultOutlet?->only(['id', 'code', 'name']),
+                    'outlet_ids' => $outletIds,
+                    'joined_at' => $member->joined_at?->toISOString(),
+                    'is_owner' => $business->owner_user_id !== null
+                        && (int) $member->user_id === (int) $business->owner_user_id,
+                ];
+            })
+            ->values();
+
+        $memberUserIds = $business->memberships()->pluck('user_id');
+
+        $candidateUsers = User::query()
+            ->whereDoesntHave('roles', fn ($query) => $query->where('name', 'super-admin'))
+            ->whereNotIn('id', $memberUserIds)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email'])
+            ->map(fn (User $user) => $user->only(['id', 'name', 'email']))
+            ->values();
+
+        return Inertia::render('Dashboard/Businesses/Show', [
+            'business' => [
+                'id' => $business->id,
+                'name' => $business->name,
+                'slug' => $business->slug,
+                'status' => $business->status,
+                'currency' => $business->currency,
+                'owner_user_id' => $business->owner_user_id,
+                'outlets_count' => $business->outlets_count,
+                'memberships_count' => $business->memberships_count,
+            ],
+            'members' => $members,
+            'candidateUsers' => $candidateUsers,
+            'outlets' => $business->outlets()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'code', 'name'])
+                ->map(fn ($outlet) => [
+                    'id' => $outlet->id,
+                    'code' => $outlet->code,
+                    'name' => $outlet->name,
+                ])
+                ->values(),
+            'roles' => BusinessUser::ROLES,
+            'statuses' => BusinessUser::STATUSES,
         ]);
     }
 

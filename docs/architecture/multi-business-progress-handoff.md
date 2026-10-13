@@ -8,7 +8,7 @@
 
 - **Semua slice KODE multi-business SELESAI & test hijau.** Objective "staging-ready" tercapai.
 - **Feature flag tetap `false`** (`MULTI_BUSINESS_ENABLED=false` di `config` default & `.env.example`). `.env` lokal `true` (untracked).
-- `development` = `92bf141` (Merge PR #9), `main` = `d8a3fdd` (**belum tersentuh**).
+- `development` = `2e24530` (Merge PR #12), `main` = `d8a3fdd` (**belum tersentuh**).
 - **Yang tersisa:** (a) **eksekusi operasional** (runbook backfill produksi → aktivasi flag → deploy), (b) **fitur fase lanjut** (self-service owner signup), (c) **cleanup opsional** (Q10 sisa migrasi DineIn). **Implementasi kode Q1 sudah SELESAI (PR #11)** — lihat §4.1.
 - **Jangan sentuh `main`** — `main` = jalur rilis. Kerja selalu lewat PR ke `development`. (Deploy produksi **manual** via panel DewaBiz — tidak ada auto-deploy; lihat `docs/production-deployment.md`.)
 - **Jangan aktifkan flag di produksi** tanpa approval owner + DBA + runbook (`multi-business-backfill-production-runbook.md`).
@@ -21,12 +21,12 @@
 | Item | Nilai |
 |---|---|
 | Branch aktif | `development` (sinkron `origin/development`) |
-| `development` | `92bf141` (Merge PR #9) |
+| `development` | `2e24530` (Merge PR #12) |
 | `main` | `d8a3fdd` (tak tersentuh / belum ada deploy baru dari kerja ini) |
 | Remote | `github.com/marioelyan/posukmkewirausahaan` (fork) |
 | Feature flag | `MULTI_BUSINESS_ENABLED=false` |
-| Test suite | **747 passed (3161 assertions)** (lokal, SQLite in-memory) |
-| CI | PR terakhir PASS (~2m16s); job deploy = *skipping* (hanya `main`) |
+| Test suite | **754 passed (3253 assertions)** (lokal, SQLite in-memory) |
+| CI | PR terakhir PASS; **CI-only, tanpa job deploy** (`.github/workflows/ci.yml`) |
 | Lint | `vendor/bin/pint` bersih |
 | Mutasi data produksi | **Nol** |
 
@@ -42,6 +42,9 @@
 | #7 | pass status Q10–Q16 (berbasis bukti) |
 | #8 | Q12 `audit_logs.business_id` ownership + viewer scoping |
 | #9 | sync status keputusan Q1–Q9 + dokumen progress/handoff (docs-only) |
+| #10 | catat keputusan Q1 (=A) + perbaikan dokumen handoff (docs-only) |
+| #11 | **implementasi Q1** — scope `payment_status='paid'` pada analitik omzet (`scopeCompleted`) |
+| #12 | koreksi jalur deploy (manual panel DewaBiz), `deploy.yml` → `ci.yml` (tanpa job deploy) |
 
 ---
 
@@ -78,6 +81,15 @@
 
 ### 2.4 Dokumentasi tuntas
 Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matrix, security test plan, 8 catatan fase, runbook produksi (DRAFT), phase-4f notes. Tabel status Q1–Q9 sudah disinkronkan (PR #9).
+
+### 2.5 Fiks UI/UX step-up (sesi ini, uncommitted)
+- **Bug "Add Member tidak berefek"**: `Businesses/Show.jsx` memakai pola `form.transform(cb).post(...)` yang **rusak di Inertia React 3.6.1** — `transform()` tidak mengembalikan form (lihat `node_modules/@inertiajs/react/dist/index.js`), sehingga `.post()`/`.patch()` dipanggil pada `undefined` → TypeError sebelum request terkirim. Diperbaiki: `transform()` dipanggil terpisah, lalu `post`/`patch`. Menimpa form Tambah & Ubah Anggota.
+- **Step-up auto-replay**: sebelumnya, aksi sensitif yang dicegat `step_up` dialihkan ke halaman Confirm Password dan user harus klik ulang. Sekarang request asli **diulang otomatis** setelah konfirmasi password:
+  - `resources/js/Utils/stepUpReplay.js` (baru): merekam visit non-GET terakhir via event Inertia `router.on('start')`; saat `navigate` mendarat di `Auth/ConfirmPassword`, visit tersebut disimpan sebagai pending; `replayPendingStepUp()` menerbitkan ulang visit asli (termasuk data/upload, karena direkam di client).
+  - `resources/js/app.jsx`: `installStepUpReplay()`.
+  - `resources/js/Pages/Auth/ConfirmPassword.jsx`: `onSuccess` → `replayPendingStepUp()`.
+  - Tidak ada pre-check global → aksi non-sensitif (mis. logout) tidak terpengaruh. Berlaku untuk POST/PUT/PATCH/DELETE (diverifikasi E2E untuk Add Member dan remove member).
+- **Verifikasi**: Chrome headless — Add Member → `step_up` → konfirmasi password → member bertambah tanpa klik kedua; remove member serupa. `npm run build` sukses; `PasswordConfirmationTest` + `BusinessMembershipAdminTest` = 17 passed.
 
 ---
 
@@ -123,7 +135,6 @@ Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matri
 - **Deployment** ke produksi — **manual**: merge rilis ke `main` → tag `vX.Y.Z` (+ `APP_VERSION`) → `./scripts/deploy-build.sh` → upload/extract via panel DewaBiz → artisan via cron. Tidak ada auto-deploy. Gunakan jalur fresh-install.
 - **Self-service owner signup** (Q6 fase lanjut) — bagian admin-platform sudah selesai; signup mandiri belum.
 - **Eksekusi runbook backfill produksi** — **Jalur B (existing):** DRAFT (referensi); berdasarkan keputusan owner (2026-10-13) **tidak berlaku** (§13.26).
-- **Self-service owner signup** (Q6 fase lanjut) — bagian admin-platform sudah selesai; signup mandiri belum.
 
 ### 4.3 Cleanup opsional
 - **Q10 residu**: `database/migrations/2026_10_11_000001_drop_dine_in_tables.php`. Idempotent/no-op pada install fresh; disarankan dihapus **pasca-deploy** (jangan hapus sebelum jendela deploy bila masih membersihkan install lama).
@@ -187,7 +198,7 @@ Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matri
 | Settings | `App\Services\...` + `TenantSettingScopeException`, `PLATFORM_KEYS` |
 | Scheduler | `BusinessTaskRunner` (enumerate active business) |
 | Middleware | `app/Http/Middleware/{ResolveBusinessContext,EnsureActiveBusiness,EnforceBusinessRoleCapability}.php` |
-| Admin business | `app/Http/Controllers/Apps/BusinessAdminController.php`, `BusinessContextController.php` |
+| Admin business | `app/Http/Controllers/Apps/BusinessAdminController.php`; `app/Http/Controllers/BusinessContextController.php` |
 | Trait scope | `BelongsToBusiness` (global scope selektif fail-closed) |
 
 ### Konfigurasi & rute
@@ -257,8 +268,6 @@ vendor/bin/pint
   - File body PR (`--body-file`) kadang hilang dari `/tmp/**`; tulis ulang bila `gh` bilang "no such file".
 
 ---
-
-## 9. Saran task berikutnya (prioritas)
 
 ## 9. Saran task berikutnya (prioritas)
 

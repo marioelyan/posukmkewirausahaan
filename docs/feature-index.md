@@ -63,6 +63,7 @@
 | Printer Settings | `docs/features/thermal-printer.md` | ✅ |
 | Users & Roles | `docs/features/rbac-users-roles.md` | ✅ |
 | Permissions | `docs/features/rbac-users-roles.md` | ✅ |
+| Business & Membership | `docs/features/business-membership.md` | ✅ |
 | Audit Logs | `docs/features/audit-logs.md` | ✅ |
 
 ## Reports & Documents

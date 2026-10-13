@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Business;
 use App\Services\BusinessMembershipResolver;
+use App\Services\OutletAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class BusinessContextController extends Controller
 {
-    public function __construct(private readonly BusinessMembershipResolver $resolver) {}
+    public function __construct(
+        private readonly BusinessMembershipResolver $resolver,
+        private readonly OutletAccessService $outletAccess,
+    ) {}
 
     public function switch(Request $request): RedirectResponse
     {
@@ -29,6 +33,12 @@ class BusinessContextController extends Controller
             : $this->resolver->activeMembershipFor($user, (int) $businessId)?->business;
 
         abort_unless($business, 404);
+
+        abort_if(
+            $this->outletAccess->hasActiveShiftInOtherBusiness($user, $business->id),
+            422,
+            'Tutup shift aktif sebelum mengganti business.'
+        );
 
         $request->session()->put('active_business_id', $business->id);
 

@@ -193,6 +193,25 @@ class OutletAccessService
             ->exists();
     }
 
+    /**
+     * True when the user has an open shift whose warehouse belongs to a
+     * business other than $businessId. Used to lock the business switcher the
+     * same way {@see hasActiveShiftInOtherOutlet()} locks the outlet switcher:
+     * switching business mid-shift would leave the shift pointing at a
+     * warehouse outside the newly active business.
+     */
+    public function hasActiveShiftInOtherBusiness(User $user, int $businessId): bool
+    {
+        $hierarchy = app(BusinessHierarchyService::class);
+
+        return CashierShift::query()
+            ->with('warehouse.outlet')
+            ->open()
+            ->where('user_id', $user->id)
+            ->get()
+            ->contains(fn (CashierShift $shift) => ! $hierarchy->warehouseBelongsToBusiness($shift->warehouse, $businessId));
+    }
+
     public function hasWarehouseHistory(Warehouse $warehouse): bool
     {
         $warehouseId = $warehouse->id;

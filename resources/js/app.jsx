@@ -5,8 +5,11 @@ import './i18n';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { installStepUpReplay } from './Utils/stepUpReplay';
 import { ThemeSwitcherProvider } from './Context/ThemeSwitcherContext';
 import { OnlineStatusProvider } from './Context/OnlineStatusContext';
+
+installStepUpReplay();
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\Apps\AgingController;
 use App\Http\Controllers\Apps\AuditLogController;
 use App\Http\Controllers\Apps\BankAccountController;
 use App\Http\Controllers\Apps\BusinessAdminController;
+use App\Http\Controllers\Apps\BusinessMemberController;
 use App\Http\Controllers\Apps\CashierShiftController;
 use App\Http\Controllers\Apps\CategoryController;
 use App\Http\Controllers\Apps\CrmCampaignController;
@@ -425,6 +426,13 @@ Route::middleware(['auth', 'platform.admin'])->prefix('dashboard')->group(functi
     Route::post('/businesses', [BusinessAdminController::class, 'store'])->middleware('step_up')->name('businesses.store');
     Route::patch('/businesses/{business}', [BusinessAdminController::class, 'update'])->middleware('step_up')->name('businesses.update');
     Route::patch('/businesses/{business}/status', [BusinessAdminController::class, 'updateStatus'])->middleware('step_up')->name('businesses.updateStatus');
+
+    // C1 — business membership management (members + outlet access). Writes
+    // require a fresh password confirmation, like every other platform write.
+    Route::get('/businesses/{business}', [BusinessAdminController::class, 'show'])->name('businesses.show');
+    Route::post('/businesses/{business}/members', [BusinessMemberController::class, 'store'])->middleware('step_up')->name('businesses.members.store');
+    Route::patch('/businesses/{business}/members/{member}', [BusinessMemberController::class, 'update'])->middleware('step_up')->name('businesses.members.update');
+    Route::delete('/businesses/{business}/members/{member}', [BusinessMemberController::class, 'destroy'])->middleware('step_up')->name('businesses.members.destroy');
 });
 
 require __DIR__.'/auth.php';
