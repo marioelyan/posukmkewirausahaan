@@ -20,3 +20,26 @@
     }
 }
 
+/* === Mobile viewport height ===
+   `100vh` on mobile means "the viewport with the browser toolbars hidden", so
+   full-height shells (dashboard, POS) get their bottom edge — and any control
+   anchored to it — cut off behind the address bar. `dvh` tracks the *visible*
+   viewport instead. Browsers without `dvh` keep the `vh` fallback. */
+.h-viewport {
+    height: 100vh;
+}
+
+.min-h-viewport {
+    min-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+    .h-viewport {
+        height: 100dvh;
+    }
+
+    .min-h-viewport {
+        min-height: 100dvh;
+    }
+}
+

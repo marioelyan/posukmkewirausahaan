@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { IconLayoutGrid } from "@tabler/icons-react";
 import LinkItem from "@/Components/Dashboard/LinkItem";
 import LinkItemDropdown from "@/Components/Dashboard/LinkItemDropdown";
+import BusinessSwitcher from "@/Components/Dashboard/BusinessSwitcher";
+import OutletSwitcher from "@/Components/Dashboard/OutletSwitcher";
 import Menu from "@/Utils/Menu";
 import { BRAND } from "@/config/brand";
 import BrandLogo, { BrandMark } from "@/Components/BrandLogo";
@@ -17,7 +19,7 @@ const ROLE_LABEL_KEYS = {
 
 export default function Sidebar({ sidebarOpen }) {
     const { t } = useTranslation();
-    const { auth, storeProfile, appVersion } = usePage().props;
+    const { auth, storeProfile, appVersion, multiBusinessEnabled } = usePage().props;
     const menuNavigation = Menu();
 
     const roleKey = ROLE_LABEL_KEYS[auth?.businessRole];
@@ -30,14 +32,23 @@ export default function Sidebar({ sidebarOpen }) {
         auth?.user?.name?.charAt(0)?.toUpperCase() ||
         "K";
 
+    // The switchers render nothing when there is a single business/outlet, so the
+    // mobile context block must not leave an empty strip behind.
+    const hasBusinessContext =
+        (auth?.businesses?.length ?? 0) >= 2 || Boolean(auth?.currentBusiness);
+    const hasOutletContext =
+        (auth?.outlets?.length ?? 0) >= 2 ||
+        (multiBusinessEnabled && Boolean(auth?.currentOutlet));
+    const showMobileContext = hasBusinessContext || hasOutletContext;
+
     return (
         <div
             data-role={auth?.businessRole ?? undefined}
             className={`
                 ${sidebarOpen ? "translate-x-0 w-[260px]" : "-translate-x-full w-[260px]"}
                 md:translate-x-0 ${sidebarOpen ? "md:w-[260px]" : "md:w-[80px]"}
-                fixed md:relative inset-y-0 left-0 z-40
-                flex h-screen flex-col overflow-hidden md:sticky md:top-0 md:self-stretch md:shrink-0
+                fixed md:relative inset-y-0 left-0 z-50 md:z-auto
+                flex h-viewport flex-col overflow-hidden md:sticky md:top-0 md:self-stretch md:shrink-0
                 border-r border-slate-200 dark:border-slate-800
                 bg-white dark:bg-slate-900
                 transition-all duration-300 ease-in-out
@@ -66,6 +77,27 @@ export default function Sidebar({ sidebarOpen }) {
 
             {/* Navigation */}
             <nav className="dashboard-scrollbar min-h-0 flex-1 overflow-y-auto py-3">
+                {/* Business/outlet context — the navbar drops these on phones, so
+                    the drawer is where they live. Hidden from md up, where the
+                    navbar shows them. */}
+                {showMobileContext && (
+                    <div className="mb-2 space-y-2 border-b border-slate-100 px-3 pb-3 md:hidden dark:border-slate-800">
+                        <BusinessSwitcher
+                            business={auth?.currentBusiness}
+                            businesses={auth?.businesses}
+                            locked={auth?.outletLocked}
+                            fullWidth
+                        />
+                        <OutletSwitcher
+                            outlet={auth?.currentOutlet}
+                            outlets={auth?.outlets}
+                            locked={auth?.outletLocked}
+                            showIndicator={multiBusinessEnabled}
+                            fullWidth
+                        />
+                    </div>
+                )}
+
                 {menuNavigation.map((section, index) => {
                     const hasPermission = section.details.some(
                         (detail) => detail.permissions === true
