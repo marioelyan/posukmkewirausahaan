@@ -1,5 +1,6 @@
 import React from "react";
 import { usePage } from "@inertiajs/react";
+import { useTranslation } from "react-i18next";
 import { IconLayoutGrid } from "@tabler/icons-react";
 import LinkItem from "@/Components/Dashboard/LinkItem";
 import LinkItemDropdown from "@/Components/Dashboard/LinkItemDropdown";
@@ -7,9 +8,20 @@ import Menu from "@/Utils/Menu";
 import { BRAND } from "@/config/brand";
 import BrandLogo, { BrandMark } from "@/Components/BrandLogo";
 
+const ROLE_LABEL_KEYS = {
+    owner: "sidebar.roles.owner",
+    manager: "sidebar.roles.manager",
+    staff: "sidebar.roles.staff",
+    "super-admin": "sidebar.roles.superAdmin",
+};
+
 export default function Sidebar({ sidebarOpen }) {
+    const { t } = useTranslation();
     const { auth, storeProfile, appVersion } = usePage().props;
     const menuNavigation = Menu();
+
+    const roleKey = ROLE_LABEL_KEYS[auth?.businessRole];
+    const roleLabel = roleKey ? t(roleKey) : "";
 
     const storeName = storeProfile?.name || BRAND.name;
     const storeLogo = storeProfile?.logo || null;
@@ -20,6 +32,7 @@ export default function Sidebar({ sidebarOpen }) {
 
     return (
         <div
+            data-role={auth?.businessRole ?? undefined}
             className={`
                 ${sidebarOpen ? "translate-x-0 w-[260px]" : "-translate-x-full w-[260px]"}
                 md:translate-x-0 ${sidebarOpen ? "md:w-[260px]" : "md:w-[80px]"}
@@ -59,12 +72,32 @@ export default function Sidebar({ sidebarOpen }) {
                     );
                     if (!hasPermission) return null;
 
+                    // Quick action block: buttons above the sections, no title.
+                    if (section.isActionBlock) {
+                        return (
+                            <div key={index} className="mb-2 space-y-2">
+                                {section.details.map((detail, idx) => (
+                                    <LinkItem
+                                        key={idx}
+                                        title={detail.title}
+                                        icon={detail.icon}
+                                        href={detail.href}
+                                        access={detail.permissions}
+                                        active={detail.active}
+                                        sidebarOpen={sidebarOpen}
+                                        variant={detail.variant}
+                                    />
+                                ))}
+                            </div>
+                        );
+                    }
+
                     return (
                         <div key={index} className="mb-2">
                             {/* Section Title */}
                             {sidebarOpen && (
                                 <div className="px-4 py-2">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-600">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--role-accent-600))] dark:text-[rgb(var(--role-accent-400))]">
                                         {section.title}
                                     </span>
                                 </div>
@@ -101,7 +134,9 @@ export default function Sidebar({ sidebarOpen }) {
                                             icon={detail.icon}
                                             href={detail.href}
                                             access={detail.permissions}
+                                            active={detail.active}
                                             sidebarOpen={sidebarOpen}
+                                            variant={detail.variant}
                                         />
                                     );
                                 })}
@@ -114,6 +149,13 @@ export default function Sidebar({ sidebarOpen }) {
             {/* Version/Footer */}
             {sidebarOpen && (
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+                    {roleLabel && (
+                        <div className="mb-2 flex justify-center">
+                            <span className="inline-flex items-center rounded-full bg-[rgb(var(--role-accent-50))] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--role-accent-700))] dark:bg-[rgb(var(--role-accent-950)/0.5)] dark:text-[rgb(var(--role-accent-300))]">
+                                {roleLabel}
+                            </span>
+                        </div>
+                    )}
                     <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center">
                         {BRAND.name} {appVersion}
                     </p>

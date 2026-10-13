@@ -38,7 +38,7 @@ export default function LinkItemDropdown({ icon, title, data, access, sidebarOpe
           }`
         : `flex w-full justify-center py-3 transition-colors duration-200 ${
               childActive
-                  ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/50"
+                  ? "text-[rgb(var(--role-accent-600))] dark:text-[rgb(var(--role-accent-400))] bg-[rgb(var(--role-accent-50))] dark:bg-[rgb(var(--role-accent-950)/0.5)]"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`;
 
@@ -54,7 +54,7 @@ export default function LinkItemDropdown({ icon, title, data, access, sidebarOpe
                 {sidebarOpen ? (
                     <>
                         <span className="flex items-center gap-3 min-w-0">
-                            <span className={childActive ? "text-primary-600 dark:text-primary-400" : ""}>
+                            <span className={childActive ? "text-[rgb(var(--role-accent-600))] dark:text-[rgb(var(--role-accent-400))]" : ""}>
                                 {icon}
                             </span>
                             <span className="truncate">{title}</span>
@@ -88,12 +88,12 @@ export default function LinkItemDropdown({ icon, title, data, access, sidebarOpe
                                 sidebarOpen
                                     ? `flex w-full items-center gap-3 px-4 py-2.5 pl-8 text-sm font-medium transition-colors duration-200 border-l-[3px] ${
                                           active
-                                              ? "bg-primary-50 text-primary-700 border-primary-500 dark:bg-primary-950/50 dark:text-primary-400"
+                                              ? "bg-[rgb(var(--role-accent-50))] text-[rgb(var(--role-accent-700))] border-[rgb(var(--role-accent-500))] dark:bg-[rgb(var(--role-accent-950)/0.5)] dark:text-[rgb(var(--role-accent-400))]"
                                               : "text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                                       }`
                                     : `flex w-full justify-center py-3 transition-colors duration-200 ${
                                           active
-                                              ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/50"
+                                              ? "text-[rgb(var(--role-accent-600))] dark:text-[rgb(var(--role-accent-400))] bg-[rgb(var(--role-accent-50))] dark:bg-[rgb(var(--role-accent-950)/0.5)]"
                                               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                                       }`
                             }

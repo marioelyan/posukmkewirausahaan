@@ -255,7 +255,16 @@
             "reports": "Reports",
             "operations": "Operations & Control",
             "userManagement": "User Management",
-            "settings": "Settings"
+            "settings": "Settings",
+            "kasir": "Cashier",
+            "customers": "Customers",
+            "other": "Other"
+        },
+        "roles": {
+            "owner": "Owner",
+            "manager": "Manager",
+            "staff": "Staff",
+            "superAdmin": "Super Admin"
         },
         "items": {
             "dashboard": "Dashboard",
