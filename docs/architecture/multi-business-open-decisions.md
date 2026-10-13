@@ -1,11 +1,11 @@
 # Multi-Business Open Decisions — Point of Sales
 
-- **Status:** keputusan owner tercatat di register (§13: ID stabil `AUTH-*`/`SETTINGS-*`/`FIN-*`/`SCHED-*`/`UNIQUE-*`/`GOV-*`). **Terwujud/selesai:** Q2/Q3 (§13.14 AUTH), Q4/UNIQUE-10/11 (§13.20–§13.22), Q5 (§13.14 SETTINGS), Q6 (§13.19), Q7/Q9 (§13.13/§13.15/§13.16 FIN + backfill/bootstrap), Q8 (§13.14 SCHED), Q10 (§13.23), Q11 (§13.22), Q12 (§13.24), Q13 (§13.23), Q14 (§13.23), Q15 (§13.23), Q16 (§13.23). **Masih terbuka: Q1** — definisi transaksi "completed" (register §3.5 X2 = `needs clarification`).
+- **Status:** keputusan owner tercatat di register (§13: ID stabil `AUTH-*`/`SETTINGS-*`/`FIN-*`/`SCHED-*`/`UNIQUE-*`/`GOV-*`). **Terwujud/selesai:** Q2/Q3 (§13.14 AUTH), Q4/UNIQUE-10/11 (§13.20–§13.22), Q5 (§13.14 SETTINGS), Q6 (§13.19), Q7/Q9 (§13.13/§13.15/§13.16 FIN + backfill/bootstrap), Q8 (§13.14 SCHED), Q10–Q16 (§13.23/§13.24). **Q1 diputuskan = A (§13.25)** — `completed` = `payment_status='paid'`; **implementasi kode masih tertunda**.
 - **Basis:** audit `multi-business-tenant-audit.md` §14 + temuan tambahan pada 2026-10-10.
 - **Label:** **FAKTA**, **REKOMENDASI**, **ASUMSI**, **PERLU KEPUTUSAN**.
 - Dokumen terkait: `multi-business-backend-implementation-plan.md`, `multi-business-data-ownership-matrix.md`, `multi-business-security-test-plan.md`.
 
-> **Aturan.** Keputusan owner dipetakan ke ID stabil di register (§13). Q2–Q16 telah diputuskan & terwujud (kecuali butir operasional yang *deferred*: eksekusi runbook produksi, aktivasi flag, self-service owner signup). **Q1 masih terbuka** sebagai keputusan bisnis (register §3.5 X2). Item tanpa keputusan eksplisit memakai *default rekomendasi* hanya sementara.
+> **Aturan.** Keputusan owner dipetakan ke ID stabil di register (§13). Q1–Q16 telah **diputuskan** (kecuali butir operasional yang *deferred*: eksekusi runbook produksi, aktivasi flag, self-service owner signup). **Q1 = A (§13.25)** — implementasi kode tertunda. Item tanpa keputusan eksplisit memakai *default rekomendasi* hanya sementara.
 
 ---
 
@@ -13,7 +13,7 @@
 
 | ID | Pertanyaan singkat | Rekomendasi default | Menghambat | Status |
 |---|---|---|---|---|
-| Q1 | Definisi transaksi "completed" | `payment_status='paid'` | Fase 6 | PERLU KEPUTUSAN (register §3.5 X2 `needs clarification`) |
+| Q1 | Definisi transaksi "completed" | `payment_status='paid'` | Fase 6 | DIPUTUSKAN A (§13.25) — implementasi kode tertunda |
 | Q2 | Owner global vs membership; super-admin tetap global | Membership `owner`; super-admin global | Fase 1-2 | SELESAI (§13.14 — AUTH-01 hybrid) |
 | Q3 | Role berbeda per business | Ya, role di membership | Fase 1 | SELESAI (§13.14 — AUTH-02 role per business) |
 | Q4 | Master data terpisah penuh | Ya, terpisah penuh | Fase 4 | SELESAI (§13.14/§13.17 + UNIQUE-10 §13.20/§13.21 + UNIQUE-11 §13.22) |
@@ -35,12 +35,12 @@
 ## 2. Detail Keputusan
 
 ### Q1 — Definisi transaksi "completed"
-- **FAKTA.** Tidak ada kolom `status`; hanya `payment_status` (`paid`, `unpaid`, `pending`, `pending_approval`, `failed`). Dashboard menghitung semua baris (`DashboardController.php:44`); shift benar memakai `paid` (`CashierShiftService.php:88,97`).
-- **STATUS (2026-10-13):** **masih terbuka** — keputusan bisnis (register §3.5 X2 = `needs clarification`). Default `payment_status='paid'` sudah dipakai shift (`CashierShiftService`), tetapi dashboard masih menghitung semua baris → definisi belum diformalkan di laporan.
-- **REKOMENDASI.** Completed = `payment_status='paid'`. `unpaid` = piutang (bukan omzet selesai). `pending`/`pending_approval` dikecualikan sampai final. `failed` dikecualikan.
-- **Alternatif.** Tambah kolom `status` terpisah dari pembayaran (lebih bersih untuk order lifecycle, tetapi migrasi lebih besar).
-- **Dampak.** Laporan omzet/laba, dashboard, sales report.
-- **Blocking:** Fase 6.
+- **FAKTA.** Tidak ada kolom `status`; hanya `payment_status` (`paid`, `unpaid`, `pending`, `pending_approval`, `failed`). Dashboard & laporan menjumlahkan `grand_total` **semua** baris (`DashboardController:48,54,65,67`; `SalesReportController:56`; `ProfitReportController:54`); shift benar memakai `paid` (`CashierShiftService:106,115`).
+- **KEPUTUSAN (A — §13.25, 2026-10-13).** `completed` = `payment_status='paid'`. `unpaid` (piutang) **bukan** omzet selesai; `pending`/`pending_approval`/`failed` **dikecualikan**. Selaras dengan rekap shift.
+- **Status implementasi.** **Kode BELUM diubah** (task terpisah): tambah filter `where('payment_status','paid')` pada agregasi omzet di `DashboardController`, `SalesReportController`, `ProfitReportController` (+ `MemberController` sesuai kebutuhan) + test regresi.
+- **Alternatif (ditolak).** A′ `paid`+`unpaid` (akrual); B kolom lifecycle `status` terpisah (migrasi besar, belum ada modul void/refund).
+- **Dampak.** Laporan omzet/laba & dashboard dapat berubah (turun) setelah perbaikan bila ada baris non-`paid`; catat di release notes.
+- **Blocking:** — (keputusan selesai; hanya implementasi kode tertunda).
 
 ### Q2 — Owner & super-admin
 - **KEPUTUSAN (AUTH-01 = C hybrid, register §13.1; terwujud §13.14).** `Owner` adalah role **membership** bisnis, bukan role global; `super-admin` tetap global sebagai operator platform (`User::isSuperAdmin()` bypass). Diimplementasikan via `BusinessRoleCapabilities` + middleware `business.role` (`EnforceBusinessRoleCapability`) + provisioning membership (§13.15).
