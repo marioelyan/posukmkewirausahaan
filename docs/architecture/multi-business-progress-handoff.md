@@ -8,8 +8,8 @@
 
 - **Semua slice KODE multi-business SELESAI & test hijau.** Objective "staging-ready" tercapai.
 - **Feature flag tetap `false`** (`MULTI_BUSINESS_ENABLED=false` di `config` default & `.env.example`). `.env` lokal `true` (untracked).
-- `development` = `5f8c2d1`, `main` = `d8a3fdd` (**belum tersentuh**).
-- **Yang tersisa BUKAN kode**, melainkan: (a) **keputusan bisnis Q1**, (b) **eksekusi operasional** (runbook backfill produksi → aktivasi flag → deploy), (c) **fitur fase lanjut** (self-service owner signup), (d) **cleanup opsional** (Q10 sisa migrasi DineIn).
+- `development` = `92bf141` (Merge PR #9), `main` = `d8a3fdd` (**belum tersentuh**).
+- **Yang tersisa:** (a) **implementasi kode Q1** (keputusan sudah diambil = A; filter status di dashboard/laporan), (b) **eksekusi operasional** (runbook backfill produksi → aktivasi flag → deploy), (c) **fitur fase lanjut** (self-service owner signup), (d) **cleanup opsional** (Q10 sisa migrasi DineIn).
 - **Jangan sentuh `main`** — push ke `main` = auto-deploy produksi. Kerja selalu lewat PR ke `development`.
 - **Jangan aktifkan flag di produksi** tanpa approval owner + DBA + runbook (`multi-business-backfill-production-runbook.md`).
 - Baca berurutan untuk konteks penuh: dokumen ini → `multi-business-open-decisions.md` → `multi-business-blocker-review-and-decision-register.md` (§13 Decision Log) → `multi-business-phase-4f-implementation-notes.md` → `multi-business-backfill-production-runbook.md`.
@@ -21,7 +21,7 @@
 | Item | Nilai |
 |---|---|
 | Branch aktif | `development` (sinkron `origin/development`) |
-| `development` | `5f8c2d1` (Merge PR #9) |
+| `development` | `92bf141` (Merge PR #9) |
 | `main` | `d8a3fdd` (tak tersentuh / belum ada deploy baru dari kerja ini) |
 | Remote | `github.com/marioelyan/posukmkewirausahaan` (fork) |
 | Feature flag | `MULTI_BUSINESS_ENABLED=false` |
@@ -41,7 +41,7 @@
 | #6 | UNIQUE-11 global idempotency token (docs-only) |
 | #7 | pass status Q10–Q16 (berbasis bukti) |
 | #8 | Q12 `audit_logs.business_id` ownership + viewer scoping |
-| #9 | sync status keputusan Q1–Q9 (docs-only) |
+| #9 | sync status keputusan Q1–Q9 + dokumen progress/handoff (docs-only) |
 
 ---
 
@@ -52,7 +52,7 @@
 - **Middleware** (`routes/web.php` grup dashboard): `business` → `business.required` → `business.role` (`ResolveBusinessContext`, `EnsureActiveBusiness`, `EnforceBusinessRoleCapability`). Tanpa konteks saat flag ON → **403 (fail-closed)**.
 - **Konteks**: `App\Services\BusinessContext` (`setActive`, `businessId`, `hasActiveBusiness`), switch via `Route::post('/dashboard/business', ...)` dan `/dashboard/outlet`.
 
-### 2.2 Keputusan owner — semua terwujud kecuali Q1
+### 2.2 Keputusan owner — semua sudah diputuskan; Q1 implementasi tertunda
 | ID | Keputusan | Terwujud | Ringkas |
 |---|---|---|---|
 | AUTH-01/02/03 (Q2/Q3/Q14) | Hybrid membership + Spatie capability; role per business; `teams=false` | §13.14 | `BusinessRoleCapabilities` + `business.role`; owner/manager/staff |
@@ -104,11 +104,17 @@ Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matri
 
 ## 4. KEKURANGAN / yang BELUM selesai
 
-### 4.1 Keputusan bisnis (butuh owner)
-- **Q1 — Definisi transaksi "completed"** *(satu-satunya keputusan yang benar-benar terbuka)*. Register §3.5 X2 = `needs clarification`.
-  - Fakta: tak ada kolom `status`; hanya `payment_status` (`paid/unpaid/pending/pending_approval/failed`). Shift memakai `paid` (`CashierShiftService`); dashboard menghitung **semua** baris (`DashboardController:44`).
-  - Opsi: (A) completed = `payment_status='paid'` (default, murah) vs (B) tambah kolom `status` lifecycle order terpisah (lebih bersih, migrasi lebih besar).
-  - **Dampak bila dibiarkan:** laporan omzet/laba bisa tidak konsisten dengan definisi bisnis. **Tidak memblokir** staging/aktivasi teknis.
+### 4.1 Keputusan bisnis
+- **Q1 — Definisi transaksi "completed": DIPUTUSKAN = A (§13.25, 2026-10-13).** `completed` = `payment_status='paid'`; `unpaid` (piutang) bukan omzet selesai; `pending`/`pending_approval`/`failed` dikecualikan.
+  - **Implementasi KODE BELUM dikerjakan** (task terpisah, jalur "koreksi presisi"):
+    - `app/Http/Controllers/DashboardController.php` — agregasi omzet baris **48, 54, 65, 67** (total/today/month/trend) dan **167** (top customers) perlu filter `payment_status='paid'`.
+    - `app/Http/Controllers/Reports/SalesReportController.php` — baris **56** (`SUM(grand_total)`).
+    - `app/Http/Controllers/Reports/ProfitReportController.php` — baris **54**.
+    - `app/Http/Controllers/Apps/MemberController.php` — baris **74** (belanja member), sesuaikan.
+    - Sudah benar: `app/Services/CashierShiftService.php` (baris 106, 115).
+  - **Saran:** buat helper/scope bersama (mis. `Transaction::scopeCompleted()`) agar definisi tak terduplikasi; tambah test regresi (non-`paid` tidak masuk omzet).
+  - **Catatan:** angka historis dashboard/laporan bisa **turun** setelah perbaikan; cantumkan di release notes.
+  - **Tidak memblokir** staging/aktivasi teknis, tetapi memperbaiki akurasi laporan (saat ini `failed`/`pending_approval` ikut terhitung omzet).
 
 ### 4.2 Operasional (deferred — butuh approval, bukan kode)
 - **Eksekusi runbook backfill produksi** — DRAFT, **belum dieksekusi**. Baca `multi-business-backfill-production-runbook.md`. Pra-syarat: read replica/restored copy, backup + uji restore, jendela perawatan, approval tertulis **owner + DBA**. Fase: 0 audit read-only → 1 deploy migrasi → 2 dry-run → 3 gate approval → 4 apply bertahap → 5 swap index manual (DBA) → 6 verifikasi → 7 aktivasi flag (keputusan terpisah).
@@ -232,24 +238,31 @@ vendor/bin/pint
 - **Test conventions**: `RefreshDatabase`; seed `PermissionSeeder→RoleSeeder→UserSeeder`; `markEmailAsVerified()` sebelum `actingAs`; `Product` wajib `tax_rate=0`; `PUSAT` = gudang `type='main'`.
 - **Demo seeder dilarang di produksi**; **email verification disabled**.
 - **Branch lokal bisa basi**: setelah merge PR, `git fetch --prune` lalu cek `git ls-remote --heads origin` untuk memastikan ref remote (tracking ref bisa tertinggal).
+- **PERSISTENSI COMMIT/MERGE (PENTING):** environment ini pernah membuat commit/merge **tampak sukses di lokal** (bahkan `gh pr create/merge` mengembalikan URL & `git log` lokal berubah) **tetapi tidak sampai ke remote**. Terjadi dua kali. **Selalu verifikasi ke remote**, jangan percaya state lokal saja:
+  - `git ls-remote --heads origin` — pastikan commit ada di `refs/heads/<branch>`.
+  - `gh pr view <N> --json state` — pastikan benar-benar `MERGED`.
+  - Setelah merge: `git fetch origin --prune && git checkout -B development origin/development` untuk memaksa sinkron.
+  - Kerjakan checkout/commit/push dalam **satu perintah atomik**; `gh` sesekali balas `401` (flaky) — ulangi.
+  - File body PR (`--body-file`) kadang hilang dari `/tmp/**`; tulis ulang bila `gh` bilang "no such file".
 
 ---
 
 ## 9. Saran task berikutnya (prioritas)
 
-1. **[Keputusan owner] Formalkan Q1** — pilih definisi "completed" (paid-only vs kolom `status`), lalu update register + implementasi laporan bila perlu.
+1. **[Kode] Implementasi Q1 (keputusan sudah = A)** — filter `payment_status='paid'` di agregasi omzet `DashboardController` (48,54,65,67,167), `SalesReportController` (56), `ProfitReportController` (54), `MemberController` (74); helper/scope bersama + test regresi. (Lihat §4.1.)
 2. **[Dokumen/ops] Persetujuan runbook** — review & approval owner + DBA; siapkan akses read replica + jadwal jendela perawatan.
 3. **[Ops] Rehearsal + eksekusi runbook** pada restored copy, lalu Fase 4–6 live.
 4. **[Ops] Aktivasi flag di staging + smoke QA** (`docs/testing-manual.md`), baru kemudian produksi.
 5. **[Fitur, opsional] Self-service owner signup** (Q6 fase lanjut) — desain kontrol abuse.
 6. **[Cleanup, opsional] Hapus sisa migrasi drop DineIn** setelah deploy (Q10).
 7. **[Fitur, opsional] Laporan konsolidasi lintas business** bila owner butuh (saat ini by-design tidak ada).
+8. **[Fitur, opsional] Command backfill `audit_logs.business_id` legacy** bila histori perlu terlihat setelah flag ON.
 
 ---
 
 ## 10. Pertanyaan terbuka untuk owner (bila AI melanjutkan)
 
-1. **Q1**: definisi transaksi "completed" — `paid` saja atau kolom lifecycle terpisah?
+1. ~~**Q1**: definisi transaksi "completed"~~ — **SUDAH DIPUTUSKAN = A** (§13.25). Sisa: implementasi kode (task #1 §9).
 2. Apakah **FK `restrictOnDelete`** (bisnis diarsipkan, tak bisa hard-delete) disetujui? (§13.13 D4)
 3. Apakah owner butuh **laporan konsolidasi lintas business** (fitur baru) atau cukup per-business?
 4. Apakah **histori `audit_logs` legacy** perlu di-backfill agar terlihat setelah flag ON?
