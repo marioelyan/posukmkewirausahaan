@@ -74,7 +74,7 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                 )}
 
                 {showBadge && (
-                    <span className="absolute left-2 top-2 max-w-[70%] truncate rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-lg">
+                    <span className="absolute left-2 top-2 max-w-[70%] truncate rounded-full bg-danger-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-lg">
                         {promoBadge.label}
                     </span>
                 )}

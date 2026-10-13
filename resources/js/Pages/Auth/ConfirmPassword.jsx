@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import {
-    IconShoppingCart,
     IconShieldLock,
     IconLock,
     IconEye,
@@ -9,6 +8,8 @@ import {
     IconLoader2,
 } from "@tabler/icons-react";
 import { replayPendingStepUp } from "@/Utils/stepUpReplay";
+import { BRAND } from "@/config/brand";
+import { BrandMark } from "@/Components/BrandLogo";
 
 export default function ConfirmPassword({ challenge = null }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -52,11 +53,9 @@ export default function ConfirmPassword({ challenge = null }) {
                     <div className="w-full max-w-md">
                         <div className="mb-8">
                             <Link href="/" className="inline-flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                                    <IconShoppingCart size={24} className="text-white" />
-                                </div>
+                                <BrandMark size={48} rounded="rounded-xl" />
                                 <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    Aplikasi Kasir
+                                    {BRAND.name}
                                 </span>
                             </Link>
                             <div className="w-14 h-14 rounded-2xl bg-primary-100 dark:bg-primary-950/50 flex items-center justify-center mb-5">

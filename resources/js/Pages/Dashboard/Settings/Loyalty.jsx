@@ -143,7 +143,7 @@ export default function Loyalty({ settings }) {
 
                         <section className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800">
                             <div className="mb-4 flex items-center gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-warning-100 text-warning-600 dark:bg-warning-950/40 dark:text-warning-300">
                                     <IconMedal size={22} />
                                 </div>
                                 <div>

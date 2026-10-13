@@ -13,7 +13,7 @@
         .store-info { line-height:1.4; }
         .store-name { font-weight:700; font-size:17px; }
         .muted { color:#475569; font-size:12px; }
-        .badge { padding:4px 10px; border-radius:999px; background:#e0f2fe; color:#0284c7; font-weight:700; font-size:12px; text-align:right; }
+        .badge { padding:4px 10px; border-radius:999px; background:#DCEDF8; color:#25648F; font-weight:700; font-size:12px; text-align:right; }
         .doc { text-align:right; min-width:180px; }
         .doc-number { font-size:17px; font-weight:800; margin:4px 0; }
         .section { border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-top:12px; }
@@ -22,8 +22,8 @@
         .stat { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px; }
         .stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.4px; }
         .stat-value { font-size:16px; font-weight:800; margin-top:4px; color:#0f172a; }
-        .stat-positive { color:#16a34a; }
-        .stat-warning { color:#c2410c; }
+        .stat-positive { color:#12664A; }
+        .stat-warning { color:#8F590A; }
         table { width:100%; border-collapse: collapse; margin-top:6px; }
         th, td { padding:6px 0; font-size:13px; text-align:left; }
         th { color:#64748b; text-transform: uppercase; letter-spacing:0.4px; font-size:11px; border-bottom:1px solid #e2e8f0; }

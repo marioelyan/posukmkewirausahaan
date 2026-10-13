@@ -1,5 +1,6 @@
 import { Head } from "@inertiajs/react";
 import PublicLayout from "@/Layouts/PublicLayout";
+import { BRAND } from "@/config/brand";
 import { IconBook2, IconArrowRight, IconBrandGithub } from "@tabler/icons-react";
 
 const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
@@ -73,7 +74,7 @@ const categories = [
 export default function Documentation() {
     return (
         <PublicLayout active="/dokumentasi">
-            <Head title="Dokumentasi — Dikasir" />
+            <Head title={`Dokumentasi — ${BRAND.name}`} />
 
             {/* Header */}
             <section className="pt-20 pb-14 px-6 bg-gradient-to-b from-primary-50 dark:from-primary-950/40 to-transparent">

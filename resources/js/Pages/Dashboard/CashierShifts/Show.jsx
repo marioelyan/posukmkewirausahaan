@@ -123,9 +123,9 @@ export default function Show({ cashierShift, canForceClose = false }) {
                     <span
                         className={`inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${
                             cashierShift.status === "open"
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                ? "bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-400"
                                 : cashierShift.status === "force_closed"
-                                  ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                                  ? "bg-danger-100 text-danger-700 dark:bg-danger-950/40 dark:text-danger-400"
                                   : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                     >
@@ -244,7 +244,7 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                             className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                         />
                                         {errors?.actual_cash && (
-                                            <p className="mt-2 text-xs text-rose-500">{errors.actual_cash}</p>
+                                            <p className="mt-2 text-xs text-danger-500">{errors.actual_cash}</p>
                                         )}
                                     </div>
                                     <div>
@@ -261,8 +261,8 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                         <div
                                             className={`rounded-xl px-4 py-3 text-sm ${
                                                 difference === 0
-                                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                                                    : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                                                    ? "bg-success-50 text-success-700 dark:bg-success-950/30 dark:text-success-300"
+                                                    : "bg-warning-50 text-warning-700 dark:bg-warning-950/30 dark:text-warning-300"
                                             }`}
                                         >
                                             Selisih closing: {formatCurrency(difference)}

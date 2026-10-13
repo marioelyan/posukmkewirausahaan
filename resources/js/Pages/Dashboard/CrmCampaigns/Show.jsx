@@ -58,7 +58,7 @@ export default function Show({ campaign }) {
                             <button
                                 type="button"
                                 onClick={cancelCampaign}
-                                className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-rose-600"
+                                className="inline-flex items-center gap-2 rounded-xl bg-danger-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-danger-600"
                             >
                                 <IconPlayerStop size={16} />
                                 Batalkan
@@ -102,7 +102,7 @@ export default function Show({ campaign }) {
                                                             href={log.payload.whatsapp_url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300"
+                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-success-50 text-success-600 hover:bg-success-100 dark:bg-success-900/30 dark:text-success-300"
                                                         >
                                                             <IconBrandWhatsapp size={16} />
                                                         </a>

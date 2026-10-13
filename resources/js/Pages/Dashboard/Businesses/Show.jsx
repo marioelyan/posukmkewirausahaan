@@ -248,7 +248,7 @@ export default function Show({ business, members, candidateUsers, outlets, statu
             }),
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#e11d48",
+            confirmButtonColor: "#a62d40",
             cancelButtonColor: "#64748b",
             confirmButtonText: t("business.memberRemoveConfirm"),
             cancelButtonText: t("common.buttons.cancel"),

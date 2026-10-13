@@ -75,7 +75,7 @@ export default function Index({ businesses, multiBusinessEnabled }) {
                 : t("business.status.activateText", { name: business.name }),
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: isSuspend ? "#f59e0b" : "#10b981",
+            confirmButtonColor: isSuspend ? "#d68910" : "#1f9d6b",
             cancelButtonColor: "#64748b",
             confirmButtonText: t("common.labels.yes"),
             cancelButtonText: t("common.buttons.cancel"),

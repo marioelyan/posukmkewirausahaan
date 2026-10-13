@@ -12,7 +12,7 @@ const statusBadge = (status) => {
         draft: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
         ready: "bg-primary-100 text-primary-700 dark:bg-primary-950/30 dark:text-primary-300",
         processed: "bg-success-100 text-success-700 dark:bg-success-950/30 dark:text-success-400",
-        cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300",
+        cancelled: "bg-danger-100 text-danger-700 dark:bg-danger-950/30 dark:text-danger-300",
     };
 
     return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${classes[status] || classes.draft}`}>{status}</span>;
@@ -104,7 +104,7 @@ export default function Index({ campaigns, filters }) {
                                                 {can("crm-campaigns-update") && (
                                                     <Link
                                                         href={route("crm-campaigns.edit", campaign.id)}
-                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-warning-200 bg-warning-50 text-warning-600 hover:bg-warning-100 dark:border-warning-800 dark:bg-warning-950/30 dark:text-warning-300"
                                                     >
                                                         <IconPencil size={16} />
                                                     </Link>
@@ -114,7 +114,7 @@ export default function Index({ campaigns, filters }) {
                                                         type="delete"
                                                         url={route("crm-campaigns.destroy", campaign.id)}
                                                         icon={<IconTrash size={16} />}
-                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300"
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-danger-200 bg-danger-50 text-danger-600 hover:bg-danger-100 dark:border-danger-800 dark:bg-danger-950/30 dark:text-danger-300"
                                                     />
                                                 )}
                                             </div>

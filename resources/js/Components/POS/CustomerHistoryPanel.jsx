@@ -159,7 +159,7 @@ export default function CustomerHistoryPanel({
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-3 text-center">
                     <div className="flex items-center justify-center mb-1">
-                        <IconCrown size={16} className="text-warning-500" />
+                        <IconCrown size={16} className="text-warning-600 dark:text-warning-400" />
                     </div>
                     <p className="text-sm font-medium uppercase text-slate-700 dark:text-slate-300">
                         {loyalty?.is_member ? loyalty.tier : "non-member"}

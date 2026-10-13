@@ -6,7 +6,7 @@ const formatPrice = (v = 0) => Number(v || 0).toLocaleString("id-ID", { style: "
 const formatDate = (v) => v ? new Date(v).toLocaleString("id-ID", { dateStyle: "full", timeStyle: "short" }) : "-";
 
 const statusBadge = (status) => {
-    const styles = { paid: "bg-emerald-100 text-emerald-700", pending: "bg-amber-100 text-amber-700", unpaid: "bg-rose-100 text-rose-700", pending_approval: "bg-slate-100 text-slate-700" };
+    const styles = { paid: "bg-success-100 text-success-700", pending: "bg-warning-100 text-warning-700", unpaid: "bg-danger-100 text-danger-700", pending_approval: "bg-slate-100 text-slate-700" };
     const labels = { paid: "Lunas", pending: "Menunggu", unpaid: "Belum Lunas", pending_approval: "Menunggu Approval" };
     return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${styles[status] || "bg-slate-100 text-slate-600"}`}>{labels[status] || status}</span>;
 };
@@ -58,11 +58,11 @@ export default function TransactionDetail({ transaction, token }) {
                         )}
 
                         {transaction.receivable && transaction.receivable.status !== "paid" && (
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
-                                <p className="text-sm font-semibold text-amber-800">Sisa Pembayaran</p>
+                            <div className="bg-warning-50 border border-warning-200 rounded-xl p-4 space-y-3">
+                                <p className="text-sm font-semibold text-warning-800">Sisa Pembayaran</p>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-amber-700">Jatuh tempo: {formatDate(transaction.receivable.due_date)}</span>
-                                    <span className="font-bold text-amber-900">{formatPrice(transaction.receivable.remaining)}</span>
+                                    <span className="text-warning-700">Jatuh tempo: {formatDate(transaction.receivable.due_date)}</span>
+                                    <span className="font-bold text-warning-900">{formatPrice(transaction.receivable.remaining)}</span>
                                 </div>
                                 <a
                                     href={route("portal.receivable.pay", [transaction.receivable.id, { token }])}

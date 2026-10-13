@@ -76,8 +76,8 @@
             border-radius: 999px;
             font-size: 12px;
             font-weight: 700;
-            background: #e0f2fe;
-            color: #0284c7
+            background: #DCEDF8;
+            color: #25648F
         }
 
         .qty {
@@ -98,7 +98,7 @@
         }
 
         thead th {
-            background: #4aa377;
+            background: #21416D;
             color: #fff;
             font-size: 12px;
             font-weight: 700;
@@ -128,7 +128,7 @@
         }
 
         tbody tr:nth-child(even) td {
-            background: #e6f3ec
+            background: #F3F7FC
         }
 
         tbody td {
@@ -245,7 +245,7 @@
                     <td>
                         {{ $detail->product->title ?? 'Produk' }}
                         @if ($detail->discount_total > 0 && ($detail->pricing_group_label || $detail->pricing_rule_name))
-                            <div style="font-size:11px;color:#e11d48; margin-top:2px;">
+                            <div style="font-size:11px;color:#C4384D; margin-top:2px;">
                                 Promo: {{ $detail->pricing_group_label ?: $detail->pricing_rule_name }}
                             </div>
                         @endif

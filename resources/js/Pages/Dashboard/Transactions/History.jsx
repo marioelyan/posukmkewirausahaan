@@ -310,7 +310,7 @@ const History = ({ transactions, filters, warehouses = [] }) => {
                                                     "pay_later" &&
                                                 transaction.payment_status !==
                                                     "paid" ? (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400 rounded-full">
                                                         Piutang
                                                     </span>
                                                 ) : transaction.payment_status ===
@@ -370,7 +370,7 @@ const History = ({ transactions, filters, warehouses = [] }) => {
                                                         )}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 transition-colors"
+                                                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-success-600 hover:text-success-700 bg-success-50 hover:bg-success-100 dark:bg-success-900/30 dark:hover:bg-success-900/50 transition-colors"
                                                         title="Bagikan ke WhatsApp"
                                                     >
                                                         <IconBrandWhatsapp
@@ -436,7 +436,7 @@ const History = ({ transactions, filters, warehouses = [] }) => {
                                                     "pay_later" &&
                                                 transaction.payment_status !==
                                                     "paid" ? (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400 rounded-full">
                                                         Piutang
                                                     </span>
                                                 ) : transaction.payment_status ===
@@ -571,7 +571,7 @@ const History = ({ transactions, filters, warehouses = [] }) => {
                                             )}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
+                                            className="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg bg-success-50 text-success-700 hover:bg-success-100 dark:bg-success-900/30 dark:text-success-300 dark:hover:bg-success-900/50"
                                         >
                                             Resi
                                         </a>

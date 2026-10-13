@@ -4,12 +4,14 @@ import { IconLayoutGrid } from "@tabler/icons-react";
 import LinkItem from "@/Components/Dashboard/LinkItem";
 import LinkItemDropdown from "@/Components/Dashboard/LinkItemDropdown";
 import Menu from "@/Utils/Menu";
+import { BRAND } from "@/config/brand";
+import BrandLogo, { BrandMark } from "@/Components/BrandLogo";
 
 export default function Sidebar({ sidebarOpen }) {
     const { auth, storeProfile, appVersion } = usePage().props;
     const menuNavigation = Menu();
 
-    const storeName = storeProfile?.name || "KASIR";
+    const storeName = storeProfile?.name || BRAND.name;
     const storeLogo = storeProfile?.logo || null;
     const storeInitial =
         storeName?.charAt(0)?.toUpperCase() ||
@@ -31,38 +33,21 @@ export default function Sidebar({ sidebarOpen }) {
             {/* Logo */}
             <div className="flex items-center justify-center h-16 border-b border-slate-100 dark:border-slate-800">
                 {sidebarOpen ? (
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        {storeLogo ? (
-                            <img
-                                src={storeLogo}
-                                alt={storeName}
-                                className="w-10 h-10 rounded-xl object-cover shrink-0"
-                            />
-                        ) : (
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shrink-0">
-                                <span className="text-white font-bold text-sm">
-                                    {storeInitial}
-                                </span>
-                            </div>
-                        )}
-                        <span className="text-lg font-bold text-slate-800 dark:text-white truncate">
-                            {storeName}
-                        </span>
-                    </div>
+                    <BrandLogo
+                        logoSrc={storeLogo}
+                        label={storeInitial}
+                        name={storeName}
+                        size={40}
+                        nameClassName="text-lg"
+                        className="min-w-0"
+                    />
                 ) : (
-                    storeLogo ? (
-                        <img
-                            src={storeLogo}
-                            alt={storeName}
-                            className="w-9 h-9 rounded-lg object-cover"
-                        />
-                    ) : (
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">
-                                {storeInitial}
-                            </span>
-                        </div>
-                    )
+                    <BrandMark
+                        logoSrc={storeLogo}
+                        label={storeInitial}
+                        size={36}
+                        rounded="rounded-lg"
+                    />
                 )}
             </div>
 
@@ -130,7 +115,10 @@ export default function Sidebar({ sidebarOpen }) {
             {sidebarOpen && (
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                     <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center">
-                        Point of Sales {appVersion}
+                        {BRAND.name} {appVersion}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-slate-300 dark:text-slate-700 text-center">
+                        {BRAND.tagline}
                     </p>
                 </div>
             )}

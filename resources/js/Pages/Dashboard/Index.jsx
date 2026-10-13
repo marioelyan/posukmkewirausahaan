@@ -106,7 +106,7 @@ function TargetCard({ title, current, target, icon: Icon }) {
                 <div className="mt-3 w-full h-2 bg-white/30 rounded-full overflow-hidden">
                     <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                            isAchieved ? "bg-green-400" : "bg-white"
+                            isAchieved ? "bg-success-400" : "bg-white"
                         }`}
                         style={{ width: `${percentage}%` }}
                     />
@@ -234,8 +234,8 @@ export default function Dashboard({
 
         const ctx = chartRef.current.getContext("2d");
         const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-        gradient.addColorStop(0, "rgba(60, 122, 231, 0.3)");
-        gradient.addColorStop(1, "rgba(60, 122, 231, 0.01)");
+        gradient.addColorStop(0, "rgba(33, 65, 109, 0.3)");
+        gradient.addColorStop(1, "rgba(33, 65, 109, 0.01)");
 
         chartInstance.current = new Chart(chartRef.current, {
             type: "line",
@@ -245,14 +245,14 @@ export default function Dashboard({
                     {
                         label: "Pendapatan",
                         data: totals,
-                        borderColor: "#3c7ae7",
+                        borderColor: "#21416d",
                         backgroundColor: gradient,
                         borderWidth: 3,
                         fill: true,
                         tension: 0.4,
                         pointRadius: 0,
                         pointHoverRadius: 6,
-                        pointHoverBackgroundColor: "#3c7ae7",
+                        pointHoverBackgroundColor: "#21416d",
                         pointHoverBorderColor: "#fff",
                         pointHoverBorderWidth: 2,
                     },
@@ -439,7 +439,7 @@ export default function Dashboard({
                                                     {shift.transactions_count} transaksi
                                                 </p>
                                             </div>
-                                            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                            <span className="text-xs font-medium text-success-600 dark:text-success-400">
                                                 {formatCurrency(shift.expected_cash)}
                                             </span>
                                         </div>
@@ -512,7 +512,7 @@ export default function Dashboard({
                                                 {product.name}
                                             </span>
                                         </div>
-                                        <span className="text-xs text-warning-500 font-semibold">
+                                        <span className="text-xs text-warning-700 dark:text-warning-400 font-semibold">
                                             {product.stock} pcs
                                         </span>
                                     </li>
@@ -631,17 +631,17 @@ export default function Dashboard({
                             {lowStockProducts.map((product, index) => (
                                 <div
                                     key={index}
-                                    className="flex items-center justify-between p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800"
+                                    className="flex items-center justify-between p-3 rounded-xl bg-danger-50 dark:bg-danger-900/20 border border-danger-100 dark:border-danger-800"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <span className="w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-sm font-semibold flex items-center justify-center">
+                                        <span className="w-7 h-7 rounded-full bg-danger-100 dark:bg-danger-900/40 text-danger-700 dark:text-danger-300 text-sm font-semibold flex items-center justify-center">
                                             {index + 1}
                                         </span>
-                                        <span className="text-sm font-semibold text-rose-800 dark:text-rose-200 truncate max-w-[140px]">
+                                        <span className="text-sm font-semibold text-danger-800 dark:text-danger-200 truncate max-w-[140px]">
                                             {product.name}
                                         </span>
                                     </div>
-                                    <span className="text-xs font-semibold text-rose-700 dark:text-rose-200">
+                                    <span className="text-xs font-semibold text-danger-700 dark:text-danger-200">
                                         {product.stock} pcs
                                     </span>
                                 </div>

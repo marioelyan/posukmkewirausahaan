@@ -92,7 +92,7 @@ export default function Show({ segment, customers = [] }) {
                                                     type="delete"
                                                     url={route("customer-segments.members.destroy", [segment.id, membership.customer.id])}
                                                     icon={<IconTrash size={16} />}
-                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300"
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-danger-200 bg-danger-50 text-danger-600 hover:bg-danger-100 dark:border-danger-800 dark:bg-danger-950/30 dark:text-danger-300"
                                                 />
                                             ) : (
                                                 <span className="text-xs text-slate-400">-</span>

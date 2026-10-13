@@ -866,7 +866,7 @@ export default function Index({
 
                 <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl items-center justify-center px-4 py-10">
                     <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-                        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-300">
                             <IconWallet size={28} />
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -890,7 +890,7 @@ export default function Index({
                                     placeholder="0"
                                 />
                                 {errors?.opening_cash && (
-                                    <p className="mt-2 text-xs text-rose-500">{errors.opening_cash}</p>
+                                    <p className="mt-2 text-xs text-danger-500">{errors.opening_cash}</p>
                                 )}
                             </div>
                             <div>
@@ -926,7 +926,7 @@ export default function Index({
                                     ))}
                                 </select>
                                 {errors?.warehouse_id && (
-                                    <p className="mt-2 text-xs text-rose-500">
+                                    <p className="mt-2 text-xs text-danger-500">
                                         {errors.warehouse_id}
                                     </p>
                                 )}
@@ -1139,7 +1139,7 @@ export default function Index({
                                                         × {item.qty}
                                                     </p>
                                                     {pricingRule && (
-                                                        <p className="mt-0.5 text-[11px] font-medium text-rose-500">
+                                                        <p className="mt-0.5 text-[11px] font-medium text-danger-500">
                                                             {pricingRule.name}
                                                         </p>
                                                     )}
@@ -1462,7 +1462,7 @@ export default function Index({
                                             className={`text-xs font-semibold ${
                                                 splitRemaining === 0
                                                     ? "text-success-600 dark:text-success-400"
-                                                    : "text-amber-600 dark:text-amber-400"
+                                                    : "text-warning-600 dark:text-warning-400"
                                             }`}
                                         >
                                             {splitRemaining === 0
@@ -1671,7 +1671,7 @@ export default function Index({
                                             </p>
                                         </div>
                                         {cash < payable && payable > 0 && (
-                                            <span className="text-right text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                            <span className="text-right text-xs font-semibold text-warning-600 dark:text-warning-400">
                                                 Kurang {formatPrice(payable - cash)}
                                             </span>
                                         )}
@@ -1750,17 +1750,17 @@ export default function Index({
 
                             {/* Discount Input */}
                             {promoDiscount > 0 && (
-                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                                <div className="rounded-xl border border-success-200 bg-success-50 p-3 dark:border-success-900/40 dark:bg-success-950/20">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
-                                            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                                            <p className="text-sm font-semibold text-success-700 dark:text-success-300">
                                                 Promo otomatis aktif
                                             </p>
-                                            <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
+                                            <p className="text-xs text-success-600/80 dark:text-success-400/80">
                                                 Harga item sudah disesuaikan berdasarkan rule promo yang berlaku.
                                             </p>
                                         </div>
-                                        <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                                        <span className="text-sm font-bold text-success-700 dark:text-success-300">
                                             -{formatPrice(promoDiscount)}
                                         </span>
                                     </div>
@@ -1864,7 +1864,7 @@ export default function Index({
                                 <span className="text-slate-500">
                                     Promo Otomatis
                                 </span>
-                                <span className="text-emerald-600">
+                                <span className="text-success-600">
                                     -{formatPrice(promoDiscount)}
                                 </span>
                             </div>
@@ -1884,7 +1884,7 @@ export default function Index({
                                                 <span className="truncate pr-3 text-slate-600 dark:text-slate-300">
                                                     {group.label}
                                                 </span>
-                                                <span className="font-medium text-emerald-600">
+                                                <span className="font-medium text-success-600">
                                                     -{formatPrice(group.discount_total)}
                                                 </span>
                                             </div>

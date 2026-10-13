@@ -63,9 +63,9 @@ export default function PayablesIndex({ payables, filters = {}, suppliers = [] }
             case "partial":
                 return <span className={`${base} bg-primary-100 text-primary-700`}>Parsial</span>;
             case "overdue":
-                return <span className={`${base} bg-rose-100 text-rose-700`}>Jatuh Tempo</span>;
+                return <span className={`${base} bg-danger-100 text-danger-700`}>Jatuh Tempo</span>;
             default:
-                return <span className={`${base} bg-amber-100 text-amber-700`}>Belum Lunas</span>;
+                return <span className={`${base} bg-warning-100 text-warning-700`}>Belum Lunas</span>;
         }
     };
 

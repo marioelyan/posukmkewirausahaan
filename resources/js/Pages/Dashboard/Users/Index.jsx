@@ -156,7 +156,7 @@ export default function Index() {
             text: "Data yang dihapus tidak dapat dikembalikan!",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#ef4444",
+            confirmButtonColor: "#c4384d",
             cancelButtonColor: "#64748b",
             confirmButtonText: "Ya, Hapus!",
             cancelButtonText: "Batal",

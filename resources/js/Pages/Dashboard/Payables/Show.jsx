@@ -65,13 +65,13 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
                 );
             case "overdue":
                 return (
-                    <span className={`${base} bg-rose-100 text-rose-700`}>
+                    <span className={`${base} bg-danger-100 text-danger-700`}>
                         Jatuh Tempo
                     </span>
                 );
             default:
                 return (
-                    <span className={`${base} bg-amber-100 text-amber-700`}>
+                    <span className={`${base} bg-warning-100 text-warning-700`}>
                         Belum Lunas
                     </span>
                 );
@@ -155,9 +155,9 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
                                     {formatCurrency(payable.paid)}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
-                                <p className="text-xs text-amber-700">Sisa</p>
-                                <p className="text-lg font-bold text-amber-700">
+                            <div className="p-3 rounded-xl bg-warning-50 dark:bg-warning-900/20 border border-warning-100 dark:border-warning-800">
+                                <p className="text-xs text-warning-700">Sisa</p>
+                                <p className="text-lg font-bold text-warning-700">
                                     {formatCurrency(payable.remaining)}
                                 </p>
                             </div>
@@ -443,9 +443,9 @@ export default function PayableShow({ payable, bankAccounts = [] }) {
                                             {formatCurrency(payable.paid)}
                                         </p>
                                     </div>
-                                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
-                                        <p className="text-xs text-amber-700">Sisa</p>
-                                        <p className="text-lg font-bold text-amber-700">
+                                    <div className="p-3 rounded-xl bg-warning-50 dark:bg-warning-900/20 border border-warning-100 dark:border-warning-800">
+                                        <p className="text-xs text-warning-700">Sisa</p>
+                                        <p className="text-lg font-bold text-warning-700">
                                             {formatCurrency(payable.remaining)}
                                         </p>
                                     </div>

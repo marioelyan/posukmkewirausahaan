@@ -104,7 +104,7 @@ export default function Index({ segments, filters }) {
                                                 {can("customer-segments-update") && (
                                                     <Link
                                                         href={route("customer-segments.edit", segment.id)}
-                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-warning-200 bg-warning-50 text-warning-600 hover:bg-warning-100 dark:border-warning-800 dark:bg-warning-950/30 dark:text-warning-300"
                                                     >
                                                         <IconPencil size={16} />
                                                     </Link>
@@ -114,7 +114,7 @@ export default function Index({ segments, filters }) {
                                                         type="delete"
                                                         url={route("customer-segments.destroy", segment.id)}
                                                         icon={<IconTrash size={16} />}
-                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300"
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-danger-200 bg-danger-50 text-danger-600 hover:bg-danger-100 dark:border-danger-800 dark:bg-danger-950/30 dark:text-danger-300"
                                                     />
                                                 )}
                                             </div>

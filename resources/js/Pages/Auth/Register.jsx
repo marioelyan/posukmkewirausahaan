@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import AuthBotGuardFields from "@/Components/AuthBotGuardFields";
+import { BRAND } from "@/config/brand";
+import { BrandMark } from "@/Components/BrandLogo";
 import {
-    IconShoppingCart,
     IconUser,
     IconMail,
     IconLock,
@@ -43,8 +44,12 @@ export default function Register({ botGuard }) {
                 {/* Left - Decoration */}
                 <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary-700 via-primary-600 to-primary-900 items-center justify-center p-12">
                     <div className="max-w-md text-center text-white">
-                        <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-8">
-                            <IconShoppingCart size={48} />
+                        <div className="w-24 h-24 rounded-3xl bg-white/15 ring-1 ring-white/25 flex items-center justify-center mx-auto mb-8">
+                            <BrandMark
+                                variant="plain"
+                                size={56}
+                                className="text-white"
+                            />
                         </div>
                         <h2 className="text-3xl font-bold mb-4">
                             Bergabung Bersama Kami
@@ -83,14 +88,13 @@ export default function Register({ botGuard }) {
                                 href="/"
                                 className="inline-flex items-center gap-3 mb-6"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center shadow-lg shadow-primary-500/20">
-                                    <IconShoppingCart
-                                        size={24}
-                                        className="text-white"
-                                    />
-                                </div>
+                                <BrandMark
+                                    size={48}
+                                    rounded="rounded-xl"
+                                    className="shadow-lg shadow-primary-500/20"
+                                />
                                 <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    Aplikasi Kasir
+                                    {BRAND.name}
                                 </span>
                             </Link>
                             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">

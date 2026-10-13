@@ -24,15 +24,15 @@ export default function Notification() {
             type: item.type || "stock",
             icon:
                 item.type === "receivable" ? (
-                    <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full bg-warning-100 text-warning-600 flex items-center justify-center">
                         <IconReceipt size={18} />
                     </span>
                 ) : item.type === "payable" ? (
-                    <span className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full bg-success-100 text-success-600 flex items-center justify-center">
                         <IconCurrencyDollar size={18} />
                     </span>
                 ) : (
-                    <span className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full bg-danger-100 text-danger-600 flex items-center justify-center">
                         <IconPackage size={18} />
                     </span>
                 ),
@@ -174,7 +174,7 @@ export default function Notification() {
             {isMobile === false ? (
                 <Menu className="relative z-50" as="div">
                     <Menu.Button className="flex items-center rounded-2xl group px-3 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow transition">
-                        <div className="absolute text-[11px] font-semibold border border-rose-500/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 top-0 -right-2 rounded-md px-2 py-0.5 group-hover:scale-110 duration-200 ease-in">
+                        <div className="absolute text-[11px] font-semibold border border-danger-500/40 bg-danger-500/10 text-danger-500 hover:bg-danger-500/20 top-0 -right-2 rounded-md px-2 py-0.5 group-hover:scale-110 duration-200 ease-in">
                             {badgeCount}
                         </div>
                         <IconBell
@@ -220,7 +220,7 @@ export default function Notification() {
                         className="flex items-center rounded-xl group p-2 relative border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                         onClick={() => setIsOpen(!isOpen)}
                     >
-                        <div className="absolute text-[10px] font-semibold border border-rose-500/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 top-0 -right-2 rounded-md px-1.5 py-0.5 group-hover:scale-110 duration-200 ease-in">
+                        <div className="absolute text-[10px] font-semibold border border-danger-500/40 bg-danger-500/10 text-danger-500 hover:bg-danger-500/20 top-0 -right-2 rounded-md px-1.5 py-0.5 group-hover:scale-110 duration-200 ease-in">
                             {badgeCount}
                         </div>
                         <IconBell strokeWidth={1.5} size={20} className="text-gray-500 dark:text-gray-400" />
