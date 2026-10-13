@@ -696,8 +696,8 @@ Audit berbasis bukti untuk sisa keputusan (Q10–Q16), tanpa mengubah perilaku. 
 | **Q15** `warehouses.outlet_id IS NULL` | `outlet_id` nullable + backfill `PUSAT`→outlet (`2026_09_14_000002`); `outlet:audit` (`--strict`) & `outlet:legacy-audit` (`--backfill` unambiguous) read-only; `OutletAccessService` legacy bypass terkontrol. | **SELESAI** — NULL = record legacy **ditandai lewat audit**, tidak dihapus/dipaksa. |
 | **Q16** laporan lintas business | `Controllers/Reports/*` men-scope via `OutletAccessService::warehousesFor()` → `restrictToActiveBusiness()` + active outlet. **Super-admin pun dibatasi ke business aktif.** Tidak ada agregasi lintas business. | **SELESAI** — isolasi per business aktif ditegakkan; **agregasi lintas business tidak disediakan** (fitur terpisah bila owner butuh). |
 
-- **Yang masih tersisa setelah pass ini:** Q12 diimplementasikan di §13.24; Q10 cleanup (opsional, pasca-deploy); eksekusi runbook produksi (read replica + approval); self-service owner signup; aktivasi flag & deployment.
-- **Catatan doc:** tabel §1 `multi-business-open-decisions.md` Q1–Q9 telah disinkronkan (2026-10-13): **Q2/Q3/Q5/Q7/Q8/Q9 → SELESAI** (bukti §13.13/§13.14/§13.15/§13.16). **Q1** diputuskan = A di §13.25 (completed = `paid`) dan **diimplementasikan (PR #11)**.
+- **Yang masih tersisa setelah pass ini:** **tidak ada keputusan terbuka.** Q12 diimplementasikan di §13.24; Q10 cleanup (opsional, pasca-deploy); **aktivasi/deploy produksi = jalur fresh install (§13.26)** sehingga tidak perlu eksekusi runbook backfill; self-service owner signup tetap fase lanjut.
+- **Catatan doc:** tabel §1 `multi-business-open-decisions.md` Q1–Q9 telah disinkronkan (2026-10-13): **Q2/Q3/Q5/Q7/Q8/Q9 → SELESAI** (bukti §13.13/§13.14/§13.15/§13.16). **Q1** diputuskan = A di §13.25 (completed = `paid`) dan **diimplementasikan (PR #11)**. Keputusan owner lanjutan (FK, laporan per-business, tanpa backfill audit, aktivasi fresh-install) dicatat di **§13.26**.
 - **Batas:** tidak ada perubahan kode/migrasi; flag tetap `false`; tidak ada mutasi data. PR disiapkan ke `development`.
 
 ### 13.24 Q12 `audit_logs.business_id` — ownership + scoping viewer — 2026-10-13
@@ -736,3 +736,20 @@ Audit berbasis bukti untuk sisa keputusan (Q10–Q16), tanpa mengubah perilaku. 
 - **Sisa permukaan teragregasi (belum difilter — follow-up opsional):** `CashierShiftService`/`CashierShiftResource` (rekap shift/drawer; sisi kas sudah `paid`), serta daftar riwayat ("recent transactions", riwayat pelanggan) yang memang *activity feed*, bukan omzet.
 - **Dampak analitik:** angka historis di dashboard/laporan berubah (turun) bila ada baris non-`paid`. Catat di release notes bila menyentuh produksi.
 - **Batas:** perubahan kode + test (tanpa migrasi); flag tetap `false`; `main` tidak disentuh.
+
+### 13.26 Keputusan owner lanjutan — FK, laporan lintas business, backfill audit, aktivasi — 2026-10-13
+
+Empat butir terbuka terakhir ditutup oleh pemilik proyek:
+
+| # | Pertanyaan | Keputusan | Tindak lanjut |
+|---|---|---|---|
+| 1 | FK `restrictOnDelete` pada `payables`/`receivables.business_id` (D4) | **DISETUJUI** | **Sudah terimplementasi + teruji**; tidak ada perubahan kode |
+| 2 | Laporan konsolidasi lintas business | **Per-business dulu** (tanpa laporan konsolidasi) | Konfirmasi Q16/§13.23; tidak ada kode baru |
+| 3 | Backfill histori `audit_logs.business_id` legacy | **Tidak perlu** | Tidak ada command; log legacy `NULL` tetap tersembunyi (fail-closed, §13.24) |
+| 4 | Aktivasi + deploy produksi | **Perlakukan sebagai deployment aplikasi baru** (tanpa data legacy penting) | Jalur **fresh install** — tanpa backfill |
+
+- **Bukti butir 1:** `database/migrations/2026_10_11_100001_add_business_id_to_payables_table.php` (`->restrictOnDelete()`) & `..._100002_add_business_id_to_receivables_table.php`; test `tests/Feature/Business/FinancialOwnershipSchemaTest.php` → `test_business_referenced_by_a_payable_cannot_be_deleted` / `..._receivable_...`. Keputusan D4 kini **final** (tanpa veto).
+- **Konteks butir 3 & 4:** aplikasi live **belum menyimpan data penting**; kehilangan data dapat diterima. Karena itu seluruh rangkaian backfill legacy pada `multi-business-backfill-production-runbook.md` (§1–§14) **tidak berlaku** dan tidak perlu read replica/dry-run/swap index.
+- **Jalur fresh install (ringkas):** deploy kode dengan `MULTI_BUSINESS_ENABLED=true` → `php artisan migrate --force` → `php artisan storage:link` → buka root URL → wizard `/setup` (membuat admin, profil toko, gudang `PUSAT`, **dan satu business default** via bootstrap Q7) → smoke test `docs/testing-manual.md` → logout+login.
+- **Konsekuensi laporan:** Q16 tetap "per business aktif"; bila owner kelak butuh menggabungkan business miliknya, itu **fitur terpisah** dengan kontrol eksplisit — bukan bagian rilis ini.
+- **Batas:** entri **docs-only**; tidak ada perubahan kode/migrasi; `MULTI_BUSINESS_ENABLED` default tetap `false` di `.env.example` (fresh deploy menyetelnya `true` di env target); `main` tidak disentuh oleh entri ini.

@@ -119,27 +119,36 @@ Decision log `§13.1–§13.24`, open-decisions Q1–Q16, audit, ownership matri
   - **Tidak memblokir** staging/aktivasi teknis.
 
 ### 4.2 Operasional (deferred — butuh approval, bukan kode)
-- **Eksekusi runbook backfill produksi** — DRAFT, **belum dieksekusi**. Baca `multi-business-backfill-production-runbook.md`. Pra-syarat: read replica/restored copy, backup + uji restore, jendela perawatan, approval tertulis **owner + DBA**. Fase: 0 audit read-only → 1 deploy migrasi → 2 dry-run → 3 gate approval → 4 apply bertahap → 5 swap index manual (DBA) → 6 verifikasi → 7 aktivasi flag (keputusan terpisah).
-- **Aktivasi flag `MULTI_BUSINESS_ENABLED=true`** — keputusan terpisah, **setelah** backfill + smoke QA staging (`docs/testing-manual.md`).
-- **Deployment** ke produksi — via `main` (auto-deploy). Belum dilakukan untuk kerja ini.
+- **Aktivasi flag `MULTI_BUSINESS_ENABLED=true`** — **Jalur A (fresh install):** tidak perlu backfill. Ikuti `multi-business-backfill-production-runbook.md` §0 dan §13.26 (deploy → `migrate` → `/setup wizard`).
+- **Deployment** ke produksi — via `main` (auto-deploy). Siapkan release branch + tag (`vX.Y.Z`), pastikan `APP_VERSION` konsisten. Gunakan jalur fresh-install.
+- **Self-service owner signup** (Q6 fase lanjut) — bagian admin-platform sudah selesai; signup mandiri belum.
+- **Eksekusi runbook backfill produksi** — **Jalur B (existing):** DRAFT (referensi); berdasarkan keputusan owner (2026-10-13) **tidak berlaku** (§13.26).
 - **Self-service owner signup** (Q6 fase lanjut) — bagian admin-platform sudah selesai; signup mandiri belum.
 
 ### 4.3 Cleanup opsional
 - **Q10 residu**: `database/migrations/2026_10_11_000001_drop_dine_in_tables.php`. Idempotent/no-op pada install fresh; disarankan dihapus **pasca-deploy** (jangan hapus sebelum jendela deploy bila masih membersihkan install lama).
 
 ### 4.4 Residual teknis / risiko (perlu diketahui sebelum deploy)
-- **FK `restrictOnDelete`** pada `payables`/`receivables.business_id` (keputusan D4) — bisnis diarsipkan, bukan hard-delete. **Dicatat untuk veto owner** sebelum deploy (§13.13).
-- **`teams=false` residual**: role ditegakkan via membership + `business.role`; permission Spatie global tetap ada sebagai capability. Verifikasi sebelum aktivasi.
-- **`transactions.invoice` global unique** & **`transactions.client_uuid` global unique** — disengaja (idempotency lintas business via namespacing/gudang), bukan bug.
+- **FK `restrictOnDelete`** pada `payables`/`receivables.business_id` — **DISETUJUI** (§13.26); sudah terimplementasi + teruji.
+- **`teams=false` residual**: role ditegakkan via membership + `business.role`.
+- **`transactions.invoice` global unique** & **`transactions.client_uuid` global unique** — disengaja (idempotency lintas business).
 - **`units.code` global** (satu-satunya identifier master data yang tetap global).
-- **`audit_logs.business_id` legacy = NULL** dan **disembunyikan** saat flag ON (fail-closed, **tanpa backfill otomatis**). Bila owner ingin histori terlihat, perlu command backfill terpisah (belum dibuat).
-- **Laporan lintas business tidak tersedia** (Q16 by design). Bila owner butuh laporan konsolidasi multi-business, itu **fitur baru**.
-- **Data existing tanpa ownership jelas** → dikarantina; perlu `business:financial-ownership-assign` manual saat apply.
-- **Permission cache stale** setelah seeder → logout + login (gotcha umum; lihat AGENTS.md).
+- **`audit_logs.business_id` legacy = NULL** dan **disembunyikan** saat flag ON (fail-closed, tanpa backfill otomatis) — disetujui **tidak perlu** (§13.26).
+- **Laporan lintas business** — **per-business dulu** (§13.26); tidak ada konsolidasi rilis ini.
+- **Data existing tanpa ownership jelas** → dikarantina (FIN-05) — **hanya Jalur B**; tidak berlaku fresh-install.
+- **Permission cache stale** setelah seeder → logout + login.
 
 ---
 
 ## 5. Pra-syarat sebelum fase berikutnya (checklist ringkas)
+
+**Jalur A (fresh install) — siap go-live:**
+- [x] Keputusan owner lengkap (**§13.26**).
+- [x] Kode + test hijau (754 passed, 3253 assertions); Q1 terimplementasi (PR #11).
+- [ ] Siapkan release `release/X.Y.Z` dari `development`; periksa `APP_VERSION`; tag; **konfirmasi go-live merge ke `main`** (auto-deploy).
+- [ ] Go-live: `MULTI_BUSINESS_ENABLED=true` → `php artisan migrate --force` → `php artisan storage:link` → root → `/setup wizard` → smoke test `docs/testing-manual.md`.
+
+**Jalur B (existing) — TIDAK DIJALANKAN saat ini (draft hanya referensi).**
 
 ### Untuk mengaktifkan flag di staging (QA)
 ```text
@@ -251,24 +260,26 @@ vendor/bin/pint
 
 ## 9. Saran task berikutnya (prioritas)
 
+## 9. Saran task berikutnya (prioritas)
+
 1. ~~**[Kode] Implementasi Q1** — filter `payment_status='paid'` + test regresi.~~ **SELESAI (PR #11)** — lihat §4.1.
-2. **[Dokumen/ops] Persetujuan runbook** — review & approval owner + DBA; siapkan akses read replica + jadwal jendela perawatan.
-3. **[Ops] Rehearsal + eksekusi runbook** pada restored copy, lalu Fase 4–6 live.
-4. **[Ops] Aktivasi flag di staging + smoke QA** (`docs/testing-manual.md`), baru kemudian produksi.
+2. ~~**[Ops] Persetujuan runbook** — review & approval owner + DBA; siapkan akses read replica + jadwal jendela perawatan.~~ **RESOLVED** — owner setujui jalur **fresh install** (tanpa backfill), §13.26.
+3. ~~**[Ops] Rehearsal + eksekusi runbook** pada restored copy, lalu Fase 4–6 live.~~ **TIDAK DIPERLUKAN** (fresh install — cukup deploy + setup wizard).
+4. **[Ops] Go-live fresh install** — deploy kode (MAIN, via release), set `MULTI_BUSINESS_ENABLED=true`, `migrate`, `storage:link`, buka root → **/setup wizard** (bootstrap default business Q7), smoke test (`docs/testing-manual.md`), logout+login.
 5. **[Fitur, opsional] Self-service owner signup** (Q6 fase lanjut) — desain kontrol abuse.
 6. **[Cleanup, opsional] Hapus sisa migrasi drop DineIn** setelah deploy (Q10).
-7. **[Fitur, opsional] Laporan konsolidasi lintas business** bila owner butuh (saat ini by-design tidak ada).
-8. **[Fitur, opsional] Command backfill `audit_logs.business_id` legacy** bila histori perlu terlihat setelah flag ON.
+7. **[Fitur, opsional] Laporan konsolidasi lintas business** bila owner butuh (saat ini by-design tidak ada; keputusan 2026-10-13: per-business dulu).
+8. **[Fitur, opsional] Command backfill `audit_logs.business_id` legacy** bila histori perlu terlihat setelah flag ON (2026-10-13: tidak perlu).
 
 ---
 
 ## 10. Pertanyaan terbuka untuk owner (bila AI melanjutkan)
 
 1. ~~**Q1**: definisi transaksi "completed"~~ — **DIPUTUSKAN = A & SUDAH DIIMPLEMENTASIKAN** (§13.25, PR #11).
-2. Apakah **FK `restrictOnDelete`** (bisnis diarsipkan, tak bisa hard-delete) disetujui? (§13.13 D4)
-3. Apakah owner butuh **laporan konsolidasi lintas business** (fitur baru) atau cukup per-business?
-4. Apakah **histori `audit_logs` legacy** perlu di-backfill agar terlihat setelah flag ON?
-5. Jadwal **jendela perawatan** & kesiapan **read replica/DBA** untuk eksekusi runbook.
+2. ~~Apakah **FK `restrictOnDelete`** (bisnis diarsipkan, tak bisa hard-delete) disetujui? (§13.13 D4)~~ — **DISETUJUI** (§13.26).
+3. ~~Apakah owner butuh **laporan konsolidasi lintas business** (fitur baru) atau cukup per-business?~~ — **Per-business dulu** (§13.26).
+4. ~~Apakah **histori `audit_logs` legacy** perlu di-backfill agar terlihat setelah flag ON?~~ — **Tidak perlu** (§13.26).
+5. ~~Jadwal **jendela perawatan** & kesiapan **read replica/DBA** untuk eksekusi runbook.~~ — **Tidak diperlukan** (fresh install, §13.26).
 
 ---
 

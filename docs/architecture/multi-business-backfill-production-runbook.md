@@ -1,9 +1,27 @@
 # Multi-Business — Runbook Backfill Produksi
 
-- **Status:** DRAFT — disiapkan, **BELUM dieksekusi**. Tidak ada data produksi yang diubah oleh dokumen ini.
+- **Status:** DRAFT — Jalur B (backfill instalasi existing). **Jalur A (fresh install, deployment aplikasi baru) disetujui §13.26**.
 - **Prasyarat eksekusi:** izin eksplisit pemilik proyek + DBA + jendela perawatan + backup terverifikasi (lihat §2).
 - **Lingkup:** backfill `business_id` (master data, outlet/warehouse, blok CRM, tabel dokumen), settings per-business, membership, lalu **swap index unique global → composite** secara manual (termasuk `payables.document_number`; `transactions.invoice` global unique).
 - **Referensi:** register keputusan §13.14 (SETTINGS/UNIQUE/SCHED/AUTH), §13.15 (memberships), §13.16 (onboarding), §13.17 (UNIQUE-08/09); `multi-business-readonly-audit-queries.md`; `financial-ownership-audit-runbook.md` (pola audit yang sama).
+
+---
+
+## 0. Jalur A — Fresh install (deployment aplikasi baru) — DISETUJUI 2026-10-13 (§13.26)
+
+> **Berlaku bila aplikasi live belum memiliki data penting** (keputusan owner §13.26). Untuk kondisi ini, **seluruh Jalur B (§1–§14) TIDAK berlaku**; tidak perlu read replica, dry-run, swap index, atau command backfill.
+
+Langkah go-live (fresh install):
+
+```text
+[ ] Merge/Deploy: push release → main atau deploy manual
+[ ] Env: set MULTI_BUSINESS_ENABLED=true (produksi)
+[ ] php artisan migrate --force
+[ ] php artisan storage:link
+[ ] Buka root URL → wizard /setup (admin + profil toko + gudang PUSAT + business default via bootstrap Q7)
+[ ] Smoke test: docs/testing-manual.md (POS, QRIS, ESC/POS, laporan)
+[ ] Logout + login (permission cache)
+```
 
 ---
 
@@ -19,12 +37,13 @@
 
 ## 2. Pra-syarat infrastruktur & approval
 
-- [ ] **Read replica / restored copy** produksi MySQL tersedia untuk Fase 0–2 (jangan jalan pada DB live).
+- [ ] **Baca terlebih dahulu Jalur A di atas.** Jika fresh install → **lewati Jalur B**.
+- [ ] **Read replica / restored copy** produksi MySQL tersedia untuk Fase 0–2 (hanya untuk Jalur B).
 - [ ] **Backup** lengkap + uji restore (point-in-time) di lingkungan terpisah; simpan bukti checksum.
 - [ ] **Jendela perawatan** di luar jam operasional; aplikasi boleh `maintenance:down` saat apply (Fase 4).
 - [ ] Approval tertulis: **pemilik proyek** + **DBA** untuk (a) eksekusi audit, (b) eksekusi apply, (c) swap index.
 - [ ] Versi kode yang memuat command dipakai: `business:backfill`, `business:settings-backfill`, `business:membership-backfill` (tersedia sejak branch staging-ready; **tidak** perlu flag ON untuk memakainya — command bekerja terhadap kolom, bukan flag).
-- [ ] `MULTI_BUSINESS_ENABLED` tetap `false` selama seluruh runbook **kecuali** fase QA staging terpisah (§10).
+- [ ] `MULTI_BUSINESS_ENABLED` tetap `false` selama seluruh runbook **kecuali** fase QA staging terpisah (§10) atau **Jalur A**.
 
 > Prinsip: **tidak pernah satu orang**. Setiap fase yang menulis data dijalankan oleh orang yang berbeda dari yang meng-approve, atau minimal direview ganda (checklist §13).
 
@@ -32,14 +51,14 @@
 
 | Fase | Tujuan | Mutasi data? | Gate |
 |---|---|---|---|
-| 0 — Audit read-only | Angka riil: orphan, duplikat, kepemilikan | Tidak | Owner + DBA |
+| 0 — Audit read-only *(Jalur B)* | Angka riil: orphan, duplikat, kepemilikan | Tidak | Owner + DBA |
 | 1 — Deploy kode & migrasi | Schema `business_id` siap | Migrasi additive (guarded) | DBA |
-| 2 — Planning (dry-run) | Plan pending/already/conflict per tabel | Tidak | Owner |
-| 3 — Gate approval | Persetujuan tertulis apply | Tidak | Owner + DBA |
-| 4 — Apply bertahap | Stempel `business_id` + memberships | **Ya** | Checklist §13 |
-| 5 — Swap index manual | Composite unique aktif | **Ya** (DDL) | DBA |
-| 6 — Verifikasi | Semua NULL = 0, duplikat tidak ada | Tidak | Owner |
-| 7 — (Deferred) Aktivasi flag + QA | Tenancy menyala di staging | — | Keputusan terpisah |
+| 2 — Planning (dry-run) *(Jalur B)* | Plan pending/already/conflict per tabel | Tidak | Owner |
+| 3 — Gate approval *(Jalur B)* | Persetujuan tertulis apply | Tidak | Owner + DBA |
+| 4 — Apply bertahap *(Jalur B)* | Stempel `business_id` + memberships | **Ya** | Checklist §13 |
+| 5 — Swap index manual *(Jalur B)* | Composite unique aktif | **Ya** (DDL) | DBA |
+| 6 — Verifikasi *(Jalur B)* | Semua NULL = 0, duplikat tidak ada | Tidak | Owner |
+| 7 — Aktivasi flag + QA | Tenancy menyala (Jalur A: fresh-install; Jalur B: setelah 0–6) | — | Keputusan terpisah |
 
 ---
 
@@ -268,14 +287,22 @@ SELECT COUNT(*) FROM business_user; -- bandingkan dengan jumlah akses outlet pem
 
 **Smoke test staging (terpisah):** salin DB produksi pasca-apply ke staging, aktifkan `MULTI_BUSINESS_ENABLED=true`, jalankan QA manual `docs/testing-manual.md` + akses demo `manager`/`staff`/`super-admin` (`DemoFlagOnAccessTest` sebagai referensi). **Jangan** aktifkan flag di produksi tanpa langkah ini.
 
-## Fase 7 — (Deferred) Aktivasi flag di produksi
+## Fase 7 — Aktivasi flag + QA
 
-- Keputusan terpisah (bukan bagian runbook ini): kapan `MULTI_BUSINESS_ENABLED=true`, bump `APP_VERSION`, deploy, dan QA produksi.
-- Checklist manual QA: `docs/testing-manual.md`; verifikasi scheduling per business (SCHED-01/02) dan overlap offline sync.
+> **Jalur A (fresh install):** ikuti §0. Tidak perlu jalankan Jalur B.  
+> **Jalur B (existing):** jalankan setelah Fase 6 terverifikasi (semua `business_id` terisi; duplikat 0; `audit_logs` legacy disembunyikan saat ON). 
+
+- [ ] **Keputusan terpisah:** owner setujui aktivasi.
+- [ ] Staging: `MULTI_BUSINESS_ENABLED=true`, smoke `docs/testing-manual.md` (POS, role, akses outlet, membership), cek audit scoping (super-admin dibatasi ke business aktif), fail-closed tanpa context.
+- [ ] Produksi: identik dengan approval tertulis (deploy kode + env) — tidak ada backfill legacy.
+- [ ] Cek: `AuditLog` list tidak menampilkan `business_id=NULL` (saat ON), `show` 404 lintas business, business default punya `PUSAT` + outlet ter-mapping (Jalur B).
 
 ---
 
 ## 12. Rollback
+
+> **Jalur A (fresh install):** rollback jarang relevan; cukup deploy versi sebelumnya. Data baru terbatas (setup wizard).  
+> **Jalur B:** hanya berlaku bila ada mutasi (Fase 4, sebagian Fase 5). Bug pada dry-run/planning → tidak perlu rollback. 
 
 | Fase | Tindakan |
 |---|---|

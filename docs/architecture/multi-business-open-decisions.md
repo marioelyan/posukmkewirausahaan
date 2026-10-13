@@ -151,7 +151,13 @@ Ini adalah gate Fase 0. Tanpa jawaban, implementasi berisiko rework besar:
 
 | Item | Tanggal | Penanggung jawab | Status |
 |---|---|---|---|
+| **Q1** — definisi `completed` | 2026-10-13 | owner | **DISETUJUI — A (paid only)**; terimplementasi (PR #11), register §13.25 |
+| **Q2, Q3, Q4, Q5, Q7, Q8, Q9** | 2026-10-13 | owner | **DISETUJUI** (rekomendasi diterima), register §13.13–§13.16 |
 | **Q6** — pembuatan business | 2026-10-13 | owner | **DISETUJUI — A (admin platform only)**, §13.19 register; self-service owner signup tetap fase lanjut |
-| Q1–Q5, Q7–Q16 (sisa) | — | — | **Belum disetujui** (default rekomendasi sementara) |
+| **Q10–Q16** | 2026-10-13 | owner | **DISETUJUI**, register §13.22–§13.23 |
+| **FK `restrictOnDelete`** (D4) | 2026-10-13 | owner | **DISETUJUI** — sudah terimplementasi + teruji; §13.26 |
+| **Laporan lintas business** | 2026-10-13 | owner | **Per-business dulu** — tanpa laporan konsolidasi; §13.26 |
+| **Backfill `audit_logs.business_id` legacy** | 2026-10-13 | owner | **Tidak perlu** (fresh deploy); §13.26 |
+| **Aktivasi/deploy produksi** | 2026-10-13 | owner | **Jalur fresh install** (tanpa backfill legacy); §13.26 |
 
-**FAKTA.** Hanya Q6 yang berstatus disetujui (2026-10-13). Item lain tidak boleh ditandai "approved" tanpa konfirmasi eksplisit pengguna.
+**FAKTA.** Seluruh keputusan P0 dan P1 telah disetujui owner (2026-10-13). Ikuti register §13.13–§13.26 sebagai rujukan tunggal. Item yang tersisa hanya **operasional** (eksekusi deploy) dan **fase lanjut** (self-service owner signup), bukan keputusan terbuka.
