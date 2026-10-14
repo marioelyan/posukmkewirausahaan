@@ -11,7 +11,7 @@ import {
     IconBulb,
 } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
+const GITHUB_URL = BRAND.github;
 
 const releases = [
     {

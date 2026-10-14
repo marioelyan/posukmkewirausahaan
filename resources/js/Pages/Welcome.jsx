@@ -21,9 +21,9 @@ import {
     IconApi,
 } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
-const DOCS_URL = `${GITHUB_URL}/blob/main/docs/getting-started.md`;
-const GALLERY_URL = `${GITHUB_URL}/blob/main/docs/screenshots.md`;
+const GITHUB_URL = BRAND.github;
+const DOCS_URL = BRAND.docs;
+const GALLERY_URL = `${BRAND.github}/blob/main/docs/screenshots.md`;
 
 const stats = [
     { value: "200+", label: "GitHub Stars" },
@@ -130,8 +130,8 @@ const faqs = [
     },
 ];
 
-const quickStart = `git clone https://github.com/aryadwiputra/point-of-sales
-cd point-of-sales
+const quickStart = `git clone ${BRAND.github}
+cd posukmkewirausahaan
 composer install
 PUPPETEER_SKIP_DOWNLOAD=true npm install
 cp .env.example .env
