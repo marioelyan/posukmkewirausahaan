@@ -140,6 +140,18 @@ export default function Index({
         if (flash?.success) toast.success(flash.success);
     }, [flash]);
 
+    // Base qty already in the cart per product, so the product grid can show
+    // the real remaining stock and disable "+" when it runs out.
+    const cartBaseQtyByProduct = useMemo(() => {
+        const map = {};
+        for (const item of carts) {
+            const base =
+                Number(item.qty || 0) * Number(item.conversion_factor || 1);
+            map[item.product_id] = (map[item.product_id] || 0) + base;
+        }
+        return map;
+    }, [carts]);
+
     // Barcode scanner integration
     const handleBarcodeScan = useCallback(
         (barcode) => {
@@ -147,18 +159,24 @@ export default function Index({
                 (p) => p.barcode?.toLowerCase() === barcode.toLowerCase()
             );
 
-            if (product) {
-                if (product.stock > 0) {
-                    handleAddToCart(product);
-                    toast.success(`${product.title} ditambahkan (barcode)`);
-                } else {
-                    toast.error(`${product.title} stok habis`);
-                }
-            } else {
+            if (!product) {
                 toast.error(`Produk tidak ditemukan: ${barcode}`);
+                return;
             }
+
+            const available = Number(
+                product.available_stock ?? product.stock ?? 0
+            );
+            const inCart = Number(cartBaseQtyByProduct[product.id] || 0);
+            if (available - inCart <= 0) {
+                toast.error(`${product.title} stok habis`);
+                return;
+            }
+
+            handleAddToCart(product);
+            toast.success(`${product.title} ditambahkan (barcode)`);
         },
-        [products]
+        [products, cartBaseQtyByProduct]
     );
 
     const { isScanning } = useBarcodeScanner(handleBarcodeScan, {
@@ -369,6 +387,20 @@ export default function Index({
     // Handle add product to cart
     const handleAddToCart = async (product, unit = null) => {
         if (!product?.id) return;
+
+        // Pre-check remaining stock (warehouse stock minus what is already in
+        // the cart) so we don't fire a request the server will reject.
+        const available = Number(
+            product.available_stock ?? product.stock ?? 0
+        );
+        const inCart = Number(cartBaseQtyByProduct[product.id] || 0);
+        const conversion = Number(unit?.conversion_factor || 1);
+        if (available - inCart < conversion) {
+            toast.error(
+                `Stok tidak mencukupi. Tersedia: ${Math.max(0, available - inCart)}`
+            );
+            return;
+        }
 
         setAddingProductId(product.id);
 
@@ -1019,6 +1051,7 @@ export default function Index({
                         onAddToCart={handleAddToCart}
                         addingProductId={addingProductId}
                         searchInputRef={searchInputRef}
+                        cartQtyByProduct={cartBaseQtyByProduct}
                     />
                 </div>
 

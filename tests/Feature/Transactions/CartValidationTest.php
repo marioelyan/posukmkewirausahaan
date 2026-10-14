@@ -14,6 +14,7 @@ use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class CartValidationTest extends TestCase
@@ -188,5 +189,68 @@ class CartValidationTest extends TestCase
         $cart = $cart->fresh();
         $this->assertSame(2, (int) $cart->qty);
         $this->assertSame(1320000, (int) $cart->price);
+    }
+
+    public function test_add_to_cart_is_cumulative_and_cannot_exceed_stock(): void
+    {
+        $this->openShiftForCashier();
+        $product = $this->makeProduct(6);
+
+        for ($i = 0; $i < 6; $i++) {
+            $this->from(route('transactions.index'))
+                ->post(route('transactions.addToCart'), [
+                    'product_id' => $product->id,
+                    'qty' => 1,
+                ])
+                ->assertSessionHasNoErrors();
+        }
+
+        $this->assertSame(6, (int) Cart::where('product_id', $product->id)->first()->qty);
+
+        // The 7th add must be rejected (regression: stock 6 but 15 got in).
+        $this->from(route('transactions.index'))
+            ->post(route('transactions.addToCart'), [
+                'product_id' => $product->id,
+                'qty' => 1,
+            ])
+            ->assertSessionHas('error', 'Stok tidak mencukupi. Tersedia: 6');
+
+        $this->assertSame(6, (int) Cart::where('product_id', $product->id)->first()->fresh()->qty);
+    }
+
+    public function test_add_to_cart_rejects_qty_above_stock_in_single_call(): void
+    {
+        $this->openShiftForCashier();
+        $product = $this->makeProduct(6);
+
+        $this->from(route('transactions.index'))
+            ->post(route('transactions.addToCart'), [
+                'product_id' => $product->id,
+                'qty' => 15,
+            ])
+            ->assertSessionHas('error', 'Stok tidak mencukupi. Tersedia: 6');
+
+        $this->assertDatabaseCount('carts', 0);
+    }
+
+    public function test_index_lists_warehouse_products_including_zero_stock_with_available_stock(): void
+    {
+        $this->openShiftForCashier();
+        $inStock = $this->makeProduct(6);
+        $outOfStock = $this->makeProduct(0);
+
+        $this->get(route('transactions.index'))
+            ->assertOk()
+            ->assertInertia(function (Assert $page) use ($inStock, $outOfStock) {
+                $products = collect($page->toArray()['props']['products'] ?? []);
+
+                $serializedInStock = $products->firstWhere('id', $inStock->id);
+                $serializedOutOfStock = $products->firstWhere('id', $outOfStock->id);
+
+                $this->assertNotNull($serializedInStock);
+                $this->assertNotNull($serializedOutOfStock);
+                $this->assertSame(6.0, (float) $serializedInStock['available_stock']);
+                $this->assertSame(0.0, (float) $serializedOutOfStock['available_stock']);
+            });
     }
 }
