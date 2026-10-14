@@ -104,7 +104,7 @@ export default function POSLayout({ children }) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+        <div className="h-viewport flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-50 h-16 flex items-center justify-between px-4 lg:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
                 {/* Left Section - Logo & Time */}
@@ -214,20 +214,20 @@ export default function POSLayout({ children }) {
                         {appVersion}
                     </span>
 
-                    {/* Tour Guide */}
+                    {/* Tour Guide — desktop only: the tour overlays assume a wide screen */}
                     <button
                         onClick={startTour}
                         disabled={tourActive}
-                        className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-touch min-h-touch flex items-center justify-center disabled:opacity-50"
+                        className="hidden lg:flex p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-touch min-h-touch items-center justify-center disabled:opacity-50"
                         title={i18n.t("tour.button")}
                     >
                         <IconQuestionMark size={20} className="text-slate-500" />
                     </button>
 
-                    {/* Fullscreen Toggle */}
+                    {/* Fullscreen Toggle — desktop only: iOS Safari has no element fullscreen */}
                     <button
                         onClick={toggleFullscreen}
-                        className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-touch min-h-touch flex items-center justify-center"
+                        className="hidden lg:flex p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-touch min-h-touch items-center justify-center"
                         title={isFullscreen ? "Keluar Fullscreen" : "Fullscreen"}
                     >
                         {isFullscreen ? (
@@ -271,7 +271,7 @@ export default function POSLayout({ children }) {
                                 </span>
                             </Link>
                         )}
-                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                        <p className="max-w-[5.5rem] truncate text-sm font-medium text-slate-700 dark:text-slate-200 sm:max-w-[10rem]">
                             {auth.user.name}
                         </p>
                     </div>
@@ -350,8 +350,8 @@ export default function POSLayout({ children }) {
                 </div>
             )}
 
-            {/* Main Content - Full Height */}
-            <main className="flex-1 overflow-hidden">
+            {/* Main Content - fills the space left by the header and any banner */}
+            <main className="min-h-0 flex-1 overflow-y-auto">
                 <Toaster
                     position="top-right"
                     toastOptions={{

@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Link } from "@inertiajs/react";
 import {
     IconBrandGithub,
     IconStar,
     IconArrowRight,
+    IconMenu2,
+    IconX,
 } from "@tabler/icons-react";
 import { BRAND } from "@/config/brand";
 import { BrandMark } from "@/Components/BrandLogo";
@@ -18,14 +21,16 @@ export const NAV_LINKS = [
 ];
 
 export default function PublicLayout({ children, active = "" }) {
+    const [menuOpen, setMenuOpen] = useState(false);
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
             {/* ============ NAVBAR ============ */}
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-                <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2.5">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+                    <Link href="/" className="flex min-w-0 items-center gap-2.5">
                         <BrandMark size={36} rounded="rounded-xl" />
-                        <span className="text-lg font-bold text-slate-900 dark:text-white">
+                        <span className="truncate text-lg font-bold text-slate-900 dark:text-white">
                             {BRAND.name}
                         </span>
                     </Link>
@@ -46,7 +51,7 @@ export default function PublicLayout({ children, active = "" }) {
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <a
                             href={GITHUB_URL}
                             target="_blank"
@@ -58,7 +63,7 @@ export default function PublicLayout({ children, active = "" }) {
                         </a>
                         <Link
                             href="/login"
-                            className="px-5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary-500 transition-colors"
+                            className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary-500 transition-colors sm:px-5"
                         >
                             Masuk
                         </Link>
@@ -66,12 +71,69 @@ export default function PublicLayout({ children, active = "" }) {
                             href={GITHUB_URL}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:from-primary-600 hover:to-primary-700 shadow-lg shadow-primary-500/25 transition-all"
+                            className="hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:from-primary-600 hover:to-primary-700 shadow-lg shadow-primary-500/25 transition-all"
                         >
                             Get Source
                         </a>
+
+                        {/* Mobile menu toggle — nav links are otherwise unreachable on phones */}
+                        <button
+                            type="button"
+                            onClick={() => setMenuOpen((open) => !open)}
+                            aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
+                            aria-expanded={menuOpen}
+                            className="md:hidden flex min-h-touch min-w-touch items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                        >
+                            {menuOpen ? <IconX size={22} /> : <IconMenu2 size={22} />}
+                        </button>
                     </div>
                 </div>
+
+                {/* Mobile menu panel */}
+                {menuOpen && (
+                    <div className="md:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                        <div className="px-4 py-3 sm:px-6">
+                            <nav className="flex flex-col">
+                                {NAV_LINKS.map((link) => (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        onClick={() => setMenuOpen(false)}
+                                        className={`min-h-touch flex items-center rounded-xl px-3 text-sm font-medium transition-colors ${
+                                            active === link.href
+                                                ? "text-primary-600 dark:text-primary-400"
+                                                : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                                        }`}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ))}
+                            </nav>
+                            <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
+                                <a
+                                    href={GITHUB_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setMenuOpen(false)}
+                                    className="min-h-touch flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                                >
+                                    <IconBrandGithub size={16} />
+                                    GitHub
+                                </a>
+                                <a
+                                    href={GITHUB_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setMenuOpen(false)}
+                                    className="min-h-touch flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-4 text-sm font-semibold text-white"
+                                >
+                                    Get Source
+                                    <IconArrowRight size={16} />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </nav>
 
             {/* ============ CONTENT ============ */}

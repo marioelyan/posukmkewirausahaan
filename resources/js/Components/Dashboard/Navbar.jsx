@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { usePage } from "@inertiajs/react";
 import {
     IconMenu2,
@@ -44,24 +44,15 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
         return "Dashboard";
     };
 
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
-        window.addEventListener("resize", handleResize);
-        handleResize();
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
     return (
         <header
-            className="sticky top-0 z-30 h-16 flex items-center justify-between px-4 md:px-6
+            className="sticky top-0 z-30 h-16 flex items-center justify-between gap-3 px-4 md:px-6
             bg-white dark:bg-slate-900
             border-b border-slate-200 dark:border-slate-800
             transition-colors duration-200"
         >
             {/* Left Section */}
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-4">
                 {/* Sidebar Toggle */}
                 <button
                     onClick={toggleSidebar}
@@ -71,14 +62,15 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
                     <IconMenu2 size={20} strokeWidth={1.5} />
                 </button>
 
-                {/* Mobile Logo */}
-                <div className="md:hidden flex items-center gap-2">
+                {/* Mobile Logo — the store name only fits once the viewport can
+                    spare the room, so it is hidden below `sm` and truncated. */}
+                <div className="md:hidden flex min-w-0 items-center gap-2">
                     <BrandMark
                         size={28}
                         label={storeInitial}
                         rounded="rounded-lg"
                     />
-                    <span className="text-lg font-bold text-slate-800 dark:text-white">
+                    <span className="hidden sm:block truncate text-lg font-bold text-slate-800 dark:text-white">
                         {storeName}
                     </span>
                 </div>
@@ -92,19 +84,23 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
                 </div>
             </div>
 
-            {/* Right Section */}
-            <div className="flex items-center gap-2">
-                <BusinessSwitcher business={auth?.currentBusiness} businesses={auth?.businesses} locked={auth?.outletLocked} />
-                <OutletSwitcher outlet={auth?.currentOutlet} outlets={auth?.outlets} locked={auth?.outletLocked} showIndicator={multiBusinessEnabled} />
-                {/* Tour Guide */}
-                <button
-                    onClick={startTour}
-                    disabled={tourActive}
-                    className="p-2.5 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-                    title={i18n.t("tour.button")}
-                >
-                    <IconQuestionMark size={20} strokeWidth={1.5} />
-                </button>
+            {/* Right Section — business/outlet context needs a wide screen, so it
+                moves into the sidebar drawer on phones. Everything that stays is
+                either an icon button or the account menu. */}
+            <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+                <div className="hidden md:flex items-center gap-2">
+                    <BusinessSwitcher business={auth?.currentBusiness} businesses={auth?.businesses} locked={auth?.outletLocked} />
+                    <OutletSwitcher outlet={auth?.currentOutlet} outlets={auth?.outlets} locked={auth?.outletLocked} showIndicator={multiBusinessEnabled} />
+                    {/* Tour Guide */}
+                    <button
+                        onClick={startTour}
+                        disabled={tourActive}
+                        className="p-2.5 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                        title={i18n.t("tour.button")}
+                    >
+                        <IconQuestionMark size={20} strokeWidth={1.5} />
+                    </button>
+                </div>
 
                 {/* Language Switcher */}
                 <LanguageSwitcher />
@@ -112,6 +108,7 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
                 {/* Theme Toggle */}
                 <button
                     onClick={themeSwitcher}
+                    aria-label={darkMode ? "Light Mode" : "Dark Mode"}
                     className="p-2.5 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                     title={darkMode ? "Light Mode" : "Dark Mode"}
                 >
@@ -130,10 +127,10 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
                 <Notification />
 
                 {/* Divider */}
-                <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-1" />
+                <div className="hidden sm:block w-px h-8 bg-slate-200 dark:bg-slate-700 mx-1" />
 
                 {/* User Dropdown */}
-                <AuthDropdown auth={auth} isMobile={isMobile} />
+                <AuthDropdown auth={auth} />
             </div>
         </header>
     );

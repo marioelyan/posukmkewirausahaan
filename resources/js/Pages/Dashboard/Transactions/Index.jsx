@@ -864,7 +864,7 @@ export default function Index({
             <>
                 <Head title="Buka Shift Kasir" />
 
-                <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl items-center justify-center px-4 py-10">
+                <div className="mx-auto flex min-h-full max-w-3xl items-center justify-center px-4 py-10">
                     <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
                         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-300">
                             <IconWallet size={28} />
@@ -962,7 +962,7 @@ export default function Index({
         <>
             <Head title="Transaksi" />
 
-            <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row">
+            <div className="h-full flex flex-col lg:flex-row">
                 {/* Mobile Tab Switcher */}
                 <div className="lg:hidden flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                     <button
@@ -1023,12 +1023,13 @@ export default function Index({
                     />
                 </div>
 
-                {/* Right Panel - Cart & Payment */}
+                {/* Right Panel - Cart & Payment. `flex-1` fills the column on
+                    phones (the layout above owns the viewport height); on lg it
+                    goes back to a fixed-width column beside the product grid. */}
                 <div
-                        className={`w-full min-w-0 lg:w-[420px] xl:w-[480px] flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 min-h-0 overflow-hidden ${
+                        className={`w-full min-w-0 flex-1 lg:flex-none lg:w-[420px] xl:w-[480px] flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 min-h-0 overflow-hidden ${
                         mobileView !== "cart" ? "hidden lg:flex" : "flex"
                     }`}
-                    style={{ height: "calc(100vh - 4rem)" }}
                 >
                     {/* Customer Select - Fixed */}
                     <div
