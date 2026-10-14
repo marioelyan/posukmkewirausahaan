@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CashierShift extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     public const STATUS_OPEN = 'open';
@@ -17,6 +19,7 @@ class CashierShift extends Model
 
     protected $fillable = [
         'user_id',
+        'business_id',
         'warehouse_id',
         'opened_by',
         'closed_by',
@@ -40,6 +43,7 @@ class CashierShift extends Model
     protected $casts = [
         'id' => 'integer',
         'user_id' => 'integer',
+        'business_id' => 'integer',
         'opened_by' => 'integer',
         'closed_by' => 'integer',
         'opened_at' => 'datetime',

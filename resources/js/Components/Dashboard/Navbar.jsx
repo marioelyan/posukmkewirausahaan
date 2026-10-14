@@ -89,7 +89,7 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
                 either an icon button or the account menu. */}
             <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
                 <div className="hidden md:flex items-center gap-2">
-                    <BusinessSwitcher business={auth?.currentBusiness} businesses={auth?.businesses} locked={auth?.outletLocked} />
+                    <BusinessSwitcher business={auth?.currentBusiness} businesses={auth?.businesses} locked={auth?.businessSwitchLocked} />
                     <OutletSwitcher outlet={auth?.currentOutlet} outlets={auth?.outlets} locked={auth?.outletLocked} showIndicator={multiBusinessEnabled} />
                     {/* Tour Guide */}
                     <button

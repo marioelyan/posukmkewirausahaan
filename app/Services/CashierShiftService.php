@@ -47,29 +47,26 @@ class CashierShiftService
      * Base query for a user's open shift, constrained to the verified active
      * business when tenancy is enabled.
      *
-     * A user may be a member of several businesses. Without this constraint an
-     * open shift in business B would keep passing the POS/active-shift gates
-     * after the request context switched to business A, letting operations run
-     * against another tenant's warehouse. The Warehouse global scope fails the
-     * relation closed when tenancy is on but no business context is resolved.
+     * A user may be a member of several businesses. `CashierShift` now stores a
+     * `business_id` and carries the fail-closed `BelongsToBusiness` global
+     * scope, so `CashierShift::query()` is already limited to the active
+     * business and returns nothing when tenancy is on but no context resolved.
      */
     private function activeShiftQuery(int $userId): Builder
     {
-        $query = CashierShift::query()
+        return CashierShift::query()
             ->open()
             ->where('user_id', $userId)
             ->latest('opened_at');
-
-        if (config('multi_business.enabled')) {
-            $query->whereHas('warehouse');
-        }
-
-        return $query;
     }
 
     public function openShift(User $cashier, User $actor, int $openingCash, ?string $notes = null, ?int $warehouseId = null): CashierShift
     {
+        // The "one open shift per cashier" invariant is intentionally global
+        // rather than per-business: the cashier must close the shift in one
+        // business before opening one in another.
         $existing = CashierShift::query()
+            ->withoutGlobalScope('business')
             ->open()
             ->where('user_id', $cashier->id)
             ->exists();
@@ -263,6 +260,8 @@ class CashierShiftService
 
     public function visibleToUser(Builder $query, User $user): Builder
     {
+        // `$query` is already limited to the active business by the model's
+        // business global scope, so every branch below inherits the boundary.
         if ($user->isSuperAdmin()) {
             return $query;
         }

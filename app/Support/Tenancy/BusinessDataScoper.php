@@ -33,6 +33,12 @@ class BusinessDataScoper
         'customer_segments',
         'customer_campaigns',
         'customer_vouchers',
+        // Not master data: shifts created by the demo/operational seeder before
+        // any context exists. Unlike the other warehouse-scoped tables the
+        // model now carries a `BelongsToBusiness` global scope, so an unscoped
+        // row would simply stop being visible under tenancy rather than being
+        // resolved through its warehouse.
+        'cashier_shifts',
     ];
 
     /**

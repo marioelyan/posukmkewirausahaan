@@ -59,6 +59,7 @@ class HandleInertiaRequests extends Middleware
         $availableOutlets = collect();
 
         $businessSwitcher = null;
+        $businessSwitchLocked = false;
         if ($request->user() && config('multi_business.enabled')) {
             $current = app(BusinessContext::class)->business();
             $accessible = $request->user()->isSuperAdmin()
@@ -67,6 +68,19 @@ class HandleInertiaRequests extends Middleware
                     ->pluck('business')
                     ->filter()
                     ->values();
+
+            // While a shift is open the active business is pinned to the shift's
+            // business (switching away is rejected with 422 server-side). The
+            // dropdown has to reflect that, otherwise it looks selectable while
+            // every option except the current one fails. Deliberately
+            // cross-business: a shift that lives in another business still
+            // means "you are on duty", and `outletLocked` only sees the shifts
+            // of the *current* business.
+            $businessSwitchLocked = CashierShift::query()
+                ->withoutGlobalScope('business')
+                ->open()
+                ->where('user_id', $request->user()->id)
+                ->exists();
 
             $businessSwitcher = [
                 'current' => $current?->only(['id', 'name', 'slug']),
@@ -279,6 +293,7 @@ class HandleInertiaRequests extends Middleware
                 ...($businessSwitcher ? [
                     'currentBusiness' => $businessSwitcher['current'],
                     'businesses' => $businessSwitcher['accessible'],
+                    'businessSwitchLocked' => $businessSwitchLocked,
                 ] : []),
             ],
             'locale' => [

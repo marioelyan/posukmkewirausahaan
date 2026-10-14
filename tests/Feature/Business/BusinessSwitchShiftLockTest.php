@@ -82,6 +82,7 @@ class BusinessSwitchShiftLockTest extends TestCase
 
         CashierShift::create([
             'user_id' => $this->manager->id,
+            'business_id' => $this->businessA->id,
             'opened_by' => $this->manager->id,
             'warehouse_id' => $warehouse->id,
             'opened_at' => now(),

@@ -94,7 +94,7 @@ Kode strategi:
 
 ## 5. Scope Warehouse (Operasional)
 
-**FAKTA.** `warehouse_id` ditambahkan ke transaksi/cart/mutasi (`2026_06_22_000004`), purchasing (`2026_06_22_000005`), dan `cashier_shifts` (`2026_06_22_000003`).
+**FAKTA.** `warehouse_id` ditambahkan ke transaksi/cart/mutasi (`2026_06_22_000004`), purchasing (`2026_06_22_000005`), dan `cashier_shifts` (`2026_06_22_000003`). **FAKTA.** `cashier_shifts` kemudian mendapat `business_id` sendiri (`2026_10_14_000001`), diturunkan dari warehouse baris lama, dan mengadopsi global scope `BelongsToBusiness` — satu-satunya tabel warehouse-scoped yang kini punya kunci kepemilikan eksplisit (lihat §13.28 keputusan).
 
 | Tabel | Tujuan | Scope saat ini | Strategi | Backfill |
 |---|---|---|---|---|

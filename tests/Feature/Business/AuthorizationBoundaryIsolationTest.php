@@ -582,6 +582,7 @@ class AuthorizationBoundaryIsolationTest extends TestCase
 
         $shiftA = CashierShift::create([
             'user_id' => $cashier->id,
+            'business_id' => $this->businessA->id,
             'opened_by' => $cashier->id,
             'opening_cash' => 0,
             'opened_at' => now(),
@@ -591,6 +592,7 @@ class AuthorizationBoundaryIsolationTest extends TestCase
 
         $shiftB = CashierShift::create([
             'user_id' => $cashier->id,
+            'business_id' => $this->businessB->id,
             'opened_by' => $cashier->id,
             'opening_cash' => 0,
             'opened_at' => now(),
@@ -613,6 +615,7 @@ class AuthorizationBoundaryIsolationTest extends TestCase
 
         CashierShift::create([
             'user_id' => $cashier->id,
+            'business_id' => $this->businessA->id,
             'opened_by' => $cashier->id,
             'opening_cash' => 0,
             'opened_at' => now(),

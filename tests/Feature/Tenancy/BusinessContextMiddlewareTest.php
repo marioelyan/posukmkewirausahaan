@@ -92,21 +92,27 @@ class BusinessContextMiddlewareTest extends TestCase
             ]);
     }
 
-    public function test_session_business_without_membership_is_rejected(): void
+    public function test_foreign_session_selection_never_resolves_to_that_business(): void
     {
         $user = User::factory()->create();
         $owned = Business::factory()->create();
         $foreign = Business::factory()->create();
         $this->member($user, $owned);
 
+        // The stale selection is dropped rather than trusted: the request
+        // recovers into the business the user actually belongs to, and never
+        // into the foreign one.
         $this->actingAs($user)
             ->withSession(['active_business_id' => $foreign->id])
             ->get('/_test/business-context')
             ->assertOk()
             ->assertJson([
-                'business_id' => null,
-                'has_active_business' => false,
-            ]);
+                'business_id' => $owned->id,
+                'has_active_business' => true,
+            ])
+            ->assertJsonMissing(['business_id' => $foreign->id]);
+
+        $this->assertSame($owned->id, session('active_business_id'));
     }
 
     public function test_business_id_query_parameter_is_not_trusted(): void
@@ -166,13 +172,15 @@ class BusinessContextMiddlewareTest extends TestCase
             ->get('/_test/business-context')
             ->assertJson(['business_id' => $owned->id]);
 
+        // A selection for a business the user does not belong to must never
+        // become the context; it heals back to their own business instead.
         $this->actingAs($user)
             ->withSession(['active_business_id' => $foreign->id])
             ->get('/_test/business-context')
-            ->assertJson([
-                'business_id' => null,
-                'has_active_business' => false,
-            ]);
+            ->assertJson(['business_id' => $owned->id])
+            ->assertJsonMissing(['business_id' => $foreign->id]);
+
+        $this->assertSame($owned->id, session('active_business_id'));
     }
 
     public function test_required_middleware_blocks_requests_without_context(): void

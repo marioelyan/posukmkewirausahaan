@@ -202,14 +202,20 @@ class OutletAccessService
      */
     public function hasActiveShiftInOtherBusiness(User $user, int $businessId): bool
     {
-        $hierarchy = app(BusinessHierarchyService::class);
-
+        // Deliberately cross-business: the whole point is to inspect shifts that
+        // fall OUTSIDE the target business, so the model's business scope (which
+        // would hide them in the current context) must be bypassed. A shift with
+        // no resolvable business is treated as "other" — the conservative
+        // choice, since the switcher lock is a safety gate, not a convenience.
         return CashierShift::query()
-            ->with('warehouse.outlet')
+            ->withoutGlobalScope('business')
             ->open()
             ->where('user_id', $user->id)
-            ->get()
-            ->contains(fn (CashierShift $shift) => ! $hierarchy->warehouseBelongsToBusiness($shift->warehouse, $businessId));
+            ->where(function ($query) use ($businessId) {
+                $query->whereNull('business_id')
+                    ->orWhere('business_id', '!=', $businessId);
+            })
+            ->exists();
     }
 
     public function hasWarehouseHistory(Warehouse $warehouse): bool

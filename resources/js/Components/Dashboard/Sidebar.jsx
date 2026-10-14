@@ -85,7 +85,7 @@ export default function Sidebar({ sidebarOpen }) {
                         <BusinessSwitcher
                             business={auth?.currentBusiness}
                             businesses={auth?.businesses}
-                            locked={auth?.outletLocked}
+                            locked={auth?.businessSwitchLocked}
                             fullWidth
                         />
                         <OutletSwitcher

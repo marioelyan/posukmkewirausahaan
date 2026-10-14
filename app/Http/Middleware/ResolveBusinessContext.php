@@ -11,6 +11,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ResolveBusinessContext
 {
+    /**
+     * The selected business came from the web session (`business.switch`), i.e.
+     * a value the app wrote for the person sitting in front of the browser.
+     */
+    private const SOURCE_SESSION = 'session';
+
+    /**
+     * The selected business came from the stateless `X-Business-Id` header used
+     * by API clients, which has to stay strict: a request that explicitly asks
+     * for a business it is not entitled to must never silently fall back to a
+     * different one.
+     */
+    private const SOURCE_HEADER = 'header';
+
     public function __construct(
         private readonly BusinessContext $context,
         private readonly BusinessMembershipResolver $resolver,
@@ -26,7 +40,8 @@ class ResolveBusinessContext
             return $next($request);
         }
 
-        $requestedId = $this->requestedBusinessId($request);
+        [$requestedId, $source] = $this->requestedBusinessId($request);
+        $selectionCleared = false;
 
         if ($requestedId !== null) {
             if ($user->isSuperAdmin()) {
@@ -37,16 +52,31 @@ class ResolveBusinessContext
 
                 if ($business) {
                     $this->context->setActive($business);
+
+                    return $next($request);
                 }
             } else {
                 $membership = $this->resolver->activeMembershipFor($user, $requestedId);
 
                 if ($membership) {
                     $this->context->setActive($membership->business, $membership);
+
+                    return $next($request);
                 }
             }
 
-            return $next($request);
+            // The selection can no longer be verified: the membership was
+            // revoked, the business suspended or the row belongs to someone
+            // else. Dropping it lets the request recover through the normal
+            // resolution below instead of failing closed on a value nothing
+            // ever clears — previously that was a permanent 403 for the
+            // session, super-admins included.
+            if ($source === self::SOURCE_SESSION && $request->hasSession()) {
+                $request->session()->forget('active_business_id');
+                $selectionCleared = true;
+            } else {
+                return $next($request);
+            }
         }
 
         // Super-admins without an explicit selection fall back to the first
@@ -64,23 +94,38 @@ class ResolveBusinessContext
         }
 
         if (! $user->isSuperAdmin()) {
-            $membership = $this->resolver->soleActiveMembershipFor($user);
+            // A member whose selection just went stale had already been working
+            // inside their businesses, so re-place them in one they are still
+            // entitled to instead of dumping them back into a contextless 403.
+            // Without a stale selection the resolver stays strict: several
+            // memberships still require an explicit choice.
+            $membership = $selectionCleared
+                ? ($this->resolver->membershipOwningOpenShiftFor($user)
+                    ?? $this->resolver->preferredActiveMembershipFor($user))
+                : $this->resolver->soleActiveMembershipFor($user);
 
             if ($membership) {
                 $this->context->setActive($membership->business, $membership);
+
+                if ($selectionCleared) {
+                    $request->session()->put('active_business_id', $membership->business_id);
+                }
             }
         }
 
         return $next($request);
     }
 
-    private function requestedBusinessId(Request $request): ?int
+    /**
+     * @return array{0: ?int, 1: ?string} the requested business id and its source
+     */
+    private function requestedBusinessId(Request $request): array
     {
         if ($request->hasSession()) {
             $value = $request->session()->get('active_business_id');
 
             if ($value !== null) {
-                return (int) $value;
+                return [(int) $value, self::SOURCE_SESSION];
             }
         }
 
@@ -90,9 +135,9 @@ class ResolveBusinessContext
         $header = $request->header('X-Business-Id');
 
         if (is_string($header) && $header !== '' && ctype_digit($header)) {
-            return (int) $header;
+            return [(int) $header, self::SOURCE_HEADER];
         }
 
-        return null;
+        return [null, null];
     }
 }
