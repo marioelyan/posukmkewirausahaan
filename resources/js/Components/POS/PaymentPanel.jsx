@@ -429,8 +429,8 @@ export default function PaymentPanel({
                                 <span
                                     className={`text-lg font-bold ${
                                         change > 0
-                                            ? "text-success-500"
-                                            : "text-slate-400"
+                                            ? "text-success-600 dark:text-success-400"
+                                            : "text-slate-500 dark:text-slate-400"
                                     }`}
                                 >
                                     {formatPrice(change)}
@@ -446,7 +446,7 @@ export default function PaymentPanel({
                         <div className="flex gap-2">
                             <IconAlertCircle
                                 size={18}
-                                className="text-warning-500 flex-shrink-0 mt-0.5"
+                                className="text-warning-700 dark:text-warning-400 flex-shrink-0 mt-0.5"
                             />
                             <p className="text-sm text-warning-700 dark:text-warning-400">
                                 Tautan pembayaran akan muncul di halaman invoice

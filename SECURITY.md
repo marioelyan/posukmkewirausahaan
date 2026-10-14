@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-Jika Anda menemukan kerentanan keamanan di Point of Sales, **jangan buat issue publik**. Kirim laporan langsung ke:
+Jika Anda menemukan kerentanan keamanan di KasirnyaKWU, **jangan buat issue publik**. Kirim laporan langsung ke:
 
 **Email:** aryadptr.developer@gmail.com
 

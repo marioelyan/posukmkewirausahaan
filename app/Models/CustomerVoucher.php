@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CustomerVoucher extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     public const TYPE_FIXED_AMOUNT = 'fixed_amount';
@@ -16,6 +18,7 @@ class CustomerVoucher extends Model
     protected $fillable = [
         'customer_id',
         'outlet_id',
+        'business_id',
         'code',
         'name',
         'discount_type',
@@ -34,6 +37,7 @@ class CustomerVoucher extends Model
     protected $casts = [
         'customer_id' => 'integer',
         'outlet_id' => 'integer',
+        'business_id' => 'integer',
         'discount_value' => 'float',
         'minimum_order' => 'integer',
         'is_active' => 'boolean',

@@ -28,7 +28,9 @@ class DashboardController extends Controller
                 ->where('outlet_id', $activeOutlet->id)
                 ->pluck('id');
         }
-        $includeLegacy = Outlet::active()->count() <= 1;
+        // Legacy rows without a warehouse cannot be proven to belong to the
+        // active business, so they are only folded in when tenancy is off.
+        $includeLegacy = ! config('multi_business.enabled') && Outlet::active()->count() <= 1;
         $scope = fn ($query, $column = 'warehouse_id') => $query->where(function ($q) use ($warehouseIds, $includeLegacy, $column) {
             $q->whereIn($column, $warehouseIds);
             if ($includeLegacy) {
@@ -36,21 +38,26 @@ class DashboardController extends Controller
             }
         });
         $scopeTransactions = fn ($query) => $scope($query);
-        $scopeProfits = fn ($query) => $query->whereHas('transaction', fn ($q) => $scope($q));
-        $scopeDetails = fn ($query) => $query->whereHas('transaction', fn ($q) => $scope($q));
+
+        // Completed-sale variants: revenue, profit, and sales counts include only
+        // settled (paid) transactions (register §13.25). Activity feeds and the
+        // setup checklist keep the unfiltered scopes above.
+        $scopeSales = fn ($query) => $scope($query)->completed();
+        $scopeSalesProfits = fn ($query) => $query->whereHas('transaction', fn ($q) => $scope($q)->completed());
+        $scopeSalesDetails = fn ($query) => $query->whereHas('transaction', fn ($q) => $scope($q)->completed());
 
         $totalCategories = Category::count();
         $totalProducts = Product::count();
-        $totalTransactions = $scopeTransactions(Transaction::query())->count();
+        $totalTransactions = $scopeSales(Transaction::query())->count();
         $totalCustomers = Customer::count();
-        $totalRevenue = $scopeTransactions(Transaction::query())->sum('grand_total');
-        $totalProfit = $scopeProfits(Profit::query())->sum('total');
-        $averageOrder = $scopeTransactions(Transaction::query())->avg('grand_total') ?? 0;
-        $todayTransactions = $scopeTransactions(Transaction::whereDate('created_at', Carbon::today()))->count();
+        $totalRevenue = $scopeSales(Transaction::query())->sum('grand_total');
+        $totalProfit = $scopeSalesProfits(Profit::query())->sum('total');
+        $averageOrder = $scopeSales(Transaction::query())->avg('grand_total') ?? 0;
+        $todayTransactions = $scopeSales(Transaction::whereDate('created_at', Carbon::today()))->count();
 
         // New: Today's Sales and Profit
-        $todaySales = $scopeTransactions(Transaction::whereDate('created_at', Carbon::today()))->sum('grand_total');
-        $todayProfit = $scopeProfits(Profit::whereDate('created_at', Carbon::today()))->sum('total');
+        $todaySales = $scopeSales(Transaction::whereDate('created_at', Carbon::today()))->sum('grand_total');
+        $todayProfit = $scopeSalesProfits(Profit::whereDate('created_at', Carbon::today()))->sum('total');
 
         // New: Monthly Target (from settings)
         $monthlyTarget = Setting::getForOutlet(
@@ -58,11 +65,11 @@ class DashboardController extends Controller
             $outletAccessService->activeOutlet(request()),
             0
         );
-        $currentMonthSales = $scopeTransactions(Transaction::whereMonth('created_at', Carbon::now()->month)
+        $currentMonthSales = $scopeSales(Transaction::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year))
             ->sum('grand_total');
 
-        $revenueTrend = $scopeTransactions(Transaction::selectRaw('DATE(created_at) as date, SUM(grand_total) as total'))
+        $revenueTrend = $scopeSales(Transaction::selectRaw('DATE(created_at) as date, SUM(grand_total) as total'))
             ->groupBy('date')
             ->orderBy('date', 'desc')
             ->take(12)
@@ -77,7 +84,7 @@ class DashboardController extends Controller
             ->reverse()
             ->values();
 
-        $topProducts = $scopeDetails(TransactionDetail::select('product_id', DB::raw('SUM(qty) as qty'), DB::raw('SUM(price) as total')))
+        $topProducts = $scopeSalesDetails(TransactionDetail::select('product_id', DB::raw('SUM(qty) as qty'), DB::raw('SUM(price) as total')))
             ->with('product:id,title,sku')
             ->groupBy('product_id')
             ->orderByDesc('qty')
@@ -123,7 +130,7 @@ class DashboardController extends Controller
 
         // New: Slow Moving Products (no sales in 30 days)
         $thirtyDaysAgo = Carbon::now()->subDays(30);
-        $recentlySoldProductIds = $scopeDetails(TransactionDetail::where('transaction_details.created_at', '>=', $thirtyDaysAgo))
+        $recentlySoldProductIds = $scopeSalesDetails(TransactionDetail::where('transaction_details.created_at', '>=', $thirtyDaysAgo))
             ->distinct()
             ->pluck('product_id');
 
@@ -162,7 +169,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        $topCustomers = $scopeTransactions(Transaction::select('customer_id', DB::raw('COUNT(*) as orders'), DB::raw('SUM(grand_total) as total')))
+        $topCustomers = $scopeSales(Transaction::select('customer_id', DB::raw('COUNT(*) as orders'), DB::raw('SUM(grand_total) as total')))
             ->with('customer:id,name')
             ->whereNotNull('customer_id')
             ->groupBy('customer_id')
@@ -177,7 +184,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        $topLocations = $scopeTransactions(Transaction::join('customers', 'transactions.customer_id', '=', 'customers.id'))
+        $topLocations = $scopeSales(Transaction::join('customers', 'transactions.customer_id', '=', 'customers.id'))
             ->select('customers.village_name', DB::raw('COUNT(*) as orders'))
             ->whereNotNull('customers.village_name')
             ->groupBy('customers.village_name')
@@ -242,7 +249,11 @@ class DashboardController extends Controller
                 'category' => Category::exists(),
                 'product' => Product::exists(),
                 'customer' => Customer::exists(),
-                'transaction' => Transaction::exists(),
+                // Transactions carry no tenant scope, so the existence check is
+                // warehouse-scoped while tenancy is enabled.
+                'transaction' => config('multi_business.enabled')
+                    ? $scopeTransactions(Transaction::query())->exists()
+                    : Transaction::exists(),
             ],
         ]);
     }

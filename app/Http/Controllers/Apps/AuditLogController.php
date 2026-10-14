@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Apps;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\BusinessContext;
 use App\Services\OutletAccessService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class AuditLogController extends Controller
 
         $visibleUserIds = $this->visibleUserIds($request->user());
 
-        $auditLogs = AuditLog::query()
+        $auditLogs = $this->businessScoped(AuditLog::query())
             ->with('user:id,name,email')
             ->when($visibleUserIds !== null, fn (Builder $query) => $query->whereIn('user_id', $visibleUserIds))
             ->when($filters['user_id'], fn (Builder $query, $userId) => $query->where('user_id', $userId))
@@ -56,10 +57,10 @@ class AuditLogController extends Controller
             'users' => User::query()
                 ->when($visibleUserIds !== null, fn (Builder $query) => $query->whereIn('id', $visibleUserIds))
                 ->select('id', 'name')->orderBy('name')->get(),
-            'modules' => AuditLog::query()
+            'modules' => $this->businessScoped(AuditLog::query())
                 ->when($visibleUserIds !== null, fn (Builder $query) => $query->whereIn('user_id', $visibleUserIds))
                 ->select('module')->distinct()->orderBy('module')->pluck('module'),
-            'events' => AuditLog::query()
+            'events' => $this->businessScoped(AuditLog::query())
                 ->when($visibleUserIds !== null, fn (Builder $query) => $query->whereIn('user_id', $visibleUserIds))
                 ->select('event')->distinct()->orderBy('event')->pluck('event'),
         ]);
@@ -67,6 +68,8 @@ class AuditLogController extends Controller
 
     public function show(AuditLog $auditLog): Response
     {
+        $this->assertVisibleInActiveBusiness($auditLog);
+
         $visibleUserIds = $this->visibleUserIds(request()->user());
         abort_if($visibleUserIds !== null && ! in_array($auditLog->user_id, $visibleUserIds, true), 404);
 
@@ -84,6 +87,49 @@ class AuditLogController extends Controller
                 'user_agent' => $auditLog->user_agent,
             ],
         ]);
+    }
+
+    /**
+     * Restrict audit logs to the verified active business.
+     *
+     * With tenancy disabled the query is untouched (legacy behaviour). With
+     * tenancy enabled the query fails closed when no verified business context
+     * exists, so a business-scoped viewer never silently degrades into an
+     * unrestricted read. Historical rows with a NULL business_id are treated
+     * as legacy and therefore hidden while the flag is on.
+     */
+    private function businessScoped(Builder $query): Builder
+    {
+        if (! config('multi_business.enabled')) {
+            return $query;
+        }
+
+        $businessId = app(BusinessContext::class)->businessId();
+
+        if ($businessId === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('audit_logs.business_id', $businessId);
+    }
+
+    /**
+     * Guard a single log against route-model binding, which bypasses the
+     * listing scope. Fails closed when tenancy is on and the log is not owned
+     * by the verified active business (including legacy NULL rows).
+     */
+    private function assertVisibleInActiveBusiness(AuditLog $auditLog): void
+    {
+        if (! config('multi_business.enabled')) {
+            return;
+        }
+
+        $businessId = app(BusinessContext::class)->businessId();
+
+        abort_unless(
+            $businessId !== null && (int) $auditLog->business_id === $businessId,
+            404,
+        );
     }
 
     /**

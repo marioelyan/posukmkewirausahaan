@@ -87,7 +87,7 @@ export default function Units({ units = [] }) {
                         {canCreate && (
                             <button
                                 onClick={() => { resetForm(); setShowForm(true); }}
-                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors"
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                             >
                                 <IconPlus size={18} />
                                 Tambah Satuan
@@ -122,7 +122,8 @@ export default function Units({ units = [] }) {
                                         {canUpdate && (
                                             <button
                                                 onClick={() => openEdit(u)}
-                                                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                aria-label={`Edit satuan ${u.name}`}
+                                                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                             >
                                                 <IconPencil size={18} />
                                             </button>
@@ -130,7 +131,8 @@ export default function Units({ units = [] }) {
                                         {canDelete && u.products_count === 0 && (
                                             <button
                                                 onClick={() => handleDelete(u)}
-                                                className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
+                                                aria-label={`Hapus satuan ${u.name}`}
+                                                className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40"
                                             >
                                                 <IconTrash size={18} />
                                             </button>
@@ -179,14 +181,14 @@ export default function Units({ units = [] }) {
                             <div className="flex items-center gap-3">
                                 <button
                                     type="submit"
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 >
                                     {editing ? "Update" : "Simpan"}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={resetForm}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 >
                                     Batal
                                 </button>

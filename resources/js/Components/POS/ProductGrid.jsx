@@ -14,9 +14,11 @@ const formatPrice = (value = 0) =>
     });
 
 // Single Product Card
-function ProductCard({ product, onAddToCart, isAdding }) {
-    const hasStock = product.stock > 0;
-    const lowStock = product.stock > 0 && product.stock <= 5;
+function ProductCard({ product, onAddToCart, isAdding, inCart = 0 }) {
+    const availableStock = Number(product.available_stock ?? product.stock ?? 0);
+    const remaining = Math.max(0, availableStock - Number(inCart || 0));
+    const hasStock = remaining > 0;
+    const lowStock = remaining > 0 && remaining <= 5;
     const promoBadge = product.pricing_badge;
     const promoPrice = Number(promoBadge?.promo_price || 0);
     const basePrice = Number(promoBadge?.base_price || product.sell_price || 0);
@@ -33,6 +35,10 @@ function ProductCard({ product, onAddToCart, isAdding }) {
         : showPromo
           ? promoPrice
           : product.sell_price;
+    const selectedConversion = selectedUnit
+        ? Number(selectedUnit.conversion_factor || 1)
+        : 1;
+    const canAdd = hasStock && remaining >= selectedConversion && !isAdding;
 
     return (
         <div
@@ -40,23 +46,10 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                 group relative flex flex-col bg-white dark:bg-slate-900
                 rounded-2xl border border-slate-200 dark:border-slate-800
                 overflow-hidden transition-all duration-200
-                ${
-                    hasStock
-                        ? "hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]"
-                        : "opacity-60"
-                }
+                ${hasStock ? "hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-lg" : "opacity-60"}
             `}
         >
-            {/* Product Icon — click adds base unit */}
-            <button
-                type="button"
-                onClick={() => hasStock && onAddToCart(product, selectedUnit)}
-                disabled={!hasStock || isAdding}
-                className={`block text-left ${
-                    hasStock ? "cursor-pointer" : "cursor-not-allowed"
-                }`}
-            >
-            {/* Product Icon */}
+            {/* Product Icon (display only — use the + button below to add) */}
             <div className="relative aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <div className="w-full h-full flex items-center justify-center">
                     <IconPackage
@@ -66,15 +59,8 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                     />
                 </div>
 
-                {/* Stock Badge */}
-                {lowStock && (
-                    <span className="absolute top-2 right-2 px-2 py-0.5 text-xs font-medium bg-warning-100 text-warning-700 dark:bg-warning-900/50 dark:text-warning-400 rounded-full">
-                        Sisa {product.stock}
-                    </span>
-                )}
-
                 {showBadge && (
-                    <span className="absolute left-2 top-2 max-w-[70%] truncate rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-lg">
+                    <span className="absolute left-2 top-2 max-w-[70%] truncate rounded-full bg-danger-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-lg">
                         {promoBadge.label}
                     </span>
                 )}
@@ -87,71 +73,99 @@ function ProductCard({ product, onAddToCart, isAdding }) {
                         </span>
                     </div>
                 )}
-
-                {/* Hover Add Indicator (centered on image) */}
-                {hasStock && (
-                    <div className="absolute inset-0 bg-primary-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
-                        <div className="bg-primary-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                            + Tambah
-                        </div>
-                    </div>
-                )}
             </div>
-            </button>
 
             {/* Product Info */}
-            <div className="flex-1 p-3 flex flex-col justify-between min-h-[80px]">
+            <div className="flex flex-1 flex-col gap-2 p-3">
                 <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight">
                     {product.title}
                 </h3>
-                <div className="mt-2">
-                    {showPromo && !selectedUnit && (
-                        <p className="text-xs text-slate-400 line-through">
-                            {formatPrice(basePrice)}
-                        </p>
-                    )}
-                    <p className="text-base font-bold text-primary-600 dark:text-primary-400">
-                        {formatPrice(displayPrice)}
-                        {selectedUnit && (
-                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                {" "}/{selectedUnit.code}
-                            </span>
-                        )}
-                    </p>
-                    {showBadge && !showPromo && !selectedUnit && (
-                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                            Promo tersedia
-                        </p>
-                    )}
-                    {multiUnits.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
+
+                {multiUnits.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedUnitId(null)}
+                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium border transition-colors ${
+                                selectedUnit === null
+                                    ? "bg-primary-500 text-white border-primary-500"
+                                    : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            }`}
+                        >
+                            Dasar
+                        </button>
+                        {multiUnits.map((u) => (
                             <button
+                                key={u.unit_id}
                                 type="button"
-                                onClick={() => setSelectedUnitId(null)}
+                                onClick={() => setSelectedUnitId(u.unit_id)}
                                 className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium border transition-colors ${
-                                    selectedUnit === null
+                                    selectedUnitId === u.unit_id
                                         ? "bg-primary-500 text-white border-primary-500"
                                         : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                                 }`}
                             >
-                                Dasar
+                                {u.code}
                             </button>
-                            {multiUnits.map((u) => (
-                                <button
-                                    key={u.unit_id}
-                                    type="button"
-                                    onClick={() => setSelectedUnitId(u.unit_id)}
-                                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium border transition-colors ${
-                                        selectedUnitId === u.unit_id
-                                            ? "bg-primary-500 text-white border-primary-500"
-                                            : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                    }`}
-                                >
-                                    {u.code}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                        ))}
+                    </div>
+                )}
+
+                {/* Price + stock + add button (beside the name & price) */}
+                <div className="mt-auto flex items-end justify-between gap-2">
+                    <div className="min-w-0">
+                        {showPromo && !selectedUnit && (
+                            <p className="text-xs text-slate-400 line-through">
+                                {formatPrice(basePrice)}
+                            </p>
+                        )}
+                        <p className="truncate text-base font-bold text-primary-600 dark:text-primary-400">
+                            {formatPrice(displayPrice)}
+                            {selectedUnit && (
+                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                    {" "}/{selectedUnit.code}
+                                </span>
+                            )}
+                        </p>
+                        <span
+                            className={`mt-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                !hasStock
+                                    ? "bg-danger-100 text-danger-700 dark:bg-danger-900/40 dark:text-danger-300"
+                                    : lowStock
+                                      ? "bg-warning-100 text-warning-700 dark:bg-warning-900/50 dark:text-warning-400"
+                                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            }`}
+                        >
+                            {!hasStock
+                                ? "Stok habis"
+                                : lowStock
+                                  ? `Sisa ${remaining}`
+                                  : `Stok ${remaining}`}
+                        </span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => onAddToCart(product, selectedUnit)}
+                        disabled={!canAdd}
+                        aria-label={`Tambah ${product.title}`}
+                        title={
+                            canAdd
+                                ? "Tambah ke keranjang"
+                                : "Stok tidak tersedia"
+                        }
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all ${
+                            canAdd
+                                ? "bg-primary-500 text-white hover:bg-primary-600 active:scale-95"
+                                : "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500"
+                        }`}
+                    >
+                        {isAdding ? (
+                            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        ) : (
+                            <IconPlus size={20} />
+                        )}
+                    </button>
                 </div>
             </div>
 
@@ -231,6 +245,7 @@ export default function ProductGrid({
     onAddToCart,
     addingProductId,
     searchInputRef,
+    cartQtyByProduct = {},
 }) {
     const normalizedSelectedCategory =
         selectedCategory === null ? null : Number(selectedCategory);
@@ -296,6 +311,9 @@ export default function ProductGrid({
                                 product={product}
                                 onAddToCart={onAddToCart}
                                 isAdding={addingProductId === product.id}
+                                inCart={Number(
+                                    cartQtyByProduct[product.id] || 0
+                                )}
                             />
                         ))}
                     </div>

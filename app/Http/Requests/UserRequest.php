@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Outlet;
+use App\Services\OutletAccessService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -34,7 +35,7 @@ class UserRequest extends FormRequest
             'password' => [$isCreate ? 'required' : 'nullable', 'string', 'min:8', 'confirmed'],
             'avatar' => ['nullable', 'image', 'max:2048'],
             'selectedRoles' => ['required', 'array', 'min:1'],
-            'selectedRoles.*' => ['string'],
+            'selectedRoles.*' => ['string', Rule::exists('roles', 'name')],
             'outlet_ids' => ['nullable', 'array'],
             'outlet_ids.*' => ['integer', 'exists:outlets,id'],
             'default_outlet_id' => ['nullable', 'integer', 'exists:outlets,id'],
@@ -62,6 +63,27 @@ class UserRequest extends FormRequest
 
                 if ($activeCount !== $outletIds->count()) {
                     $validator->errors()->add('outlet_ids', 'Semua outlet yang dipilih harus aktif.');
+                }
+            }
+
+            $actor = $this->user();
+
+            if (! $actor) {
+                return;
+            }
+
+            if (! $actor->isSuperAdmin() && collect($this->input('selectedRoles', []))->contains('super-admin')) {
+                $validator->errors()->add('selectedRoles', 'Anda tidak berwenang menetapkan role super-admin.');
+            }
+
+            if ($outletIds->isNotEmpty()) {
+                $accessibleOutletIds = app(OutletAccessService::class)
+                    ->accessibleOutlets($actor)
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id);
+
+                if ($outletIds->diff($accessibleOutletIds)->isNotEmpty()) {
+                    $validator->errors()->add('outlet_ids', 'Anda tidak berwenang menetapkan outlet tersebut.');
                 }
             }
         });

@@ -7,6 +7,8 @@ use App\Models\Outlet;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\BusinessContext;
+use App\Support\Tenancy\BusinessBootstrap;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +29,10 @@ class SetupController extends Controller
 
     public function index(): Response
     {
-        $primaryWarehouse = Warehouse::find(Setting::get('setup_warehouse_id'));
+        // Setup runs before any business context exists, so tenant-scoped reads
+        // must bypass the fail-closed global scope explicitly.
+        $primaryWarehouse = Warehouse::withoutGlobalScope('business')
+            ->find(Setting::get('setup_warehouse_id'));
 
         return Inertia::render('Setup/Wizard', [
             'businessTypes' => array_map(
@@ -39,7 +44,7 @@ class SetupController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, BusinessBootstrap $bootstrap, BusinessContext $context): RedirectResponse
     {
         $validated = $request->validate([
             'store_name' => 'required|string|max:255',
@@ -58,7 +63,7 @@ class SetupController extends Controller
                 'integer',
                 'exists:warehouses,id',
                 function ($attribute, $value, $fail) {
-                    if ($value && ! Warehouse::whereKey($value)->where('code', 'PUSAT')->exists()) {
+                    if ($value && ! Warehouse::withoutGlobalScope('business')->whereKey($value)->where('code', 'PUSAT')->exists()) {
                         $fail('Wizard setup hanya dapat memakai gudang PUSAT.');
                     }
                 },
@@ -100,7 +105,7 @@ class SetupController extends Controller
             'branches.*.phone' => 'nullable|string|max:50',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $bootstrap, $context) {
             $user = User::create([
                 'name' => $validated['user_name'],
                 'email' => $validated['user_email'],
@@ -120,7 +125,7 @@ class SetupController extends Controller
             $pusat->update(['is_active' => true, 'is_sales_enabled' => false]);
 
             if (! empty($validated['warehouse_id'])) {
-                Warehouse::where('id', $validated['warehouse_id'])->update([
+                Warehouse::withoutGlobalScope('business')->where('id', $validated['warehouse_id'])->update([
                     'code' => $validated['warehouse_code'],
                     'name' => $validated['warehouse_name'],
                     'outlet_id' => $pusat->id,
@@ -170,6 +175,15 @@ class SetupController extends Controller
 
             foreach (array_unique($validated['categories']) as $name) {
                 Category::create(['name' => $name]);
+            }
+
+            // With tenancy enabled, bootstrap the installation's default business
+            // and make it the active context so the store settings below are
+            // written to the business row (SETTINGS-07). Flag off: unchanged
+            // legacy behaviour (globally-scoped settings, no business).
+            if (config('multi_business.enabled')) {
+                $business = $bootstrap->bootstrap($validated['store_name']);
+                $context->setActive($business);
             }
 
             foreach ([

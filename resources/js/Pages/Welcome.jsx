@@ -1,5 +1,7 @@
 import { Head, Link } from "@inertiajs/react";
 import PublicLayout from "@/Layouts/PublicLayout";
+import { BRAND } from "@/config/brand";
+import { BrandMark } from "@/Components/BrandLogo";
 import {
     IconShoppingCart,
     IconWallet,
@@ -16,13 +18,12 @@ import {
     IconArrowRight,
     IconDeviceMobile,
     IconTerminal2,
-    IconQrcode,
     IconApi,
 } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
-const DOCS_URL = `${GITHUB_URL}/blob/main/docs/getting-started.md`;
-const GALLERY_URL = `${GITHUB_URL}/blob/main/docs/screenshots.md`;
+const GITHUB_URL = BRAND.github;
+const DOCS_URL = BRAND.docs;
+const GALLERY_URL = `${BRAND.github}/blob/main/docs/screenshots.md`;
 
 const stats = [
     { value: "200+", label: "GitHub Stars" },
@@ -83,11 +84,6 @@ const features = [
         desc: "Checkout yang sudah disiapkan dapat masuk antrean offline dan tersinkron saat koneksi kembali.",
     },
     {
-        icon: IconQrcode,
-        title: "Dine-in QR Menu",
-        desc: "Pelanggan scan QR meja, melihat menu, membuat pesanan, dan memantau status sampai diproses staff.",
-    },
-    {
         icon: IconApi,
         title: "API & Integrasi",
         desc: "API terautentikasi untuk master data, POS, checkout, shift, transaksi, dan sinkronisasi offline.",
@@ -97,7 +93,7 @@ const features = [
 const techStack = [
     { name: "Laravel 13", color: "bg-red-500" },
     { name: "Inertia.js 3", color: "bg-purple-500" },
-    { name: "React 19", color: "bg-cyan-500" },
+    { name: "React 19", color: "bg-accent-500" },
     { name: "Tailwind CSS", color: "bg-sky-500" },
     { name: "MySQL", color: "bg-orange-500" },
     { name: "PWA", color: "bg-emerald-500" },
@@ -113,12 +109,12 @@ const screenshots = [
 
 const faqs = [
     {
-        q: "Apakah Dikasir benar-benar gratis?",
-        a: "Ya. Dikasir dirilis di bawah lisensi MIT, sehingga bebas digunakan, dimodifikasi, dan didistribusikan. Hosting, hardware, biaya payment gateway, dan layanan pihak ketiga tetap menjadi tanggung jawab pengguna.",
+        q: `Apakah ${BRAND.name} benar-benar gratis?`,
+        a: `Ya. ${BRAND.name} dirilis di bawah lisensi MIT, sehingga bebas digunakan, dimodifikasi, dan didistribusikan. Hosting, hardware, biaya payment gateway, dan layanan pihak ketiga tetap menjadi tanggung jawab pengguna.`,
     },
     {
         q: "Bisakah dipakai untuk bisnis multi-cabang?",
-        a: "Bisa. Dikasir mendukung multi-warehouse dengan stok terpisah per gudang/cabang, transfer stok antar gudang, dan laporan per gudang.",
+        a: `Bisa. ${BRAND.name} mendukung multi-warehouse dengan stok terpisah per gudang/cabang, transfer stok antar gudang, dan laporan per gudang.`,
     },
     {
         q: "Bagaimana kalau internet di toko mati?",
@@ -134,8 +130,8 @@ const faqs = [
     },
 ];
 
-const quickStart = `git clone https://github.com/aryadwiputra/point-of-sales
-cd point-of-sales
+const quickStart = `git clone ${BRAND.github}
+cd posukmkewirausahaan
 composer install
 PUPPETEER_SKIP_DOWNLOAD=true npm install
 cp .env.example .env
@@ -151,12 +147,19 @@ composer run dev
 export default function Welcome() {
     return (
         <PublicLayout>
-            <Head title="Dikasir — Sistem Kasir Open Source untuk UMKM" />
+            <Head title={`${BRAND.name} — Sistem Kasir Open Source untuk UMKM`} />
 
             {/* ============ HERO ============ */}
             <section className="pt-28 pb-16 px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center max-w-4xl mx-auto">
+                        <div className="flex justify-center mb-6">
+                            <BrandMark
+                                size={72}
+                                rounded="rounded-2xl"
+                                className="shadow-xl shadow-primary-500/25"
+                            />
+                        </div>
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 text-sm font-medium mb-6 border border-primary-100 dark:border-primary-900">
                             <IconBrandGithub size={16} />
                             Open Source · MIT License · 200+ Stars
@@ -170,7 +173,7 @@ export default function Welcome() {
                         </h1>
 
                         <p className="mt-6 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                            Dikasir adalah aplikasi point of sale lengkap untuk warung, toko, dan
+                            {BRAND.name} adalah aplikasi point of sale lengkap untuk warung, toko, dan
                             UMKM Indonesia — multi-warehouse, PPN, loyalty &amp; CRM, WhatsApp
                             gateway, hingga offline mode. Self-hosted, data 100% milik Anda.
                         </p>
@@ -180,7 +183,7 @@ export default function Welcome() {
                                 href={GITHUB_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full sm:w-auto px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl hover:from-primary-600 hover:to-primary-700 shadow-xl shadow-primary-500/30 transition-all flex items-center justify-center gap-2"
+                                className="w-full sm:w-auto px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-800 rounded-2xl hover:from-primary-700 hover:to-primary-900 shadow-xl shadow-primary-500/30 transition-all flex items-center justify-center gap-2"
                             >
                                 <IconStar size={20} />
                                 Star di GitHub
@@ -207,12 +210,12 @@ export default function Welcome() {
                                     <div className="w-3 h-3 rounded-full bg-green-400" />
                                 </div>
                                 <div className="flex-1 text-center text-xs text-slate-500">
-                                    dikasir.web.id
+                                    {BRAND.url.replace(/^https?:\/\//, "")}
                                 </div>
                             </div>
                             <img
                                 src="/media/revamp-pos.png"
-                                alt="Preview POS Dikasir"
+                                alt={`Preview POS ${BRAND.name}`}
                                 className="w-full"
                                 loading="lazy"
                             />
@@ -449,7 +452,7 @@ export default function Welcome() {
                 <div className="max-w-4xl mx-auto">
                     <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-3xl p-12 text-center text-white">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Siap Kelola Bisnis dengan Dikasir?
+                            Siap Kelola Bisnis dengan {BRAND.name}?
                         </h2>
                         <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
                              Gratis digunakan dan dimodifikasi di bawah lisensi MIT, dengan data

@@ -22,7 +22,7 @@ export default function Button({
             text: "Data yang dihapus tidak dapat dikembalikan!",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#6366f1",
+            confirmButtonColor: "#21416d",
             cancelButtonColor: "#64748b",
             confirmButtonText: "Ya, Hapus!",
             cancelButtonText: "Batal",
@@ -42,7 +42,7 @@ export default function Button({
     };
 
     const baseStyles =
-        "inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 active:scale-[0.98]";
+        "inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900";
     const sizeStyles = "px-4 py-2.5 text-sm rounded-xl";
     const smallStyles = "px-3 py-2 rounded-xl";
 

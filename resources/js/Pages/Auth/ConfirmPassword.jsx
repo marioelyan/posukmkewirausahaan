@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import {
-    IconShoppingCart,
     IconShieldLock,
     IconLock,
     IconEye,
     IconEyeOff,
     IconLoader2,
 } from "@tabler/icons-react";
+import { replayPendingStepUp } from "@/Utils/stepUpReplay";
+import { BRAND } from "@/config/brand";
+import { BrandMark } from "@/Components/BrandLogo";
 
 export default function ConfirmPassword({ challenge = null }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -32,7 +34,14 @@ export default function ConfirmPassword({ challenge = null }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route("password.confirm"));
+        post(route("password.confirm"), {
+            onSuccess: () => {
+                // The step-up middleware redirected the original sensitive
+                // request here; re-issue it now that the password is fresh so
+                // the user does not have to repeat the action.
+                replayPendingStepUp();
+            },
+        });
     };
 
     return (
@@ -44,11 +53,9 @@ export default function ConfirmPassword({ challenge = null }) {
                     <div className="w-full max-w-md">
                         <div className="mb-8">
                             <Link href="/" className="inline-flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                                    <IconShoppingCart size={24} className="text-white" />
-                                </div>
+                                <BrandMark size={48} rounded="rounded-xl" />
                                 <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    Aplikasi Kasir
+                                    {BRAND.name}
                                 </span>
                             </Link>
                             <div className="w-14 h-14 rounded-2xl bg-primary-100 dark:bg-primary-950/50 flex items-center justify-center mb-5">
@@ -64,7 +71,7 @@ export default function ConfirmPassword({ challenge = null }) {
 
                         <form onSubmit={submit} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Password
                                 </label>
                                 <div className="relative">
@@ -87,7 +94,9 @@ export default function ConfirmPassword({ challenge = null }) {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword((value) => !value)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     >
                                         {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
                                     </button>

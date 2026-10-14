@@ -3,6 +3,8 @@
 use App\Http\Controllers\Apps\AgingController;
 use App\Http\Controllers\Apps\AuditLogController;
 use App\Http\Controllers\Apps\BankAccountController;
+use App\Http\Controllers\Apps\BusinessAdminController;
+use App\Http\Controllers\Apps\BusinessMemberController;
 use App\Http\Controllers\Apps\CashierShiftController;
 use App\Http\Controllers\Apps\CategoryController;
 use App\Http\Controllers\Apps\CrmCampaignController;
@@ -10,8 +12,6 @@ use App\Http\Controllers\Apps\CrmReminderController;
 use App\Http\Controllers\Apps\CustomerController;
 use App\Http\Controllers\Apps\CustomerSegmentController;
 use App\Http\Controllers\Apps\CustomerVoucherController;
-use App\Http\Controllers\Apps\DineAreaController;
-use App\Http\Controllers\Apps\DineTableController;
 use App\Http\Controllers\Apps\DiscountApprovalController;
 use App\Http\Controllers\Apps\GoodsReceivingController;
 use App\Http\Controllers\Apps\ImportExportController;
@@ -34,9 +34,8 @@ use App\Http\Controllers\Apps\SupplierReturnController;
 use App\Http\Controllers\Apps\TransactionController;
 use App\Http\Controllers\Apps\UnitController;
 use App\Http\Controllers\Apps\WarehouseController;
+use App\Http\Controllers\BusinessContextController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DineMenuController;
-use App\Http\Controllers\DineOrderController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\NotificationController;
@@ -53,7 +52,6 @@ use App\Http\Controllers\SetupController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\UserController;
 use App\Models\Setting;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -100,8 +98,9 @@ Route::post('/portal/receivables/{receivable}/pay', [PublicPortalController::cla
 // Language switch
 Route::post('/language/switch', [LanguageController::class, 'switch'])->name('language.switch');
 
-Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'business', 'business.required', 'business.role']], function () {
     Route::post('/outlet', [OutletContextController::class, 'switch'])->name('outlet.switch');
+    Route::post('/business', [BusinessContextController::class, 'switch'])->name('business.switch');
     Route::post('/tours/{tour}/complete', [TourController::class, 'complete'])->name('tours.complete');
     Route::post('/tours/reset', [TourController::class, 'reset'])->name('tours.reset');
     Route::get('/', [DashboardController::class, 'index'])->middleware(['permission:dashboard-access'])->name('dashboard');
@@ -412,32 +411,28 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth']], function () {
     // aging & reminders
     Route::get('/aging', [AgingController::class, 'index'])->middleware('permission:receivables-access')->name('aging.index');
 
-    // dine-in areas
-    Route::resource('/dine-areas', DineAreaController::class)
-        ->middleware('permission:dine-tables-access')
-        ->except(['create', 'edit', 'show']);
-
-    // dine-in tables
-    Route::get('/dine-tables', [DineTableController::class, 'index'])->middleware('permission:dine-tables-access')->name('dine-tables.index');
-    Route::post('/dine-tables', [DineTableController::class, 'store'])->middleware('permission:dine-tables-create')->name('dine-tables.store');
-    Route::patch('/dine-tables/{dineTable}', [DineTableController::class, 'update'])->middleware('permission:dine-tables-update')->name('dine-tables.update');
-    Route::delete('/dine-tables/{dineTable}', [DineTableController::class, 'destroy'])->middleware('permission:dine-tables-delete')->name('dine-tables.destroy');
-    Route::get('/dine-tables/{dineTable}/qr', [DineTableController::class, 'qr'])->middleware('permission:dine-tables-access')->name('dine-tables.qr');
-
-    // dine-in orders
-    Route::get('/dine-orders', [App\Http\Controllers\Apps\DineOrderController::class, 'index'])->middleware('permission:dine-orders-access')->name('dine-orders.index');
-    Route::post('/dine-orders/{dineOrder}/accept', [App\Http\Controllers\Apps\DineOrderController::class, 'accept'])->middleware('permission:dine-orders-process')->name('dine-orders.accept');
-    Route::post('/dine-orders/{dineOrder}/reject', [App\Http\Controllers\Apps\DineOrderController::class, 'reject'])->middleware('permission:dine-orders-process')->name('dine-orders.reject');
-
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// dine-in public routes
-Route::get('/dine/{token}', [DineMenuController::class, 'show'])->name('dine.menu');
-Route::post('/dine/{token}/order', [DineOrderController::class, 'store'])->name('dine-order.store');
-Route::get('/dine-order/{accessToken}', [DineOrderController::class, 'status'])->name('dine-order.status');
-Route::get('/dine-order/{accessToken}/check', [DineOrderController::class, 'statusCheck'])->middleware('throttle:30,1')->name('dine-order.status-check');
+// Q6-A — platform business management (super-admin only). Kept OUTSIDE the
+// `business.required` group: managing businesses must work without an active
+// business context (e.g. before the first business is activated, or to restore
+// a suspended install). Writes require a fresh password confirmation (step_up).
+Route::middleware(['auth', 'platform.admin'])->prefix('dashboard')->group(function () {
+    Route::get('/businesses', [BusinessAdminController::class, 'index'])->name('businesses.index');
+    Route::get('/businesses/create', [BusinessAdminController::class, 'create'])->name('businesses.create');
+    Route::post('/businesses', [BusinessAdminController::class, 'store'])->middleware('step_up')->name('businesses.store');
+    Route::patch('/businesses/{business}', [BusinessAdminController::class, 'update'])->middleware('step_up')->name('businesses.update');
+    Route::patch('/businesses/{business}/status', [BusinessAdminController::class, 'updateStatus'])->middleware('step_up')->name('businesses.updateStatus');
+
+    // C1 — business membership management (members + outlet access). Writes
+    // require a fresh password confirmation, like every other platform write.
+    Route::get('/businesses/{business}', [BusinessAdminController::class, 'show'])->name('businesses.show');
+    Route::post('/businesses/{business}/members', [BusinessMemberController::class, 'store'])->middleware('step_up')->name('businesses.members.store');
+    Route::patch('/businesses/{business}/members/{member}', [BusinessMemberController::class, 'update'])->middleware('step_up')->name('businesses.members.update');
+    Route::delete('/businesses/{business}/members/{member}', [BusinessMemberController::class, 'destroy'])->middleware('step_up')->name('businesses.members.destroy');
+});
 
 require __DIR__.'/auth.php';

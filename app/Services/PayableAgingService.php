@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Payable;
 use App\Models\Outlet;
+use App\Models\Payable;
 use App\Models\Supplier;
 use Illuminate\Support\Collection;
 
@@ -92,6 +92,8 @@ class PayableAgingService
 
     private function singleOutlet(): bool
     {
-        return Outlet::active()->count() <= 1;
+        // A single active outlet is not proof that an unowned payable belongs
+        // to the active business; under tenancy they fail closed.
+        return ! config('multi_business.enabled') && Outlet::active()->count() <= 1;
     }
 }

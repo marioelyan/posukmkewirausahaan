@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $casts = [
         'id' => 'integer',
+        'business_id' => 'integer',
     ];
 
     /**
@@ -20,7 +23,7 @@ class Category extends Model
      * @var array
      */
     protected $fillable = [
-        'image', 'name', 'description',
+        'image', 'name', 'description', 'business_id',
     ];
 
     /**

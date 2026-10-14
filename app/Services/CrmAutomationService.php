@@ -295,6 +295,21 @@ class CrmAutomationService
         $this->generateRepeatOrderCampaign($at);
     }
 
+    /**
+     * SCHED-02: scheduled campaign context keys are namespaced per active
+     * business so two businesses scheduled on the same day never collide on
+     * the shared `customer_campaigns.context_key` unique column. With tenancy
+     * disabled the key stays the legacy `prefix-YYYY-MM-DD` format.
+     */
+    private function scheduledContextKey(string $prefix, CarbonInterface $at): string
+    {
+        $businessId = app(BusinessContext::class)->businessId();
+
+        return $businessId === null
+            ? $prefix.'-'.$at->toDateString()
+            : $prefix.'-'.$businessId.'-'.$at->toDateString();
+    }
+
     public function reminderCampaignsQuery()
     {
         return CustomerCampaign::query()
@@ -311,7 +326,7 @@ class CrmAutomationService
 
     private function generateDueSoonCampaign(CarbonInterface $at): void
     {
-        $contextKey = 'due-soon-'.$at->toDateString();
+        $contextKey = $this->scheduledContextKey('due-soon', $at);
         $campaign = CustomerCampaign::query()->firstOrCreate(
             ['context_key' => $contextKey],
             [
@@ -338,7 +353,7 @@ class CrmAutomationService
 
     private function generateOverdueCampaign(CarbonInterface $at): void
     {
-        $contextKey = 'overdue-'.$at->toDateString();
+        $contextKey = $this->scheduledContextKey('overdue', $at);
         $campaign = CustomerCampaign::query()->firstOrCreate(
             ['context_key' => $contextKey],
             [
@@ -365,7 +380,7 @@ class CrmAutomationService
 
     private function generateRepeatOrderCampaign(CarbonInterface $at): void
     {
-        $contextKey = 'repeat-order-'.$at->toDateString();
+        $contextKey = $this->scheduledContextKey('repeat-order', $at);
         $campaign = CustomerCampaign::query()->firstOrCreate(
             ['context_key' => $contextKey],
             [

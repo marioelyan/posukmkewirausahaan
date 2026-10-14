@@ -23,6 +23,12 @@ return [
     'api_path' => 'api',
 
     /*
+     * Optional shared token protecting the documentation UI and OpenAPI spec
+     * (middleware group uses the `viewApiDocs` Gate). Leave empty for public docs.
+     */
+    'docs_token' => env('SCRAMBLE_DOCS_TOKEN'),
+
+    /*
      * Your API domain. By default, app domain is used. This is also a part of the default API routes
      * matcher, so when implementing your own, make sure you use this config if needed.
      */
@@ -52,12 +58,12 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'REST API untuk Dikasir — sistem kasir (POS) open source untuk UMKM Indonesia. '
+        'description' => 'REST API untuk KasirnyaKWU — sistem kasir (POS) open source untuk UMKM Indonesia. '
             .'Semua endpoint (kecuali login/register/webhooks) memerlukan Bearer token dari POST /api/v1/auth/login.',
     ],
 
     'ui' => [
-        'title' => 'Dikasir API Documentation',
+        'title' => 'KasirnyaKWU API Documentation',
     ],
 
     'renderer' => 'elements',

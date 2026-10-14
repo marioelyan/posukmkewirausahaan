@@ -207,7 +207,7 @@ export default function Index({ members, filters, tierOptions, summary }) {
                                         <Table.Td className="text-center">
                                             <Link
                                                 href={route("members.edit", member.id)}
-                                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-warning-200 bg-warning-50 text-warning-600 hover:bg-warning-100 dark:border-warning-800 dark:bg-warning-950/30 dark:text-warning-300"
                                             >
                                                 <IconPencil size={16} />
                                             </Link>

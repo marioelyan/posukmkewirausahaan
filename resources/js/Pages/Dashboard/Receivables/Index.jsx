@@ -37,9 +37,9 @@ const statusBadge = (value) => {
         case "partial":
             return <span className={`${base} bg-primary-100 text-primary-700`}>Parsial</span>;
         case "overdue":
-            return <span className={`${base} bg-rose-100 text-rose-700`}>Jatuh Tempo</span>;
+            return <span className={`${base} bg-danger-100 text-danger-700`}>Jatuh Tempo</span>;
         default:
-            return <span className={`${base} bg-amber-100 text-amber-700`}>Belum Lunas</span>;
+            return <span className={`${base} bg-warning-100 text-warning-700`}>Belum Lunas</span>;
     }
 };
 
@@ -173,7 +173,7 @@ export default function ReceivablesIndex({ receivables, filters = {} }) {
                                                     current: "bg-success-100 text-success-700",
                                                     "0-30": "bg-success-100 text-success-700",
                                                     "31-60": "bg-warning-100 text-warning-700",
-                                                    "61-90": "bg-orange-100 text-orange-700",
+                                                    "61-90": "bg-warning-100 text-warning-700",
                                                     "90+": "bg-danger-100 text-danger-700",
                                                 };
                                                 const bucketLabels = {

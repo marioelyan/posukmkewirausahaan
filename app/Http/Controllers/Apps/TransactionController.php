@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
 use App\Models\Warehouse;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
 use App\Services\BatchService;
 use App\Services\CashierShiftService;
@@ -96,23 +97,32 @@ class TransactionController extends Controller
         // get all customers
         $customers = Customer::latest()->get();
 
-        // get products with stock > 0 in active warehouse
+        // Products for the POS grid. Warehouse-scoped products are listed even
+        // when their stock is 0, so the cashier still sees them as a disabled
+        // card ("Habis") instead of the product silently disappearing.
         $products = Product::with(['category:id,name', 'units'])
             ->select('id', 'barcode', 'title', 'description', 'image', 'buy_price', 'sell_price', 'stock', 'category_id')
             ->when($warehouseId, function ($q) use ($warehouseId) {
-                $q->whereHas('warehouses', fn ($w) => $w->where('product_warehouse.warehouse_id', $warehouseId)
-                    ->where('product_warehouse.stock', '>', 0));
+                $q->whereHas('warehouses', fn ($w) => $w->where('product_warehouse.warehouse_id', $warehouseId));
             }, function ($q) {
                 $q->where('stock', '>', 0);
             })
             ->orderBy('title')
             ->get();
+        // Sellable stock per product for the active warehouse (pivot), falling
+        // back to the global aggregate for legacy shifts.
+        $warehouseStock = $warehouseId
+            ? DB::table('product_warehouse')->where('warehouse_id', $warehouseId)->pluck('stock', 'product_id')
+            : collect();
         $pricingBadges = $this->pricingService->previewProducts($products, null, null, $outlet);
-        $products = $products->map(function (Product $product) use ($pricingBadges) {
+        $products = $products->map(function (Product $product) use ($pricingBadges, $warehouseId, $warehouseStock) {
             $pricing = $pricingBadges->get($product->id);
 
             return [
                 ...$product->toArray(),
+                'available_stock' => (float) ($warehouseId
+                    ? ($warehouseStock[$product->id] ?? 0)
+                    : $product->stock),
                 'units' => $product->units->map(fn ($u) => [
                     'unit_id' => $u->id,
                     'code' => $u->code,
@@ -215,11 +225,11 @@ class TransactionController extends Controller
     public function previewPricing(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            'customer_id' => ['nullable', 'exists:customers,id', new BelongsToActiveBusiness('customers')],
             'discount' => ['nullable', 'integer', 'min:0'],
             'shipping_cost' => ['nullable', 'integer', 'min:0'],
             'redeem_points' => ['nullable', 'integer', 'min:0'],
-            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id'],
+            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id', new BelongsToActiveBusiness('customer_vouchers')],
         ]);
 
         $customer = isset($validated['customer_id'])
@@ -259,9 +269,9 @@ class TransactionController extends Controller
     public function addToCart(Request $request)
     {
         $validated = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'product_id' => ['required', 'integer', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'qty' => ['required', 'numeric', 'min:0.01'],
-            'unit_id' => ['nullable', 'integer'],
+            'unit_id' => ['nullable', 'integer', new BelongsToActiveBusiness('units')],
         ]);
 
         $activeShift = $this->cashierShiftService->getActiveShiftForUser(auth()->user()->id);
@@ -276,11 +286,19 @@ class TransactionController extends Controller
         // ponytail: composite branch skips unit logic; null unit_id is fine for composite carts
         $unitId = null;
 
+        // Existing cart row (if any) so the stock check below is cumulative:
+        // a cashier cannot push the cart past the warehouse stock.
+        $existingCart = Cart::where('cashier_id', auth()->user()->id)
+            ->where('product_id', $product->id)
+            ->active()
+            ->first();
+
         // Composite: check component stock
         if ($product->is_composite) {
             $product->load('components');
+            $totalQty = (float) ($existingCart?->qty ?? 0) + (float) $validated['qty'];
             foreach ($product->components as $component) {
-                $needed = (float) $component->pivot->qty * $validated['qty'];
+                $needed = (float) $component->pivot->qty * $totalQty;
                 $whProduct = $component->warehouses()->where('warehouse_id', $warehouseId)->first();
                 $avail = $whProduct?->pivot->stock ?? 0;
                 if ($avail < $needed) {
@@ -304,8 +322,14 @@ class TransactionController extends Controller
                 ? (int) ($product->warehouses()->where('warehouse_id', $warehouseId)->first()?->pivot->stock ?? 0)
                 : (int) $product->stock;
 
-            if ($availableStock < $baseQty) {
-                return redirect()->back()->with('error', 'Stok tidak mencukupi.');
+            // Base qty already in the cart (any unit) so repeated "+" clicks
+            // cannot exceed the available stock (e.g. stock 6 but 15 added).
+            $existingBaseQty = $existingCart
+                ? (float) $existingCart->qty * (float) ($existingCart->conversion_factor ?: 1)
+                : 0;
+
+            if ($availableStock < $existingBaseQty + $baseQty) {
+                return redirect()->back()->with('error', 'Stok tidak mencukupi. Tersedia: '.$availableStock);
             }
 
             $sellPrice = $unitConversion->getSellPrice($product, $unitId);
@@ -316,16 +340,10 @@ class TransactionController extends Controller
             $conversionFactor = 1;
         }
 
-        $cart = Cart::with('product')
-            ->where('product_id', $validated['product_id'])
-            ->where('cashier_id', auth()->user()->id)
-            ->active()
-            ->first();
-
-        if ($cart) {
-            $cart->increment('qty', $validated['qty']);
-            $cart->price = $sellPrice * $cart->qty;
-            $cart->save();
+        if ($existingCart) {
+            $existingCart->qty = $existingCart->qty + $validated['qty'];
+            $existingCart->price = $sellPrice * $existingCart->qty;
+            $existingCart->save();
         } else {
             Cart::create([
                 'cashier_id' => auth()->user()->id,
@@ -600,6 +618,16 @@ class TransactionController extends Controller
      */
     public function store(Request $request, PaymentGatewayManager $paymentGatewayManager)
     {
+        // Close cross-business foreign-key gaps: ids accepted here must belong to
+        // the active business (no-op while multi_business.enabled is false).
+        $request->validate([
+            'customer_id' => ['nullable', 'exists:customers,id', new BelongsToActiveBusiness('customers')],
+            'customer_voucher_id' => ['nullable', 'integer', 'exists:customer_vouchers,id', new BelongsToActiveBusiness('customer_vouchers')],
+            'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
+            'tenders' => ['nullable', 'array'],
+            'tenders.*.bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
+        ]);
+
         $isPayLater = $request->boolean('pay_later');
         $paymentGateway = $isPayLater ? null : $request->input('payment_gateway');
         if ($paymentGateway) {

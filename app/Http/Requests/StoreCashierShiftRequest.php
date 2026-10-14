@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\BelongsToActiveBusiness;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCashierShiftRequest extends FormRequest
@@ -16,7 +17,7 @@ class StoreCashierShiftRequest extends FormRequest
         return [
             'opening_cash' => ['required', 'integer', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
+            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
         ];
     }
 }

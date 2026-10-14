@@ -131,6 +131,8 @@ class CheckoutService
             $this->loyaltyService->finalizeTransaction($transaction, $ctx->customer, $checkoutPreview);
 
             if ($ctx->isPayLater) {
+                $ownership = app(FinancialOwnershipService::class)->stampFromWarehouse((int) $activeShift->warehouse_id);
+
                 Receivable::create([
                     'customer_id' => $ctx->customer?->id,
                     'transaction_id' => $transaction->id,
@@ -139,6 +141,9 @@ class CheckoutService
                     'paid' => 0,
                     'due_date' => $ctx->dueDate,
                     'status' => 'unpaid',
+                    'business_id' => $ownership['business_id'],
+                    'ownership_status' => $ownership['ownership_status'],
+                    'ownership_evaluated_at' => $ownership['ownership_evaluated_at'],
                 ]);
             }
 

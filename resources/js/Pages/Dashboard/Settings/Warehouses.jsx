@@ -118,7 +118,7 @@ export default function Warehouses({ warehouses = [] }) {
                         {canCreate && (
                             <button
                                 onClick={() => { resetForm(); setShowForm(true); }}
-                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors"
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                             >
                                 <IconPlus size={18} />
                                 Tambah Gudang
@@ -157,7 +157,8 @@ export default function Warehouses({ warehouses = [] }) {
                                         {canUpdate && (
                                             <button
                                                 onClick={() => openEdit(w)}
-                                                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                aria-label={`Edit gudang ${w.name}`}
+                                                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                             >
                                                 <IconPencil size={18} />
                                             </button>
@@ -165,7 +166,8 @@ export default function Warehouses({ warehouses = [] }) {
                                         {canDelete && w.type !== "main" && (
                                             <button
                                                 onClick={() => handleDelete(w)}
-                                                className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
+                                                aria-label={`Hapus gudang ${w.name}`}
+                                                className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40"
                                             >
                                                 <IconTrash size={18} />
                                             </button>
@@ -205,11 +207,12 @@ export default function Warehouses({ warehouses = [] }) {
                                     errors={errors.name}
                                 />
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Tipe</label>
+                                    <label htmlFor="warehouse_type" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Tipe</label>
                                     <select
+                                        id="warehouse_type"
                                         value={form.type}
                                         onChange={(e) => setForm({ ...form, type: e.target.value })}
-                                        className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                        className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     >
                                         <option value="branch">Cabang</option>
                                         <option value="warehouse">Gudang</option>
@@ -221,13 +224,14 @@ export default function Warehouses({ warehouses = [] }) {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    <label htmlFor="warehouse_address" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Alamat
                                     </label>
                                     <textarea
+                                        id="warehouse_address"
                                         value={form.address}
                                         onChange={(e) => setForm({ ...form, address: e.target.value })}
-                                        className="w-full h-20 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
+                                        className="w-full h-20 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
                                     />
                                     {errors.address && (
                                         <p className="text-xs text-danger-500 mt-1">{errors.address}</p>
@@ -266,14 +270,14 @@ export default function Warehouses({ warehouses = [] }) {
                             <div className="flex items-center gap-3">
                                 <button
                                     type="submit"
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 >
                                     {editing ? "Update" : "Simpan"}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={resetForm}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 >
                                     Batal
                                 </button>

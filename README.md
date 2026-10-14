@@ -1,6 +1,6 @@
-# Point of Sales
+# KasirnyaKWU
 
-Sistem kasir berbasis Laravel + Inertia + React untuk transaksi penjualan, inventory audit, purchasing, finance, CRM, loyalty, dan observability operasional — dengan dukungan multi-warehouse, PPN, dan offline mode.
+Bergerak cepat, bertumbuh hebat — sistem kasir berbasis Laravel + Inertia + React untuk transaksi penjualan, inventory audit, purchasing, finance, CRM, loyalty, dan observability operasional — dengan dukungan multi-warehouse, PPN, dan offline mode.
 
 > 200+ GitHub stars • Open-source • MIT License
 
@@ -108,7 +108,7 @@ npm install && npm start
 ```
 
 Tidak ada akun default. Setelah `migrate --seed`, buka root aplikasi (`http://localhost:8000`); pada instalasi pertama aplikasi otomatis mengarahkan ke `/setup` untuk membuat akun admin dan profil toko.
-Ingin langsung mencoba dengan data contoh? Jalankan `php artisan seed:demo --force`. Seeder ini membuat dataset demo lengkap (outlet `MAL`/`TKB`/`PUT`, produk, transaksi, purchasing, CRM, dine-in) beserta tiga akun siap pakai — lihat `docs/demo-data.md`.
+Ingin langsung mencoba dengan data contoh? Jalankan `php artisan seed:demo --force`. Seeder ini membuat dataset demo lengkap (outlet `MAL`/`TKB`/`PUT`, produk, transaksi, purchasing, CRM) beserta tiga akun siap pakai — lihat `docs/demo-data.md`.
 
 ## Dokumentasi Detail
 
@@ -122,7 +122,7 @@ Ingin langsung mencoba dengan data contoh? Jalankan `php artisan seed:demo --for
 
 ## REST API (OpenAPI)
 
-Dikasir menyediakan REST API untuk integrasi mobile app / pihak ketiga. Dokumentasi interaktif otomatis (Scramble) tersedia di:
+KasirnyaKWU menyediakan REST API untuk integrasi mobile app / pihak ketiga. Dokumentasi interaktif otomatis (Scramble) tersedia di:
 
 - **UI docs:** `/docs/api` — coba endpoint langsung dari browser (Try It)
 - **OpenAPI spec:** `/docs/api.json` — untuk generate client (Postman, OpenAPI Generator, Swagger Codegen)
@@ -131,13 +131,13 @@ Semua endpoint (kecuali `auth/login`, `auth/register`, webhooks) memerlukan **Be
 
 ```bash
 # 1. Login → dapat token
-curl -X POST https://dikasir.web.id/api/v1/auth/login \
+curl -X POST https://posukmkewirausahaan.web.id/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"password"}'
 # → {"token": "1|abc123...", "user": {...}}
 
 # 2. Panggil API dengan token
-curl https://dikasir.web.id/api/v1/products \
+curl https://posukmkewirausahaan.web.id/api/v1/products \
   -H "Authorization: Bearer 1|abc123..."
 ```
 
@@ -153,7 +153,7 @@ curl https://dikasir.web.id/api/v1/products \
 | Supplier | `suppliers` | CRUD |
 | POS | `pos/shift`, `pos/products`, `pos/cart`, `pos/hold`, `pos/checkout`, `pos/transactions` | Alur kasir lengkap (mobile) |
 
-Base URL: `https://dikasir.web.id/api/v1` (dev: `http://localhost:8000/api/v1`)
+Base URL: `https://posukmkewirausahaan.web.id/api/v1` (dev: `http://localhost:8000/api/v1`)
 
 ### Per Modul
 

@@ -1,5 +1,6 @@
 import { Head } from "@inertiajs/react";
 import PublicLayout from "@/Layouts/PublicLayout";
+import { BRAND } from "@/config/brand";
 import {
     IconHeart,
     IconGitBranch,
@@ -11,10 +12,10 @@ import {
     IconShieldCheck,
 } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
+const GITHUB_URL = BRAND.github;
 
-const setupCommands = `git clone https://github.com/aryadwiputra/point-of-sales
-cd point-of-sales
+const setupCommands = `git clone ${BRAND.github}
+cd posukmkewirausahaan
 cp .env.example .env
 composer install && npm install
 php artisan key:generate
@@ -36,7 +37,7 @@ const checklist = [
 export default function Contributing() {
     return (
         <PublicLayout active="/kontribusi">
-            <Head title="Kontribusi — Dikasir" />
+            <Head title={`Kontribusi — ${BRAND.name}`} />
 
             {/* Header */}
             <section className="pt-20 pb-14 px-6 bg-gradient-to-b from-primary-50 dark:from-primary-950/40 to-transparent">
@@ -46,7 +47,7 @@ export default function Contributing() {
                         Kontribusi
                     </div>
                     <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white">
-                        Bantu Dikasir Tumbuh
+                        Bantu {BRAND.name} Tumbuh
                     </h1>
                     <p className="mt-5 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
                         Open source hidup dari kontributor — laporan bug, perbaikan kode,
@@ -162,7 +163,7 @@ export default function Contributing() {
                     <ul className="space-y-3">
                         {checklist.map((item) => (
                             <li key={item} className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                <IconShieldCheck size={20} className="text-emerald-500 mt-0.5 shrink-0" />
+                                <IconShieldCheck size={20} className="text-success-500 mt-0.5 shrink-0" />
                                 <span className="text-sm text-slate-700 dark:text-slate-300">{item}</span>
                             </li>
                         ))}

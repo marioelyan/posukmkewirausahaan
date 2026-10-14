@@ -31,7 +31,7 @@ const discountTypeOptions = [
 
 function InputError({ message }) {
     if (!message) return null;
-    return <p className="mt-1 text-xs text-rose-500">{message}</p>;
+    return <p className="mt-1 text-xs text-danger-500">{message}</p>;
 }
 
 function CardSection({ title, description, children }) {
@@ -493,7 +493,7 @@ export default function Form({
                                         <button
                                             type="button"
                                             onClick={() => removeRow("qty_breaks", index)}
-                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/40"
+                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-danger-200 bg-danger-50 text-danger-600 dark:border-danger-900/50 dark:bg-danger-950/40"
                                         >
                                             <IconTrash size={16} />
                                         </button>
@@ -581,7 +581,7 @@ export default function Form({
                                         <button
                                             type="button"
                                             onClick={() => removeRow("bundle_items", index)}
-                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/40"
+                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-danger-200 bg-danger-50 text-danger-600 dark:border-danger-900/50 dark:bg-danger-950/40"
                                         >
                                             <IconTrash size={16} />
                                         </button>
@@ -667,7 +667,7 @@ export default function Form({
                                         <button
                                             type="button"
                                             onClick={() => removeRow("buy_get_items", index)}
-                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/40"
+                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-danger-200 bg-danger-50 text-danger-600 dark:border-danger-900/50 dark:bg-danger-950/40"
                                         >
                                             <IconTrash size={16} />
                                         </button>
@@ -781,7 +781,7 @@ export default function Form({
                                         <p className="text-xs uppercase tracking-wide text-slate-500">
                                             Promo discount
                                         </p>
-                                        <p className="mt-1 text-lg font-semibold text-rose-600 dark:text-rose-300">
+                                        <p className="mt-1 text-lg font-semibold text-danger-600 dark:text-danger-300">
                                             Rp {Number(previewState.data.summary.promo_discount_total || 0).toLocaleString("id-ID")}
                                         </p>
                                     </div>
@@ -809,7 +809,7 @@ export default function Form({
                                                     <span className="font-medium text-slate-700 dark:text-slate-200">
                                                         {group.label}
                                                     </span>
-                                                    <span className="text-rose-600 dark:text-rose-300">
+                                                    <span className="text-danger-600 dark:text-danger-300">
                                                         -Rp {Number(group.discount_total || 0).toLocaleString("id-ID")}
                                                     </span>
                                                 </div>

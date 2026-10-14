@@ -8,6 +8,7 @@ import {
     IconCheck,
     IconChevronDown,
     IconUserPlus,
+    IconX,
 } from "@tabler/icons-react";
 import { CustomerHistoryButton } from "./CustomerHistoryPanel";
 import AddCustomerModal from "./AddCustomerModal";
@@ -112,77 +113,95 @@ export default function CustomerSelect({
 
                 {/* Customer selection stays full-width; actions flow below it. */}
                 <div className="space-y-2">
-                    <button
-                        type="button"
-                        onClick={() => setIsOpen(!isOpen)}
-                        className={`
-                            w-full min-w-0 min-h-12 h-auto px-4 py-2 rounded-xl text-left
-                            flex items-center gap-3
-                            border-2 transition-all duration-200
-                            ${
-                                isOpen
-                                    ? "border-primary-500 ring-4 ring-primary-500/20"
-                                    : error
-                                    ? "border-danger-500"
-                                    : "border-slate-200 dark:border-slate-700"
-                            }
-                            bg-white dark:bg-slate-900
-                        `}
-                    >
-                        <div
+                    <div className="relative min-w-0">
+                        <button
+                            type="button"
+                            onClick={() => setIsOpen(!isOpen)}
                             className={`
-                            w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                            ${
-                                selected
-                                    ? "bg-primary-100 dark:bg-primary-900/50"
-                                    : "bg-slate-100 dark:bg-slate-800"
-                            }
-                        `}
-                        >
-                            <IconUser
-                                size={18}
-                                className={
-                                    selected
-                                        ? "text-primary-600 dark:text-primary-400"
-                                        : "text-slate-400"
+                                w-full min-w-0 min-h-12 h-auto px-4 py-2 pr-11 rounded-xl text-left
+                                flex items-center gap-3
+                                border-2 transition-all duration-200
+                                ${
+                                    isOpen
+                                        ? "border-primary-500 ring-4 ring-primary-500/20"
+                                        : error
+                                        ? "border-danger-500"
+                                        : "border-slate-200 dark:border-slate-700"
                                 }
+                                bg-white dark:bg-slate-900
+                            `}
+                        >
+                            <div
+                                className={`
+                                w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
+                                ${
+                                    selected
+                                        ? "bg-primary-100 dark:bg-primary-900/50"
+                                        : "bg-slate-100 dark:bg-slate-800"
+                                }
+                            `}
+                            >
+                                <IconUser
+                                    size={18}
+                                    className={
+                                        selected
+                                            ? "text-primary-600 dark:text-primary-400"
+                                            : "text-slate-400"
+                                    }
+                                />
+                            </div>
+                            <div className="min-w-0 flex-1 overflow-hidden">
+                                {selected ? (
+                                    <>
+                                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                                            {selected.name}
+                                        </p>
+                                        {selected.no_telp && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                {selected.no_telp}
+                                            </p>
+                                        )}
+                                        {selected.member_code ? (
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                                {selected.member_code}
+                                            </p>
+                                        ) : null}
+                                        <p className="text-[11px] text-primary-500 dark:text-primary-300 truncate">
+                                            {selected.is_loyalty_member
+                                                ? `${selected.loyalty_tier} • ${selected.loyalty_points || 0} poin`
+                                                : "Non-member"}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-slate-400 dark:text-slate-500">
+                                        {placeholder}
+                                    </p>
+                                )}
+                            </div>
+                        </button>
+
+                        {selected ? (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    onSelect(null);
+                                    setSearch("");
+                                }}
+                                aria-label="Hapus pilihan pelanggan"
+                                title="Hapus pelanggan"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                            >
+                                <IconX size={16} />
+                            </button>
+                        ) : (
+                            <IconChevronDown
+                                size={18}
+                                className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-transform ${
+                                    isOpen ? "rotate-180" : ""
+                                }`}
                             />
-                        </div>
-                        <div className="min-w-0 flex-1 overflow-hidden">
-                            {selected ? (
-                                <>
-                                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
-                                        {selected.name}
-                                    </p>
-                                    {selected.no_telp && (
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                            {selected.no_telp}
-                                        </p>
-                                    )}
-                                    {selected.member_code ? (
-                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                            {selected.member_code}
-                                        </p>
-                                    ) : null}
-                                    <p className="text-[11px] text-primary-500 dark:text-primary-300 truncate">
-                                        {selected.is_loyalty_member
-                                            ? `${selected.loyalty_tier} • ${selected.loyalty_points || 0} poin`
-                                            : "Non-member"}
-                                    </p>
-                                </>
-                            ) : (
-                                <p className="text-sm text-slate-400 dark:text-slate-500">
-                                    {placeholder}
-                                </p>
-                            )}
-                        </div>
-                        <IconChevronDown
-                            size={18}
-                            className={`text-slate-400 transition-transform ${
-                                isOpen ? "rotate-180" : ""
-                            }`}
-                        />
-                    </button>
+                        )}
+                    </div>
 
                     <div className="flex min-w-0 flex-wrap gap-2">
                         {/* History Button - Show when customer is selected */}
@@ -251,6 +270,46 @@ export default function CustomerSelect({
 
                         {/* Customer List */}
                         <div className="max-h-60 overflow-y-auto scrollbar-thin">
+                            {/* Walk-in / tanpa pelanggan */}
+                            <button
+                                type="button"
+                                onClick={() => handleSelect(null)}
+                                className={`
+                                    flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left
+                                    transition-colors dark:border-slate-800
+                                    ${
+                                        !selected
+                                            ? "bg-primary-50 dark:bg-primary-950/30"
+                                            : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                                    }
+                                `}
+                            >
+                                <div
+                                    className={`
+                                        flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full
+                                        ${
+                                            !selected
+                                                ? "bg-primary-500 text-white"
+                                                : "bg-slate-100 text-slate-500 dark:bg-slate-800"
+                                        }
+                                    `}
+                                >
+                                    {!selected ? (
+                                        <IconCheck size={16} />
+                                    ) : (
+                                        <IconUser size={16} />
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                                        Umum (Tanpa Nama)
+                                    </p>
+                                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                                        Transaksi tanpa data pelanggan
+                                    </p>
+                                </div>
+                            </button>
+
                             {filteredCustomers.length > 0 ? (
                                 <ul>
                                     {filteredCustomers.map((customer) => (

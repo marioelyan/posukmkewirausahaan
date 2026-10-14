@@ -7,11 +7,13 @@ use App\Models\AuditLog;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\Outlet;
 use App\Models\PricingRule;
 use App\Models\PricingRuleBundleItem;
 use App\Models\PricingRuleBuyGetItem;
 use App\Models\PricingRuleQtyBreak;
 use App\Models\Product;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
 use App\Services\LoyaltyService;
 use App\Services\OutletAccessService;
@@ -40,12 +42,7 @@ class PricingRuleController extends Controller
 
         $outlet = $this->outletAccess->activeOutlet($request);
         $rules = PricingRule::query()
-            ->where(function ($query) use ($outlet) {
-                $query->whereNull('outlet_id');
-                if ($outlet) {
-                    $query->orWhere('outlet_id', $outlet->id);
-                }
-            })
+            ->tap(fn ($query) => $this->scopeToActiveOutlet($query, $outlet))
             ->with(['product:id,title', 'category:id,name', 'creator:id,name', 'qtyBreaks', 'bundleItems', 'buyGetItems'])
             ->when($filters['search'], function ($query, $search) {
                 $query->where('name', 'like', '%'.$search.'%');
@@ -97,12 +94,8 @@ class PricingRuleController extends Controller
             ]);
 
         $summaryBase = PricingRule::query()
-            ->where(function ($query) use ($outlet) {
-                $query->whereNull('outlet_id');
-                if ($outlet) {
-                    $query->orWhere('outlet_id', $outlet->id);
-                }
-            })->get();
+            ->tap(fn ($query) => $this->scopeToActiveOutlet($query, $outlet))
+            ->get();
 
         return Inertia::render('Dashboard/PricingRules/Index', [
             'rules' => $rules,
@@ -211,7 +204,40 @@ class PricingRuleController extends Controller
     {
         $outlet = $this->outletAccess->activeOutlet(request());
 
+        if (config('multi_business.enabled')) {
+            // Legacy rules without an outlet have no verified owner, so they
+            // must not be reachable from any business context.
+            return $outlet !== null
+                && $rule->outlet_id !== null
+                && (int) $rule->outlet_id === (int) $outlet->id;
+        }
+
         return $rule->outlet_id === null || ($outlet && (int) $rule->outlet_id === (int) $outlet->id);
+    }
+
+    /**
+     * Restrict a pricing-rule query to the active outlet.
+     *
+     * In legacy mode rules without an outlet are global. With tenancy enabled
+     * an outlet-less rule has no verified business owner, so it is excluded
+     * (fail closed) instead of leaking into whichever business is active.
+     */
+    private function scopeToActiveOutlet($query, ?Outlet $outlet)
+    {
+        if (config('multi_business.enabled')) {
+            if (! $outlet) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->where('outlet_id', $outlet->id);
+        }
+
+        return $query->where(function ($query) use ($outlet) {
+            $query->whereNull('outlet_id');
+            if ($outlet) {
+                $query->orWhere('outlet_id', $outlet->id);
+            }
+        });
     }
 
     public function destroy(PricingRule $pricingRule)
@@ -282,8 +308,8 @@ class PricingRuleController extends Controller
                 PricingRule::TARGET_PRODUCT,
                 PricingRule::TARGET_CATEGORY,
             ])],
-            'product_id' => ['nullable', 'integer', 'exists:products,id'],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'product_id' => ['nullable', 'integer', 'exists:products,id', new BelongsToActiveBusiness('products')],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id', new BelongsToActiveBusiness('categories')],
             'customer_scope' => ['required', Rule::in([
                 PricingRule::SCOPE_ALL,
                 PricingRule::SCOPE_WALK_IN,
@@ -312,11 +338,11 @@ class PricingRuleController extends Controller
             'qty_breaks.*.discount_value' => ['required_with:qty_breaks', 'numeric', 'min:0.01'],
             'qty_breaks.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'bundle_items' => ['nullable', 'array'],
-            'bundle_items.*.product_id' => ['required_with:bundle_items', 'integer', 'exists:products,id'],
+            'bundle_items.*.product_id' => ['required_with:bundle_items', 'integer', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'bundle_items.*.quantity' => ['required_with:bundle_items', 'integer', 'min:1'],
             'bundle_items.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'buy_get_items' => ['nullable', 'array'],
-            'buy_get_items.*.product_id' => ['required_with:buy_get_items', 'integer', 'exists:products,id'],
+            'buy_get_items.*.product_id' => ['required_with:buy_get_items', 'integer', 'exists:products,id', new BelongsToActiveBusiness('products')],
             'buy_get_items.*.role' => ['required_with:buy_get_items', Rule::in([
                 PricingRuleBuyGetItem::ROLE_BUY,
                 PricingRuleBuyGetItem::ROLE_GET,

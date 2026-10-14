@@ -1,8 +1,9 @@
 import { Head } from "@inertiajs/react";
 import PublicLayout from "@/Layouts/PublicLayout";
+import { BRAND } from "@/config/brand";
 import { IconBook2, IconArrowRight, IconBrandGithub } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
+const GITHUB_URL = BRAND.github;
 const DOCS_BASE = `${GITHUB_URL}/blob/main/docs`;
 const REPO_BASE = `${GITHUB_URL}/blob/main`;
 
@@ -26,7 +27,6 @@ const categories = [
             { file: "features/mobile-pos.md", title: "Mobile POS (PWA)", desc: "Gunakan kasir dari HP — installable dan offline-ready." },
             { file: "features/offline-mode.md", title: "Offline Mode", desc: "Batasan, antrean transaksi, dan sinkronisasi offline." },
             { file: "features/thermal-printer.md", title: "Printer Thermal", desc: "Cetak struk 58/80mm via WebUSB." },
-            { file: "features/dine-in.md", title: "Dine-in QR Menu", desc: "QR menu, self-order, floor plan, dan status pesanan." },
             { file: "features/api-integration.md", title: "API & Integrasi", desc: "Auth, endpoint POS, master data, dan API documentation." },
         ],
     },
@@ -74,7 +74,7 @@ const categories = [
 export default function Documentation() {
     return (
         <PublicLayout active="/dokumentasi">
-            <Head title="Dokumentasi — Dikasir" />
+            <Head title={`Dokumentasi — ${BRAND.name}`} />
 
             {/* Header */}
             <section className="pt-20 pb-14 px-6 bg-gradient-to-b from-primary-50 dark:from-primary-950/40 to-transparent">

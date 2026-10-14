@@ -1,4 +1,4 @@
-# Contributing to Point of Sales
+# Contributing to KasirnyaKWU
 
 Terima kasih sudah tertarik untuk berkontribusi! 🎉
 

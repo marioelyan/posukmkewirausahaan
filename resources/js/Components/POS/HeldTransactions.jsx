@@ -91,42 +91,42 @@ export default function HeldTransactions({
         return (
             <button
                 onClick={() => setIsExpanded(true)}
-                className="w-full px-3 py-2 flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                className="w-full px-3 py-2 flex items-center justify-between bg-warning-50 dark:bg-warning-950/30 border-b border-warning-200 dark:border-warning-800/50 hover:bg-warning-100 dark:hover:bg-warning-900/40 transition-colors"
             >
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-6 h-6 rounded-md bg-warning-500 flex items-center justify-center text-white text-xs font-bold">
                         {heldCarts.length}
                     </div>
-                    <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                    <span className="text-sm font-medium text-warning-700 dark:text-warning-300">
                         Transaksi Ditahan
                     </span>
-                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                    <span className="text-xs text-warning-600 dark:text-warning-400">
                         • {formatPrice(totalHeldAmount)}
                     </span>
                 </div>
-                <IconChevronDown size={16} className="text-amber-600" />
+                <IconChevronDown size={16} className="text-warning-600" />
             </button>
         );
     }
 
     // Expanded view - list with max height and scroll
     return (
-        <div className="border-b border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/30">
+        <div className="border-b border-warning-200 dark:border-warning-800/50 bg-warning-50 dark:bg-warning-950/30">
             {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-amber-200/50 dark:border-amber-800/30">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-warning-200/50 dark:border-warning-800/30">
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-6 h-6 rounded-md bg-warning-500 flex items-center justify-center text-white text-xs font-bold">
                         {heldCarts.length}
                     </div>
-                    <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                    <span className="text-sm font-medium text-warning-700 dark:text-warning-300">
                         Transaksi Ditahan
                     </span>
                 </div>
                 <button
                     onClick={() => setIsExpanded(false)}
-                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-amber-200 dark:hover:bg-amber-900/50"
+                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-warning-200 dark:hover:bg-warning-900/50"
                 >
-                    <IconChevronUp size={16} className="text-amber-600" />
+                    <IconChevronUp size={16} className="text-warning-600" />
                 </button>
             </div>
 
@@ -135,13 +135,13 @@ export default function HeldTransactions({
                 {heldCarts.map((hold) => (
                     <div
                         key={hold.hold_id}
-                        className="px-3 py-2 border-b border-amber-100/50 dark:border-amber-900/30 last:border-0 flex items-center justify-between gap-2"
+                        className="px-3 py-2 border-b border-warning-100/50 dark:border-warning-900/30 last:border-0 flex items-center justify-between gap-2"
                     >
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-amber-800 dark:text-amber-200 truncate">
+                            <p className="text-xs font-medium text-warning-800 dark:text-warning-200 truncate">
                                 {hold.label}
                             </p>
-                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                            <p className="text-xs text-warning-600 dark:text-warning-400">
                                 {hold.items_count} item •{" "}
                                 {formatPrice(hold.total)}
                             </p>
@@ -152,7 +152,7 @@ export default function HeldTransactions({
                                 disabled={
                                     resumingId === hold.hold_id || hasActiveCart
                                 }
-                                className="px-2 py-1 rounded bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium disabled:opacity-50 flex items-center gap-1"
+                                className="px-2 py-1 rounded bg-warning-500 hover:bg-warning-600 text-white text-xs font-medium disabled:opacity-50 flex items-center gap-1"
                                 title={
                                     hasActiveCart
                                         ? "Kosongkan keranjang dulu"
@@ -168,7 +168,7 @@ export default function HeldTransactions({
                             <button
                                 onClick={() => handleDelete(hold.hold_id)}
                                 disabled={deletingId === hold.hold_id}
-                                className="p-1 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 text-amber-600 disabled:opacity-50"
+                                className="p-1 rounded hover:bg-warning-200 dark:hover:bg-warning-900/50 text-warning-600 disabled:opacity-50"
                             >
                                 <IconTrash size={12} />
                             </button>
@@ -213,7 +213,7 @@ export function HoldButton({ hasItems = false, onHold, isHolding = false }) {
                 <button
                     onClick={handleHold}
                     disabled={isHolding}
-                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg bg-warning-500 hover:bg-warning-600 text-white text-xs font-semibold disabled:opacity-50"
                 >
                     {isHolding ? "..." : "OK"}
                 </button>
@@ -230,7 +230,7 @@ export function HoldButton({ hasItems = false, onHold, isHolding = false }) {
     return (
         <button
             onClick={() => setShowLabelInput(true)}
-            className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-lg border border-dashed border-amber-400 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 text-xs font-medium transition-colors"
+            className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-lg border border-dashed border-warning-400 dark:border-warning-700 text-warning-600 dark:text-warning-400 hover:bg-warning-50 dark:hover:bg-warning-950/30 text-xs font-medium transition-colors"
         >
             <IconClock size={14} />
             Tahan

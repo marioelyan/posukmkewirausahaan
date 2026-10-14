@@ -19,6 +19,8 @@ class CustomerSegmentController extends Controller
 
     public function index(Request $request)
     {
+        $this->ensureSegmentsManageable();
+
         $this->segmentationService->ensureDefaultAutoSegments();
 
         $filters = [
@@ -43,6 +45,8 @@ class CustomerSegmentController extends Controller
 
     public function create()
     {
+        $this->ensureSegmentsManageable();
+
         return Inertia::render('Dashboard/CustomerSegments/Create', [
             'segment' => null,
         ]);
@@ -50,6 +54,8 @@ class CustomerSegmentController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureSegmentsManageable();
+
         $validated = $this->validateSegment($request);
         $segment = CustomerSegment::query()->create($validated);
 
@@ -64,6 +70,8 @@ class CustomerSegmentController extends Controller
 
     public function show(CustomerSegment $customerSegment)
     {
+        $this->ensureSegmentsManageable();
+
         $customerSegment->load([
             'memberships.customer' => fn ($query) => $query->select('id', 'name', 'no_telp', 'is_loyalty_member', 'loyalty_tier', 'last_purchase_at'),
         ]);
@@ -98,6 +106,8 @@ class CustomerSegmentController extends Controller
 
     public function edit(CustomerSegment $customerSegment)
     {
+        $this->ensureSegmentsManageable();
+
         return Inertia::render('Dashboard/CustomerSegments/Edit', [
             'segment' => $customerSegment,
         ]);
@@ -105,6 +115,8 @@ class CustomerSegmentController extends Controller
 
     public function update(Request $request, CustomerSegment $customerSegment)
     {
+        $this->ensureSegmentsManageable();
+
         $validated = $this->validateSegment($request, $customerSegment);
         $customerSegment->update($validated);
 
@@ -119,6 +131,8 @@ class CustomerSegmentController extends Controller
 
     public function destroy(CustomerSegment $customerSegment)
     {
+        $this->ensureSegmentsManageable();
+
         $customerSegment->delete();
 
         return redirect()
@@ -128,6 +142,8 @@ class CustomerSegmentController extends Controller
 
     public function storeMember(Request $request, CustomerSegment $customerSegment)
     {
+        $this->ensureSegmentsManageable();
+
         abort_if($customerSegment->type !== CustomerSegment::TYPE_MANUAL, 422, 'Segment otomatis tidak dapat diubah manual.');
 
         $validated = $request->validate([
@@ -149,6 +165,8 @@ class CustomerSegmentController extends Controller
 
     public function destroyMember(CustomerSegment $customerSegment, Customer $customer)
     {
+        $this->ensureSegmentsManageable();
+
         abort_if($customerSegment->type !== CustomerSegment::TYPE_MANUAL, 422, 'Segment otomatis tidak dapat diubah manual.');
 
         $manualIds = $customer->segmentMemberships()
@@ -198,5 +216,15 @@ class CustomerSegmentController extends Controller
         $validated['is_active'] = (bool) ($validated['is_active'] ?? false);
 
         return $validated;
+    }
+
+    /**
+     * Segment definitions carry no `business_id` (nor an `outlet_id`), so they
+     * cannot be proven to belong to the active business. While multi-business is
+     * enabled the whole surface fails closed, consistent with the reports panel.
+     */
+    private function ensureSegmentsManageable(): void
+    {
+        abort_if(config('multi_business.enabled'), 404);
     }
 }

@@ -18,6 +18,7 @@ class DemoSeeder extends Seeder
             OperationalCoreSeeder::class,
             FeatureCoverageSeeder::class,
             FeatureDemoSeeder::class,
+            DemoBusinessSeeder::class,
         ]);
 
         Setting::set('app_setup_completed', true);
@@ -26,5 +27,6 @@ class DemoSeeder extends Seeder
         $this->command?->info('Admin   : arya@gmail.com / password (super-admin, semua outlet)');
         $this->command?->info('Manager : manager@gmail.com / password (outlet MAL + TKB)');
         $this->command?->info('Kasir   : cashier@gmail.com / password (outlet MAL)');
+        $this->command?->info('Multi-business: demo business + memberships provisioned (flag ON ready).');
     }
 }

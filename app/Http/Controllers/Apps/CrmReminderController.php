@@ -23,8 +23,8 @@ class CrmReminderController extends Controller
             'status' => $request->input('status'),
         ];
 
-        $includeLegacy = Outlet::active()->count() <= 1;
-        $outletIds = $request->user()->isSuperAdmin()
+        $includeLegacy = ! config('multi_business.enabled') && Outlet::active()->count() <= 1;
+        $outletIds = ($request->user()->isSuperAdmin() && ! config('multi_business.enabled'))
             ? null
             : $this->outletAccessService->accessibleOutlets($request->user())->pluck('id')->all();
 

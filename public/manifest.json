@@ -1,13 +1,15 @@
 {
-    "name": "Point of Sales",
-    "short_name": "POS",
-    "description": "Sistem kasir online untuk UMKM",
+    "name": "KasirnyaKWU",
+    "short_name": "KasirnyaKWU",
+    "description": "Bergerak cepat, bertumbuh hebat — sistem kasir (POS) open source untuk UMKM Indonesia.",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#4f46e5",
+    "background_color": "#f3f7fc",
+    "theme_color": "#21416D",
     "orientation": "any",
     "icons": [
+        { "src": "/images/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
         { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
         { "src": "/images/icon-512.png", "sizes": "512x512", "type": "image/png" }
     ],

@@ -5,10 +5,14 @@ import './i18n';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { installStepUpReplay } from './Utils/stepUpReplay';
+import { BRAND } from './config/brand';
 import { ThemeSwitcherProvider } from './Context/ThemeSwitcherContext';
 import { OnlineStatusProvider } from './Context/OnlineStatusContext';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+installStepUpReplay();
+
+const appName = import.meta.env.VITE_APP_NAME || BRAND.name;
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -31,6 +35,6 @@ createInertiaApp({
         );
     },
     progress: {
-        color: '#4B5563',
+        color: '#21416D',
     },
 });

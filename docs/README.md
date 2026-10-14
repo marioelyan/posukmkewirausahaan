@@ -1,4 +1,4 @@
-# Dokumentasi Point of Sales
+# Dokumentasi KasirnyaKWU
 
 Dokumentasi ini ditujukan untuk developer yang ingin setup, memahami alur modul, dan melakukan maintenance aplikasi.
 
@@ -8,6 +8,7 @@ Dokumentasi ini ditujukan untuk developer yang ingin setup, memahami alur modul,
 - `docs/getting-started.md` — setup dari awal
 - `docs/demo-data.md` — seeder demo lengkap + akun demo
 - `docs/configuration.md` — environment, payment, tax, printer
+- `docs/production-deployment.md` — deploy VPS/GitHub Actions, shared hosting, scheduler, queue, WhatsApp, backup 🆕
 
 ### Arsitektur
 - `docs/architecture-overview.md` — stack, middleware, service layer
@@ -18,7 +19,6 @@ Dokumentasi ini ditujukan untuk developer yang ingin setup, memahami alur modul,
 - `docs/features/sales-returns.md` — retur penjualan, refund, store credit
 - `docs/features/cashier-shifts.md` — buka/tutup shift kasir
 - `docs/features/customer-portal.md` — invoice publik, bayar piutang online 🆕
-- `docs/features/dine-in.md` — QR menu, self-order, floor plan 🆕
 
 ### Inventory & Warehouse
 - `docs/features/inventory-stock.md` — produk, stock opname, mutation
@@ -41,6 +41,7 @@ Dokumentasi ini ditujukan untuk developer yang ingin setup, memahami alur modul,
 ### Settings & Admin
 - `docs/features/settings-payments.md` — payment gateways, bank accounts, store profile, target
 - `docs/features/rbac-users-roles.md` — users, roles, permissions
+- `docs/features/business-membership.md` — business, anggota business, akses outlet per business
 - `docs/features/audit-logs.md` — audit trail
 
 ### Reports & Documents

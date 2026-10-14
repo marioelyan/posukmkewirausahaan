@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use App\Models\Receivable;
 use App\Models\ReceivablePayment;
+use App\Rules\BelongsToActiveBusiness;
 use App\Services\OutletAccessService;
 use App\Services\ReceivableService;
 use Illuminate\Http\Request;
@@ -89,7 +90,7 @@ class ReceivableController extends Controller
             'amount' => ['required', 'numeric', 'min:1'],
             'paid_at' => ['required', 'date'],
             'method' => ['required', 'string', 'max:30'],
-            'bank_account_id' => ['nullable', 'exists:bank_accounts,id'],
+            'bank_account_id' => ['nullable', 'exists:bank_accounts,id', new BelongsToActiveBusiness('bank_accounts')],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -160,7 +161,7 @@ class ReceivableController extends Controller
     public function customerStatement(Request $request)
     {
         $validated = $request->validate([
-            'customer_id' => ['required', 'exists:customers,id'],
+            'customer_id' => ['required', 'exists:customers,id', new BelongsToActiveBusiness('customers')],
         ]);
 
         $warehouseIds = $this->outletAccessService->warehousesFor($request->user())->pluck('id');

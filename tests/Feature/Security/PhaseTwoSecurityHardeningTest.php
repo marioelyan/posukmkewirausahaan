@@ -95,7 +95,8 @@ class PhaseTwoSecurityHardeningTest extends TestCase
         $response->assertHeader('X-Content-Type-Options', 'nosniff');
         $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->assertHeader('X-Frame-Options', 'DENY');
-        $response->assertHeader('Content-Security-Policy-Report-Only');
+        // CSP is enforced (not Report-Only) since the Oct 2026 hardening.
+        $response->assertHeader('Content-Security-Policy');
     }
 
     public function test_hsts_header_is_not_sent_outside_production(): void

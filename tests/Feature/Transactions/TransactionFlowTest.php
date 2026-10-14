@@ -358,6 +358,7 @@ class TransactionFlowTest extends TestCase
             'is_active' => true,
         ]);
         $cashier = $this->createCashier();
+        $cashier->outlets()->attach($outletA->id, ['is_default' => true]);
 
         foreach ([
             ['invoice' => 'TRX-OUTLET', 'warehouse_id' => $warehouse->id],

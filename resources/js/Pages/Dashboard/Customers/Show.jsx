@@ -70,7 +70,7 @@ export default function Show({
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                             <div className="mb-2 flex items-center gap-2">
-                                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                                <h1 className="text-2xl font-bold text-slate-900 dark:text-white break-words">
                                     {customer.name}
                                 </h1>
                                 <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -103,7 +103,7 @@ export default function Show({
                                     )}
                                     method="post"
                                     as="button"
-                                    className="inline-flex items-center gap-2 rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-primary-600"
+                                    className="inline-flex items-center gap-2 rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                                 >
                                     <IconCrown size={14} />
                                     Jadikan Member
@@ -178,7 +178,7 @@ export default function Show({
                                             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
                                                 segment.source === "manual"
                                                     ? "bg-primary-100 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300"
-                                                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                                    : "bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-300"
                                             }`}
                                         >
                                             {segment.name}
@@ -271,8 +271,8 @@ export default function Show({
                                                     <p
                                                         className={`text-sm font-bold ${
                                                             history.points_delta >= 0
-                                                                ? "text-emerald-600 dark:text-emerald-300"
-                                                                : "text-rose-600 dark:text-rose-300"
+                                                                ? "text-success-600 dark:text-success-300"
+                                                                : "text-danger-600 dark:text-danger-300"
                                                         }`}
                                                     >
                                                         {history.points_delta >= 0 ? "+" : ""}
@@ -392,14 +392,14 @@ export default function Show({
                                         ))}
                                     </div>
                                     {segmentForm.errors.segment_ids && (
-                                        <p className="text-sm text-rose-600">
+                                        <p className="text-sm text-danger-600">
                                             {segmentForm.errors.segment_ids}
                                         </p>
                                     )}
                                     <button
                                         type="submit"
                                         disabled={segmentForm.processing}
-                                        className="inline-flex items-center justify-center rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="inline-flex items-center justify-center rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                                     >
                                         {segmentForm.processing
                                             ? "Menyimpan..."

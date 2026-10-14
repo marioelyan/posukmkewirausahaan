@@ -1,11 +1,12 @@
 import { Head, Link, useForm } from "@inertiajs/react";
 import {
-    IconShoppingCart,
     IconMail,
     IconLoader2,
     IconArrowLeft,
 } from "@tabler/icons-react";
 import AuthBotGuardFields from "@/Components/AuthBotGuardFields";
+import { BRAND } from "@/config/brand";
+import { BrandMark } from "@/Components/BrandLogo";
 
 export default function ForgotPassword({ status, botGuard }) {
     const honeypotField = botGuard?.honeypot_field || "company_website";
@@ -34,11 +35,9 @@ export default function ForgotPassword({ status, botGuard }) {
                                 href="/"
                                 className="inline-flex items-center gap-3 mb-6"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                                    <IconShoppingCart size={24} className="text-white" />
-                                </div>
+                                <BrandMark size={48} rounded="rounded-xl" />
                                 <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    Aplikasi Kasir
+                                    {BRAND.name}
                                 </span>
                             </Link>
                             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">

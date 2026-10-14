@@ -74,7 +74,6 @@ class SampleDataSeeder extends Seeder
             'purchase_order_items',
             'goods_receiving_items',
             'supplier_return_items',
-            'dine_order_items',
             'product_notification_reads',
             'transaction_detail_batch_allocations',
             'stock_transfer_items',

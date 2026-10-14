@@ -71,7 +71,8 @@ class SettingController extends Controller
             'store_city' => Setting::getForOutlet('store_city', $outlet, ''),
             'store_npwp' => Setting::get('store_npwp', ''),
             'store_nib' => Setting::get('store_nib', ''),
-            'tax_default_rate' => Setting::get('tax_default_rate', '11.00'),
+            // SETTINGS-04: business default with an optional outlet override.
+            'tax_default_rate' => Setting::getForOutlet('tax_default_rate', $outlet, '11.00'),
         ];
 
         return Inertia::render('Dashboard/Settings/Store', [
@@ -285,7 +286,7 @@ class SettingController extends Controller
 
         $sent = $this->whatsAppService->send(
             $request->target,
-            'Test pesan dari Point of Sales — '.config('app.url'),
+            'Test pesan dari KasirnyaKWU — '.config('app.url'),
             $outlet
         );
 

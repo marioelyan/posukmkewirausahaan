@@ -63,7 +63,7 @@ export default function Payment({
 
         if (source.managed_by_environment) {
             return (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
+                <p className="text-xs text-warning-600 dark:text-warning-400">
                     Secret dikelola oleh environment dan tidak bisa diubah dari dashboard.
                 </p>
             );
@@ -106,21 +106,22 @@ export default function Payment({
                         membuka halaman transaksi.
                     </p>
                     {!canUpdatePaymentSettings && (
-                        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+                        <div className="mb-4 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-900/60 dark:bg-warning-950/30 dark:text-warning-300">
                             Anda hanya memiliki akses lihat. Perubahan payment settings memerlukan permission update dan konfirmasi password ulang.
                         </div>
                     )}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        <label htmlFor="default_gateway" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Pilih Gateway
                         </label>
                         <select
+                            id="default_gateway"
                             value={data.default_gateway}
                             onChange={(e) =>
                                 setData("default_gateway", e.target.value)
                             }
                             disabled={!canUpdatePaymentSettings}
-                            className="w-full h-11 px-4 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                            className="w-full h-11 px-4 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {supportedGateways.map((gw) => (
                                 <option
@@ -175,7 +176,7 @@ export default function Payment({
                     </p>
                         <a
                             href={route("settings.bank-accounts.index")}
-                        className="inline-flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium"
+                        className="inline-flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded"
                     >
                         Kelola Rekening Bank →
                     </a>
@@ -394,7 +395,7 @@ export default function Payment({
                             {webhookWarnings.map((warning) => (
                                 <div
                                     key={warning}
-                                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                    className="rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-900/60 dark:bg-warning-950/30 dark:text-warning-300"
                                 >
                                     {warning}
                                 </div>
@@ -403,15 +404,17 @@ export default function Payment({
                     )}
                     <div className="space-y-3">
                         <div>
-                            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            <label htmlFor="webhook_midtrans" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                                 Midtrans Notification URL
                             </label>
                             <div className="flex items-center gap-2">
                                 <input
+                                    id="webhook_midtrans"
+                                    aria-label="Midtrans Notification URL"
                                     type="text"
                                     readOnly
                                     value={webhookUrls.midtrans || ""}
-                                    className="flex-1 h-10 px-3 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                                    className="flex-1 h-10 px-3 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 />
                                 <button
                                     type="button"
@@ -421,22 +424,24 @@ export default function Payment({
                                         );
                                         toast.success("URL disalin!");
                                     }}
-                                    className="px-3 h-10 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    className="px-3 h-10 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 >
                                     Salin
                                 </button>
                             </div>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            <label htmlFor="webhook_xendit" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                                 Xendit Callback URL
                             </label>
                             <div className="flex items-center gap-2">
                                 <input
+                                    id="webhook_xendit"
+                                    aria-label="Xendit Callback URL"
                                     type="text"
                                     readOnly
                                     value={webhookUrls.xendit || ""}
-                                    className="flex-1 h-10 px-3 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                                    className="flex-1 h-10 px-3 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 />
                                 <button
                                     type="button"
@@ -446,7 +451,7 @@ export default function Payment({
                                         );
                                         toast.success("URL disalin!");
                                     }}
-                                    className="px-3 h-10 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    className="px-3 h-10 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                 >
                                     Salin
                                 </button>
@@ -460,7 +465,7 @@ export default function Payment({
                     <button
                         type="submit"
                         disabled={processing || !canUpdatePaymentSettings}
-                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                     >
                         <IconDeviceFloppy size={18} />
                         {processing ? "Menyimpan..." : "Simpan Konfigurasi"}

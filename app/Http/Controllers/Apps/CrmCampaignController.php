@@ -27,14 +27,7 @@ class CrmCampaignController extends Controller
             'status' => $request->input('status'),
         ];
 
-        $outlet = $this->outletAccessService->activeOutlet($request);
-        $campaigns = CustomerCampaign::query()
-            ->where(function ($query) use ($outlet) {
-                $query->whereNull('outlet_id');
-                if ($outlet) {
-                    $query->orWhere('outlet_id', $outlet->id);
-                }
-            })
+        $campaigns = $this->scopeCampaignsToActiveOutlet($request, CustomerCampaign::query())
             ->with(['creator:id,name'])
             ->withCount('logs')
             ->when($filters['type'], fn ($query, $type) => $query->where('type', $type))
@@ -219,18 +212,58 @@ class CrmCampaignController extends Controller
             return false;
         }
 
-        if ($campaign->outlet_id === null) {
-            return true;
-        }
-
         $user = request()->user();
 
-        if ($user?->isSuperAdmin()) {
-            return true;
+        if (! config('multi_business.enabled')) {
+            if ($campaign->outlet_id === null) {
+                return true;
+            }
+
+            if ($user?->isSuperAdmin()) {
+                return true;
+            }
+
+            return $this->outletAccessService->accessibleOutlets($user)
+                ->pluck('id')
+                ->contains((int) $campaign->outlet_id);
+        }
+
+        // Tenancy on: an unowned (null outlet) campaign cannot be attributed to a
+        // business, and `accessibleOutlets` already constrains every role
+        // (including super-admin) to the active business.
+        if ($campaign->outlet_id === null) {
+            return false;
         }
 
         return $this->outletAccessService->accessibleOutlets($user)
             ->pluck('id')
             ->contains((int) $campaign->outlet_id);
+    }
+
+    /**
+     * Constrain a campaign query to the outlet rows owned by the active business.
+     *
+     * Campaigns are outlet-scoped. Unowned (null outlet) rows cannot be proven to
+     * belong to the active business and are dropped while tenancy is enabled;
+     * legacy mode keeps the original null-or-active-outlet behaviour.
+     */
+    private function scopeCampaignsToActiveOutlet(Request $request, $query)
+    {
+        $outlet = $this->outletAccessService->activeOutlet($request);
+
+        if (! config('multi_business.enabled')) {
+            return $query->where(function ($query) use ($outlet) {
+                $query->whereNull('outlet_id');
+                if ($outlet) {
+                    $query->orWhere('outlet_id', $outlet->id);
+                }
+            });
+        }
+
+        if (! $outlet) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('outlet_id', $outlet->id);
     }
 }

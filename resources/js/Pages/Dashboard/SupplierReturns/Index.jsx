@@ -25,7 +25,7 @@ const statusBadge = (status) => {
     const map = {
         draft: "bg-warning-100 text-warning-700 dark:bg-warning-950/30 dark:text-warning-400",
         completed: "bg-success-100 text-success-700 dark:bg-success-950/30 dark:text-success-400",
-        cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400",
+        cancelled: "bg-danger-100 text-danger-700 dark:bg-danger-950/30 dark:text-danger-400",
     };
     const labels = {
         draft: "Draft",

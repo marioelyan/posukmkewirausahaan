@@ -16,15 +16,26 @@ use App\Models\PricingRule;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\BusinessContext;
 use App\Services\OutletAccessService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AdvancedSalesInsightsController extends Controller
 {
+    /**
+     * Memoised outlet ids of the verified active business. Null means tenancy is
+     * disabled (no scoping); an empty collection means tenancy is enabled but no
+     * business context exists, which fails closed.
+     */
+    private ?Collection $businessOutletIds = null;
+
+    private bool $businessOutletIdsResolved = false;
+
     public function __construct(
         private readonly OutletAccessService $outletAccessService
     ) {}
@@ -45,7 +56,9 @@ class AdvancedSalesInsightsController extends Controller
             'customer_id' => $request->input('customer_id'),
             'category_id' => $request->input('category_id'),
             'warehouse_ids' => $warehouseIds,
-            'include_legacy' => Outlet::active()->count() <= 1,
+            // Legacy rows without a warehouse cannot be proven to belong to the
+            // active business, so they are only folded in when tenancy is off.
+            'include_legacy' => ! config('multi_business.enabled') && Outlet::active()->count() <= 1,
         ];
 
         $transactionQuery = $this->applyTransactionFilters(
@@ -130,7 +143,9 @@ class AdvancedSalesInsightsController extends Controller
                 if ($filters['include_legacy']) {
                     $q->orWhereNull('transactions.warehouse_id');
                 }
-            });
+            })
+            // Completed sales only (register §13.25).
+            ->where('transactions.payment_status', Transaction::PAYMENT_STATUS_PAID);
     }
 
     protected function detailMetricsQuery(array $filters)
@@ -149,7 +164,9 @@ class AdvancedSalesInsightsController extends Controller
                 if ($filters['include_legacy']) {
                     $q->orWhereNull('t.warehouse_id');
                 }
-            });
+            })
+            // Completed sales only (register §13.25).
+            ->where('t.payment_status', Transaction::PAYMENT_STATUS_PAID);
     }
 
     private function warehouseStockSubquery($warehouseIds)
@@ -629,7 +646,13 @@ class AdvancedSalesInsightsController extends Controller
 
     protected function promoMonitor(?int $outletId = null): array
     {
+        // Pricing rules are outlet-scoped; tie them to the active business's
+        // outlets. Rules with no outlet cannot be proven to belong to the
+        // business and are dropped while tenancy is enabled (fail closed).
+        $outletIds = $this->activeBusinessOutletIds();
+
         $rules = PricingRule::query()
+            ->when($outletIds !== null, fn ($query) => $query->whereIn('outlet_id', $outletIds))
             ->when($outletId, fn ($query) => $query->where(function ($scope) use ($outletId) {
                 $scope->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
             }))
@@ -637,6 +660,23 @@ class AdvancedSalesInsightsController extends Controller
             ->orderByDesc('priority')
             ->orderBy('name')
             ->get();
+
+        // Audit logs carry no tenant owner, so they are suppressed while tenancy
+        // is enabled rather than risk exposing another business's activity.
+        $recentAudits = $outletIds === null
+            ? AuditLog::query()
+                ->where('module', 'pricing_rules')
+                ->latest('id')
+                ->limit(5)
+                ->get()
+                ->map(fn (AuditLog $log) => [
+                    'id' => $log->id,
+                    'event' => $log->event,
+                    'description' => $log->description,
+                    'created_at' => optional($log->created_at)?->toIso8601String(),
+                ])
+                ->all()
+            : [];
 
         return [
             'summary' => [
@@ -664,31 +704,28 @@ class AdvancedSalesInsightsController extends Controller
                 ->values()
                 ->map(fn (PricingRule $rule) => $this->serializePromoRule($rule))
                 ->all(),
-            'recent_audits' => AuditLog::query()
-                ->where('module', 'pricing_rules')
-                ->latest('id')
-                ->limit(5)
-                ->get()
-                ->map(fn (AuditLog $log) => [
-                    'id' => $log->id,
-                    'event' => $log->event,
-                    'description' => $log->description,
-                    'created_at' => optional($log->created_at)?->toIso8601String(),
-                ])
-                ->all(),
+            'recent_audits' => $recentAudits,
         ];
     }
 
     protected function loyaltyPerformance(array $filters, ?int $outletId = null): array
     {
+        $outletIds = $this->activeBusinessOutletIds();
+
         $members = Customer::query()
             ->where('is_loyalty_member', true)
             ->get();
 
-        $historyQuery = LoyaltyPointHistory::query();
+        // Point history carries no business_id; ownership is inherited from the
+        // customer, whose global scope is business-aware.
+        $historyQuery = LoyaltyPointHistory::query()
+            ->when($outletIds !== null, fn ($query) => $query->whereHas('customer'));
         $this->applyDateRangeFilter($historyQuery, 'created_at', $filters);
 
+        // Vouchers are outlet-scoped; unowned (null outlet) vouchers are dropped
+        // while tenancy is enabled.
         $vouchers = CustomerVoucher::query()
+            ->when($outletIds !== null, fn ($query) => $query->whereIn('outlet_id', $outletIds))
             ->when($outletId, fn ($query) => $query->where(function ($scope) use ($outletId) {
                 $scope->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
             }))
@@ -741,16 +778,28 @@ class AdvancedSalesInsightsController extends Controller
 
     protected function crmOperations(array $filters, ?int $outletId = null): array
     {
-        $segments = CustomerSegment::query()->withCount('memberships')->get();
+        $outletIds = $this->activeBusinessOutletIds();
 
-        $campaignsQuery = CustomerCampaign::query()->withCount('logs');
+        // Segments have no owner column (membership is per-customer, which is
+        // business-scoped), so they cannot be proven to belong to the active
+        // business. Fail closed while tenancy is enabled.
+        $segments = $outletIds === null
+            ? CustomerSegment::query()->withCount('memberships')->get()
+            : collect();
+
+        // Campaigns are outlet-scoped; unowned (null outlet) campaigns are
+        // dropped while tenancy is enabled.
+        $campaignsQuery = CustomerCampaign::query()
+            ->when($outletIds !== null, fn ($query) => $query->whereIn('outlet_id', $outletIds))
+            ->withCount('logs');
         $campaignsQuery->when($outletId, fn ($query) => $query->where(function ($scope) use ($outletId) {
             $scope->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
         }));
         $this->applyDateRangeFilter($campaignsQuery, 'created_at', $filters);
         $campaigns = $campaignsQuery->get();
 
-        $logsQuery = CustomerCampaignLog::query();
+        $logsQuery = CustomerCampaignLog::query()
+            ->when($outletIds !== null, fn ($query) => $query->whereHas('campaign', fn ($campaign) => $campaign->whereIn('outlet_id', $outletIds)));
         $logsQuery->when($outletId, fn ($query) => $query->whereHas('campaign', function ($campaign) use ($outletId) {
             $campaign->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
         }));
@@ -775,6 +824,7 @@ class AdvancedSalesInsightsController extends Controller
                 'queue_skipped' => $logs->where('status', CustomerCampaignLog::STATUS_SKIPPED)->count(),
             ],
             'recent_campaigns' => CustomerCampaign::query()
+                ->when($outletIds !== null, fn ($query) => $query->whereIn('outlet_id', $outletIds))
                 ->when($outletId, fn ($query) => $query->where(function ($scope) use ($outletId) {
                     $scope->whereNull('outlet_id')->orWhere('outlet_id', $outletId);
                 }))
@@ -794,6 +844,32 @@ class AdvancedSalesInsightsController extends Controller
                 ])
                 ->all(),
         ];
+    }
+
+    /**
+     * Outlet ids owned by the verified active business.
+     *
+     * Returns null when multi-business is disabled (legacy: no scoping) and an
+     * empty collection when tenancy is enabled without a verified context, so
+     * every outlet-scoped query fails closed instead of reading global data.
+     */
+    private function activeBusinessOutletIds(): ?Collection
+    {
+        if (! config('multi_business.enabled')) {
+            return null;
+        }
+
+        if (! $this->businessOutletIdsResolved) {
+            $businessId = app(BusinessContext::class)->businessId();
+
+            $this->businessOutletIds = $businessId === null
+                ? collect()
+                : Outlet::query()->where('business_id', $businessId)->pluck('id');
+
+            $this->businessOutletIdsResolved = true;
+        }
+
+        return $this->businessOutletIds;
     }
 
     protected function applyDateRangeFilter($query, string $column, array $filters): void

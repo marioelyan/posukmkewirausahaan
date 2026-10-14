@@ -12,9 +12,9 @@ const formatDateTime = (value) => {
 const statusBadge = (status) => {
     const styles = {
         draft: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-        in_transit: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
-        completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
-        cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
+        in_transit: "bg-warning-100 text-warning-700 dark:bg-warning-950/40 dark:text-warning-400",
+        completed: "bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-400",
+        cancelled: "bg-danger-100 text-danger-700 dark:bg-danger-950/40 dark:text-danger-400",
     };
     const labels = { draft: "Draft", in_transit: "In Transit", completed: "Selesai", cancelled: "Batal" };
     return <span className={`inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${styles[status] || styles.draft}`}>{labels[status] || status}</span>;
@@ -113,7 +113,7 @@ export default function Show({ transfer }) {
                                         </button>
                                     )}
                                     {can("stock-transfers-cancel") && (
-                                        <button onClick={() => confirmAction("cancel", "membatalkan")} className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20">
+                                        <button onClick={() => confirmAction("cancel", "membatalkan")} className="flex w-full items-center justify-center gap-2 rounded-xl border border-danger-200 px-4 py-2.5 text-sm font-medium text-danger-600 transition-colors hover:bg-danger-50 dark:border-danger-900 dark:text-danger-400 dark:hover:bg-danger-950/20">
                                             <IconX size={18} /> Batalkan
                                         </button>
                                     )}
@@ -126,12 +126,12 @@ export default function Show({ transfer }) {
                                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Aksi</h2>
                                 <div className="mt-4 space-y-3">
                                     {can("stock-transfers-receive") && (
-                                        <button onClick={() => confirmAction("receive", "menerima")} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600">
+                                        <button onClick={() => confirmAction("receive", "menerima")} className="flex w-full items-center justify-center gap-2 rounded-xl bg-success-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-success-600">
                                             <IconCheck size={18} /> Terima Barang
                                         </button>
                                     )}
                                     {can("stock-transfers-cancel") && (
-                                        <button onClick={() => confirmAction("cancel", "membatalkan")} className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20">
+                                        <button onClick={() => confirmAction("cancel", "membatalkan")} className="flex w-full items-center justify-center gap-2 rounded-xl border border-danger-200 px-4 py-2.5 text-sm font-medium text-danger-600 transition-colors hover:bg-danger-50 dark:border-danger-900 dark:text-danger-400 dark:hover:bg-danger-950/20">
                                             <IconX size={18} /> Batalkan & Kembalikan
                                         </button>
                                     )}

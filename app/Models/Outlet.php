@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -12,6 +13,7 @@ class Outlet extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'code',
         'name',
         'is_active',
@@ -30,6 +32,11 @@ class Outlet extends Model
         ];
     }
 
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
+    }
+
     public function warehouses(): HasMany
     {
         return $this->hasMany(Warehouse::class);
@@ -43,5 +50,10 @@ class Outlet extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeForBusiness($query, int $businessId)
+    {
+        return $query->where('business_id', $businessId);
     }
 }

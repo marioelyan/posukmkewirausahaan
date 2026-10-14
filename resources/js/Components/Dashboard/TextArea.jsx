@@ -1,20 +1,25 @@
-import React from "react";
+import React, { useId } from "react";
 
 export default function Textarea({
     label,
     className,
     errors,
     rows = 4,
+    id,
     ...props
 }) {
+    const generatedId = useId();
+    const textareaId = id || generatedId;
+
     return (
         <div className="flex flex-col gap-2">
             {label && (
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor={textareaId} className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     {label}
                 </label>
             )}
             <textarea
+                id={textareaId}
                 rows={rows}
                 className={`
                     w-full px-4 py-3 text-sm rounded-xl

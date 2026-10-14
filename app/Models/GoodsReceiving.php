@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class GoodsReceiving extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $fillable = [
@@ -17,10 +19,12 @@ class GoodsReceiving extends Model
         'notes',
         'received_by',
         'received_at',
+        'business_id',
     ];
 
     protected $casts = [
         'received_at' => 'datetime',
+        'business_id' => 'integer',
     ];
 
     public function purchaseOrder()

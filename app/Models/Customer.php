@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     /**
@@ -18,6 +20,7 @@ class Customer extends Model
         'name',
         'no_telp',
         'address',
+        'business_id',
         'is_loyalty_member',
         'member_code',
         'loyalty_tier',

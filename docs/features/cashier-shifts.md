@@ -48,6 +48,11 @@ Mengontrol sesi kerja kasir agar transaksi kasir memiliki konteks shift yang jel
 
 - tanpa shift aktif, operasi inti transaksi diblokir
 - close shift dipakai untuk rekonsiliasi cash operasional
+- switch **outlet** dikunci selama shift aktif (route `outlet.switch` menolak; komponen
+  `OutletSwitcher` menjadi read-only)
+- switch **business** juga dikunci bila ada shift aktif di business lain (route `business.switch`
+  mengembalikan 422 via `OutletAccessService::hasActiveShiftInOtherBusiness`; `BusinessSwitcher`
+  menjadi read-only)
 
 ## Batasan Saat Ini
 

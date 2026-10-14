@@ -1,5 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
 import PublicLayout from "@/Layouts/PublicLayout";
+import { BRAND } from "@/config/brand";
 import {
     IconRoute,
     IconRocket,
@@ -10,7 +11,7 @@ import {
     IconBulb,
 } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
+const GITHUB_URL = BRAND.github;
 
 const releases = [
     {
@@ -62,16 +63,6 @@ const releases = [
             "CI/CD pipeline (build + auto-deploy)",
             "Landing page & situs publik baru",
             "Perbaikan portal customer & invoice PDF",
-        ],
-    },
-    {
-        version: "v2.4.0",
-        tag: "Dine-in QR",
-        date: "Sep 2026",
-        items: [
-            "QR menu dan self-order pelanggan",
-            "Floor plan area dan meja",
-            "Status pesanan publik dan alur accept/reject staff",
         ],
     },
     {
@@ -163,7 +154,7 @@ const directions = [
 export default function Roadmap() {
     return (
         <PublicLayout active="/roadmap">
-            <Head title="Roadmap — Dikasir" />
+            <Head title={`Roadmap — ${BRAND.name}`} />
 
             {/* Header */}
             <section className="pt-20 pb-14 px-6 bg-gradient-to-b from-primary-50 dark:from-primary-950/40 to-transparent">
@@ -173,7 +164,7 @@ export default function Roadmap() {
                         Roadmap
                     </div>
                     <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white">
-                        Perjalanan Dikasir
+                        Perjalanan {BRAND.name}
                     </h1>
                     <p className="mt-5 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
                         Dari kasir sederhana menjadi ekosistem POS lengkap — dan masih terus
@@ -201,7 +192,7 @@ export default function Roadmap() {
                                 <ul className="mt-3 space-y-2">
                                     {rel.items.map((item) => (
                                         <li key={item} className="flex items-start gap-2.5">
-                                            <IconCheck size={16} className="text-emerald-500 mt-1 shrink-0" />
+                                            <IconCheck size={16} className="text-success-500 mt-1 shrink-0" />
                                             <span className="text-sm text-slate-600 dark:text-slate-300">
                                                 {item}
                                             </span>

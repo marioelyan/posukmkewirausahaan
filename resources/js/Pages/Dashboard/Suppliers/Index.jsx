@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Head, useForm, usePage, router } from "@inertiajs/react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { IconBuildingStore, IconPencil, IconTrash, IconPlus } from "@tabler/icons-react";
+import { IconBuildingStore, IconPencil, IconTrash, IconPlus, IconDatabaseOff } from "@tabler/icons-react";
 import toast from "react-hot-toast";
 import { useAuthorization } from "@/Utils/authorization";
 
@@ -72,7 +72,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                     {canManageSuppliers && (
                         <button
                             onClick={cancel}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold shadow-lg shadow-primary-500/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                             <IconPlus size={16} />
                             Tambah Supplier
@@ -90,7 +90,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                             Nama
                         </label>
                         <input
-                            className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                            className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                             value={data.name}
                             onChange={(e) => setData("name", e.target.value)}
                             required
@@ -101,7 +101,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                             Telepon
                         </label>
                         <input
-                            className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                            className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                             value={data.phone}
                             onChange={(e) => setData("phone", e.target.value)}
                         />
@@ -111,7 +111,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                             Email
                         </label>
                         <input
-                            className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                            className="w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                             value={data.email}
                             onChange={(e) => setData("email", e.target.value)}
                             type="email"
@@ -123,7 +123,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                         </label>
                         <textarea
                             rows={1}
-                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
                             value={data.address}
                             onChange={(e) => setData("address", e.target.value)}
                         />
@@ -132,7 +132,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="px-4 py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold"
+                            className="px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                             {editing ? "Update" : "Simpan"}
                         </button>
@@ -140,7 +140,7 @@ export default function SuppliersIndex({ suppliers = [] }) {
                             <button
                                 type="button"
                                 onClick={cancel}
-                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold"
+                                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                             >
                                 Batal
                             </button>
@@ -174,13 +174,15 @@ export default function SuppliersIndex({ suppliers = [] }) {
                                         <>
                                             <button
                                                 onClick={() => startEdit(sup)}
-                                                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                aria-label={`Ubah supplier ${sup.name}`}
+                                                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                             >
                                                 <IconPencil size={16} />
                                             </button>
                                             <button
                                                 onClick={() => remove(sup.id)}
-                                                className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/30"
+                                                aria-label={`Hapus supplier ${sup.name}`}
+                                                className="p-2 rounded-lg text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/40"
                                             >
                                                 <IconTrash size={16} />
                                             </button>
@@ -190,8 +192,16 @@ export default function SuppliersIndex({ suppliers = [] }) {
                             </div>
                         ))
                     ) : (
-                        <div className="p-6 text-center text-slate-500">
-                            Belum ada supplier.
+                        <div className="p-10 flex flex-col items-center justify-center text-center">
+                            <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                                <IconDatabaseOff size={26} className="text-slate-400" strokeWidth={1.5} />
+                            </div>
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                Belum ada supplier
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Tambahkan supplier pertama Anda.
+                            </p>
                         </div>
                     )}
                 </div>

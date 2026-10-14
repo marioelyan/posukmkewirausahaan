@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SalesReturn extends Model
 {
+    use BelongsToBusiness;
     use HasFactory;
 
     protected $fillable = [
@@ -23,6 +25,7 @@ class SalesReturn extends Model
         'total_return_amount',
         'notes',
         'completed_at',
+        'business_id',
     ];
 
     protected $casts = [
@@ -34,6 +37,7 @@ class SalesReturn extends Model
         'credited_amount' => 'integer',
         'total_return_amount' => 'integer',
         'completed_at' => 'datetime',
+        'business_id' => 'integer',
     ];
 
     public function transaction()

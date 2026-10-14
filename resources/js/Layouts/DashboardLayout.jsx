@@ -52,12 +52,13 @@ export default function AppLayout({ children }) {
         auth?.super === true && securityWarnings.length > 0;
 
     return (
-        <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
+        <div className="flex h-viewport overflow-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
             <Sidebar sidebarOpen={sidebarOpen} />
-            {/* Mobile overlay */}
+            {/* Mobile overlay — above the sticky header (z-30) so the open drawer
+                dims the whole shell instead of leaving the header lit on top. */}
             <div
                 className={`fixed inset-0 bg-slate-900/40 md:hidden transition-opacity duration-300 ${
-                    sidebarOpen ? "opacity-100 pointer-events-auto z-30" : "opacity-0 pointer-events-none"
+                    sidebarOpen ? "opacity-100 pointer-events-auto z-40" : "opacity-0 pointer-events-none"
                 }`}
                 onClick={() => setSidebarOpen(false)}
             />
@@ -67,10 +68,10 @@ export default function AppLayout({ children }) {
                     themeSwitcher={themeSwitcher}
                     darkMode={darkMode}
                 />
-                <main className="dashboard-scrollbar flex-1 overflow-y-auto">
-                    <div className="w-full py-6 px-4 md:px-6 lg:px-8 pb-20 md:pb-6">
+                <main className="dashboard-scrollbar safe-bottom overscroll-contain-y flex-1 overflow-y-auto">
+                    <div className="w-full px-4 py-6 md:px-6 lg:px-8">
                         {showSecurityWarnings && (
-                            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                            <div className="mb-6 rounded-2xl border border-warning-200 bg-warning-50 px-4 py-4 text-warning-800 dark:border-warning-800 dark:bg-warning-950/30 dark:text-warning-200">
                                 <p className="text-sm font-semibold">
                                     Production security baseline warning
                                 </p>
@@ -85,6 +86,10 @@ export default function AppLayout({ children }) {
                         )}
                         <Toaster
                             position="top-right"
+                            containerStyle={{
+                                top: "calc(16px + env(safe-area-inset-top, 0px))",
+                                bottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
+                            }}
                             toastOptions={{
                                 className: "text-sm",
                                 duration: 3000,

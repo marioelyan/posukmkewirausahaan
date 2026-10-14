@@ -410,7 +410,7 @@ export default function SalesReturnForm({
                                         </p>
                                     )}
                                     {transaction.payment_method === "split" && (
-                                        <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                                        <p className="mt-2 text-xs text-warning-600 dark:text-warning-400">
                                             Transaksi split hanya dapat direfund
                                             sebagai refund tunai pada versi ini.
                                         </p>

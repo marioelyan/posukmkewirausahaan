@@ -87,7 +87,7 @@ export default function Index({
     const [redeemPointsInput, setRedeemPointsInput] = useState("");
     const [cashInput, setCashInput] = useState("");
     const [shippingInput, setShippingInput] = useState("");
-    const [orderType, setOrderType] = useState("in_store");
+    const [orderType, setOrderType] = useState("takeaway");
     const [orderNote, setOrderNote] = useState("");
     const [paymentMethod, setPaymentMethod] = useState(
         defaultPaymentGateway ?? "cash"
@@ -140,6 +140,18 @@ export default function Index({
         if (flash?.success) toast.success(flash.success);
     }, [flash]);
 
+    // Base qty already in the cart per product, so the product grid can show
+    // the real remaining stock and disable "+" when it runs out.
+    const cartBaseQtyByProduct = useMemo(() => {
+        const map = {};
+        for (const item of carts) {
+            const base =
+                Number(item.qty || 0) * Number(item.conversion_factor || 1);
+            map[item.product_id] = (map[item.product_id] || 0) + base;
+        }
+        return map;
+    }, [carts]);
+
     // Barcode scanner integration
     const handleBarcodeScan = useCallback(
         (barcode) => {
@@ -147,18 +159,24 @@ export default function Index({
                 (p) => p.barcode?.toLowerCase() === barcode.toLowerCase()
             );
 
-            if (product) {
-                if (product.stock > 0) {
-                    handleAddToCart(product);
-                    toast.success(`${product.title} ditambahkan (barcode)`);
-                } else {
-                    toast.error(`${product.title} stok habis`);
-                }
-            } else {
+            if (!product) {
                 toast.error(`Produk tidak ditemukan: ${barcode}`);
+                return;
             }
+
+            const available = Number(
+                product.available_stock ?? product.stock ?? 0
+            );
+            const inCart = Number(cartBaseQtyByProduct[product.id] || 0);
+            if (available - inCart <= 0) {
+                toast.error(`${product.title} stok habis`);
+                return;
+            }
+
+            handleAddToCart(product);
+            toast.success(`${product.title} ditambahkan (barcode)`);
         },
-        [products]
+        [products, cartBaseQtyByProduct]
     );
 
     const { isScanning } = useBarcodeScanner(handleBarcodeScan, {
@@ -369,6 +387,20 @@ export default function Index({
     // Handle add product to cart
     const handleAddToCart = async (product, unit = null) => {
         if (!product?.id) return;
+
+        // Pre-check remaining stock (warehouse stock minus what is already in
+        // the cart) so we don't fire a request the server will reject.
+        const available = Number(
+            product.available_stock ?? product.stock ?? 0
+        );
+        const inCart = Number(cartBaseQtyByProduct[product.id] || 0);
+        const conversion = Number(unit?.conversion_factor || 1);
+        if (available - inCart < conversion) {
+            toast.error(
+                `Stok tidak mencukupi. Tersedia: ${Math.max(0, available - inCart)}`
+            );
+            return;
+        }
 
         setAddingProductId(product.id);
 
@@ -618,8 +650,7 @@ export default function Index({
                     break;
                 case "F2":
                     e.preventDefault();
-                    if (carts.length > 0 && selectedCustomer)
-                        handleSubmitTransaction();
+                    if (carts.length > 0) handleSubmitTransaction();
                     break;
                 case "F3":
                     e.preventDefault();
@@ -828,7 +859,7 @@ export default function Index({
                     setPaymentMethod(defaultPaymentGateway ?? "cash");
                     setPayLater(false);
                     setDueDate("");
-                    setOrderType("in_store");
+                    setOrderType("takeaway");
                     setOrderNote("");
                     setIsSubmitting(false);
                     toast.success("Transaksi berhasil!");
@@ -864,9 +895,9 @@ export default function Index({
             <>
                 <Head title="Buka Shift Kasir" />
 
-                <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl items-center justify-center px-4 py-10">
+                <div className="mx-auto flex min-h-full max-w-3xl items-center justify-center px-4 py-10">
                     <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-                        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-300">
                             <IconWallet size={28} />
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -890,7 +921,7 @@ export default function Index({
                                     placeholder="0"
                                 />
                                 {errors?.opening_cash && (
-                                    <p className="mt-2 text-xs text-rose-500">{errors.opening_cash}</p>
+                                    <p className="mt-2 text-xs text-danger-500">{errors.opening_cash}</p>
                                 )}
                             </div>
                             <div>
@@ -926,7 +957,7 @@ export default function Index({
                                     ))}
                                 </select>
                                 {errors?.warehouse_id && (
-                                    <p className="mt-2 text-xs text-rose-500">
+                                    <p className="mt-2 text-xs text-danger-500">
                                         {errors.warehouse_id}
                                     </p>
                                 )}
@@ -962,7 +993,7 @@ export default function Index({
         <>
             <Head title="Transaksi" />
 
-            <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row">
+            <div className="h-full flex flex-col lg:flex-row">
                 {/* Mobile Tab Switcher */}
                 <div className="lg:hidden flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                     <button
@@ -1020,15 +1051,17 @@ export default function Index({
                         onAddToCart={handleAddToCart}
                         addingProductId={addingProductId}
                         searchInputRef={searchInputRef}
+                        cartQtyByProduct={cartBaseQtyByProduct}
                     />
                 </div>
 
-                {/* Right Panel - Cart & Payment */}
+                {/* Right Panel - Cart & Payment. `flex-1` fills the column on
+                    phones (the layout above owns the viewport height); on lg it
+                    goes back to a fixed-width column beside the product grid. */}
                 <div
-                        className={`w-full min-w-0 lg:w-[420px] xl:w-[480px] flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 min-h-0 overflow-hidden ${
+                        className={`w-full min-w-0 flex-1 lg:flex-none lg:w-[420px] xl:w-[480px] flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 min-h-0 overflow-hidden ${
                         mobileView !== "cart" ? "hidden lg:flex" : "flex"
                     }`}
-                    style={{ height: "calc(100vh - 4rem)" }}
                 >
                     {/* Customer Select - Fixed */}
                     <div
@@ -1039,9 +1072,9 @@ export default function Index({
                             customers={customers}
                             selected={selectedCustomer}
                             onSelect={setSelectedCustomer}
-                            placeholder="Pilih pelanggan..."
+                            placeholder="Umum (Tanpa Nama)"
                             error={errors?.customer_id}
-                            label="Pelanggan"
+                            label="Pelanggan (opsional)"
                             tierOptions={loyaltyTierOptions}
                         />
                     </div>
@@ -1139,7 +1172,7 @@ export default function Index({
                                                         × {item.qty}
                                                     </p>
                                                     {pricingRule && (
-                                                        <p className="mt-0.5 text-[11px] font-medium text-rose-500">
+                                                        <p className="mt-0.5 text-[11px] font-medium text-danger-500">
                                                             {pricingRule.name}
                                                         </p>
                                                     )}
@@ -1248,6 +1281,20 @@ export default function Index({
                                 </label>
                             </div>
 
+                            {payLater && !selectedCustomer && (
+                                <div className="flex items-start gap-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:border-warning-900/50 dark:bg-warning-950/30 dark:text-warning-300">
+                                    <IconAlertTriangle
+                                        size={14}
+                                        className="mt-0.5 shrink-0"
+                                    />
+                                    <span>
+                                        Nota barang memerlukan pelanggan.
+                                        Pilih pelanggan dulu sebelum
+                                        menyelesaikan transaksi.
+                                    </span>
+                                </div>
+                            )}
+
                             {payLater && (
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
@@ -1272,10 +1319,9 @@ export default function Index({
                                     <label className="mb-2 block text-xs font-medium text-slate-600 dark:text-slate-400">
                                         Tipe Pesanan
                                     </label>
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         {[
-                                            { value: "in_store", label: "Di Tempat" },
-                                            { value: "takeaway", label: "Bawa Pulang" },
+                                            { value: "takeaway", label: "Diambil" },
                                             { value: "delivery", label: "Diantar" },
                                         ].map((type) => (
                                             <button
@@ -1462,7 +1508,7 @@ export default function Index({
                                             className={`text-xs font-semibold ${
                                                 splitRemaining === 0
                                                     ? "text-success-600 dark:text-success-400"
-                                                    : "text-amber-600 dark:text-amber-400"
+                                                    : "text-warning-600 dark:text-warning-400"
                                             }`}
                                         >
                                             {splitRemaining === 0
@@ -1671,7 +1717,7 @@ export default function Index({
                                             </p>
                                         </div>
                                         {cash < payable && payable > 0 && (
-                                            <span className="text-right text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                            <span className="text-right text-xs font-semibold text-warning-600 dark:text-warning-400">
                                                 Kurang {formatPrice(payable - cash)}
                                             </span>
                                         )}
@@ -1750,17 +1796,17 @@ export default function Index({
 
                             {/* Discount Input */}
                             {promoDiscount > 0 && (
-                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                                <div className="rounded-xl border border-success-200 bg-success-50 p-3 dark:border-success-900/40 dark:bg-success-950/20">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
-                                            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                                            <p className="text-sm font-semibold text-success-700 dark:text-success-300">
                                                 Promo otomatis aktif
                                             </p>
-                                            <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
+                                            <p className="text-xs text-success-600/80 dark:text-success-400/80">
                                                 Harga item sudah disesuaikan berdasarkan rule promo yang berlaku.
                                             </p>
                                         </div>
-                                        <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                                        <span className="text-sm font-bold text-success-700 dark:text-success-300">
                                             -{formatPrice(promoDiscount)}
                                         </span>
                                     </div>
@@ -1864,7 +1910,7 @@ export default function Index({
                                 <span className="text-slate-500">
                                     Promo Otomatis
                                 </span>
-                                <span className="text-emerald-600">
+                                <span className="text-success-600">
                                     -{formatPrice(promoDiscount)}
                                 </span>
                             </div>
@@ -1884,7 +1930,7 @@ export default function Index({
                                                 <span className="truncate pr-3 text-slate-600 dark:text-slate-300">
                                                     {group.label}
                                                 </span>
-                                                <span className="font-medium text-emerald-600">
+                                                <span className="font-medium text-success-600">
                                                     -{formatPrice(group.discount_total)}
                                                 </span>
                                             </div>
@@ -1963,7 +2009,6 @@ export default function Index({
                             onClick={handleSubmitTransaction}
                             disabled={
                                 !carts.length ||
-                                !selectedCustomer ||
                                 (!payLater &&
                                     paymentMethod === "cash" &&
                                     cash < payable) ||
@@ -1972,9 +2017,8 @@ export default function Index({
                             }
                             className={`w-full h-12 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
                                 carts.length &&
-                                selectedCustomer &&
-                                (paymentMethod !== "cash" || cash >= payable)
-                                    && !isLoadingPricing
+                                (paymentMethod !== "cash" || cash >= payable) &&
+                                !isLoadingPricing
                                     ? "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-lg shadow-primary-500/30"
                                     : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
                             }`}
@@ -1987,8 +2031,6 @@ export default function Index({
                                     <span>
                                         {!carts.length
                                             ? "Keranjang Kosong"
-                                            : !selectedCustomer
-                                            ? "Pilih Pelanggan"
                                             : paymentMethod === "cash" &&
                                               cash < payable
                                             ? `Kurang ${formatPrice(

@@ -70,7 +70,7 @@ export default function Store({ settings }) {
                     <div className="flex flex-col lg:flex-row gap-6">
                         {/* Logo */}
                         <div className="lg:w-1/3">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                            <label htmlFor="store_logo" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
                                 <IconPhoto size={18} />
                                 Logo Toko
                             </label>
@@ -88,6 +88,7 @@ export default function Store({ settings }) {
                                 )}
                             </div>
                             <input
+                                id="store_logo"
                                 type="file"
                                 accept="image/*"
                                 onChange={(e) => {
@@ -206,7 +207,7 @@ export default function Store({ settings }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                             <IconDeviceFloppy size={18} />
                             {processing ? "Menyimpan..." : "Simpan Profil"}

@@ -19,20 +19,14 @@ class CashierShiftService
 
     public function getActiveShiftForUser(int $userId): ?CashierShift
     {
-        return CashierShift::query()
+        return $this->activeShiftQuery($userId)
             ->with(['user:id,name', 'openedBy:id,name'])
-            ->open()
-            ->where('user_id', $userId)
-            ->latest('opened_at')
             ->first();
     }
 
     public function requireActiveShiftForUser(int $userId, bool $lockForUpdate = false): CashierShift
     {
-        $query = CashierShift::query()
-            ->open()
-            ->where('user_id', $userId)
-            ->latest('opened_at');
+        $query = $this->activeShiftQuery($userId);
 
         if ($lockForUpdate) {
             $query->lockForUpdate();
@@ -47,6 +41,30 @@ class CashierShiftService
         }
 
         return $shift;
+    }
+
+    /**
+     * Base query for a user's open shift, constrained to the verified active
+     * business when tenancy is enabled.
+     *
+     * A user may be a member of several businesses. Without this constraint an
+     * open shift in business B would keep passing the POS/active-shift gates
+     * after the request context switched to business A, letting operations run
+     * against another tenant's warehouse. The Warehouse global scope fails the
+     * relation closed when tenancy is on but no business context is resolved.
+     */
+    private function activeShiftQuery(int $userId): Builder
+    {
+        $query = CashierShift::query()
+            ->open()
+            ->where('user_id', $userId)
+            ->latest('opened_at');
+
+        if (config('multi_business.enabled')) {
+            $query->whereHas('warehouse');
+        }
+
+        return $query;
     }
 
     public function openShift(User $cashier, User $actor, int $openingCash, ?string $notes = null, ?int $warehouseId = null): CashierShift

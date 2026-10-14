@@ -208,6 +208,29 @@ class ExpirePendingTransactionsTest extends TestCase
         ]);
     }
 
+    public function test_fails_closed_without_business_context_under_tenancy(): void
+    {
+        config()->set('multi_business.enabled', true);
+
+        $transaction = $this->makePendingTransaction('INV-TENANT-1', now()->subHours(30));
+
+        $this->artisan('transactions:expire')->assertFailed();
+
+        // No partial mutation: the pending transaction must stay pending and the
+        // business-scoped product must not be silently skipped while marking it.
+        $transaction->refresh();
+        $this->assertEquals('pending', $transaction->payment_status);
+        $this->assertDatabaseHas('product_warehouse', [
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'stock' => 0,
+        ]);
+        $this->assertDatabaseMissing('stock_mutations', [
+            'reference_type' => 'transaction_expire',
+            'reference_id' => $transaction->id,
+        ]);
+    }
+
     public function test_webhook_ignores_terminal_transaction(): void
     {
         $transaction = $this->makePendingTransaction('INV-TERM-1', now());

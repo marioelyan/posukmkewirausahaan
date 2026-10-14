@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import { useTranslation } from "react-i18next";
 import AuthBotGuardFields from "@/Components/AuthBotGuardFields";
+import { BrandMark } from "@/Components/BrandLogo";
 import {
-    IconShoppingCart,
     IconMail,
     IconLock,
     IconEye,
@@ -48,12 +48,11 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
                                 href="/"
                                 className="inline-flex items-center gap-3 mb-6"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                                    <IconShoppingCart
-                                        size={24}
-                                        className="text-white"
-                                    />
-                                </div>
+                                <BrandMark
+                                    size={48}
+                                    rounded="rounded-xl"
+                                    className="shadow-lg shadow-primary-500/20"
+                                />
                                 <span className="text-2xl font-bold text-slate-900 dark:text-white">
                                     {t("auth.login.appName")}
                                 </span>
@@ -87,7 +86,7 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
                             )}
                             {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     {t("auth.login.email")}
                                 </label>
                                 <div className="relative">
@@ -95,6 +94,7 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
                                         <IconMail size={20} />
                                     </div>
                                     <input
+                                        id="email"
                                         type="email"
                                         name="email"
                                         value={data.email}
@@ -118,7 +118,7 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
 
                             {/* Password */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     {t("auth.login.password")}
                                 </label>
                                 <div className="relative">
@@ -126,6 +126,7 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
                                         <IconLock size={20} />
                                     </div>
                                     <input
+                                        id="password"
                                         type={
                                             showPassword ? "text" : "password"
                                         }
@@ -146,7 +147,9 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
                                         onClick={() =>
                                             setShowPassword(!showPassword)
                                         }
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                                     >
                                         {showPassword ? (
                                             <IconEyeOff size={20} />
@@ -195,7 +198,7 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full h-12 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold hover:from-primary-600 hover:to-primary-700 focus:ring-4 focus:ring-primary-500/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                className="w-full h-12 rounded-xl bg-gradient-to-r from-primary-600 to-primary-800 text-white font-semibold hover:from-primary-700 hover:to-primary-900 focus:ring-4 focus:ring-primary-500/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-500/25"
                             >
                                 {processing ? (
                                     <>
@@ -227,10 +230,14 @@ export default function Login({ status, canResetPassword, canRegister, botGuard 
                 </div>
 
                 {/* Right - Image/Decoration */}
-                <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary-500 to-primary-700 items-center justify-center p-12">
+                <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary-700 via-primary-600 to-primary-900 items-center justify-center p-12">
                     <div className="max-w-md text-center text-white">
-                        <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-8">
-                            <IconShoppingCart size={48} />
+                        <div className="w-24 h-24 rounded-3xl bg-white/15 ring-1 ring-white/25 flex items-center justify-center mx-auto mb-8">
+                            <BrandMark
+                                variant="plain"
+                                size={56}
+                                className="text-white"
+                            />
                         </div>
                         <h2 className="text-3xl font-bold mb-4">
                             {t("auth.login.heroTitle")}

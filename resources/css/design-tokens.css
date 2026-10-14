@@ -1,69 +1,74 @@
 /* =====================================================
-   POINT OF SALES - DESIGN TOKENS
+   KASIRNYAKWU - DESIGN TOKENS
    Modern POS-optimized design system
    ===================================================== */
 
 /* === Color Palette === */
 :root {
-  /* Primary - Deep Blue/Indigo */
-  --color-primary-50: 238 242 255;
-  --color-primary-100: 224 231 255;
-  --color-primary-200: 199 210 254;
-  --color-primary-300: 165 180 252;
-  --color-primary-400: 129 140 248;
-  --color-primary-500: 99 102 241;
-  --color-primary-600: 79 70 229;
-  --color-primary-700: 67 56 202;
-  --color-primary-800: 55 48 163;
-  --color-primary-900: 49 46 129;
+  /* Primary - KasirnyaKWU Navy (#21416D) */
+  --color-primary-50: 243 247 252;
+  --color-primary-100: 228 236 247;
+  --color-primary-200: 197 214 236;
+  --color-primary-300: 155 184 220;
+  --color-primary-400: 110 147 198;
+  --color-primary-500: 69 111 175;
+  --color-primary-600: 33 65 109;
+  --color-primary-700: 27 53 89;
+  --color-primary-800: 21 42 71;
+  --color-primary-900: 16 33 56;
+  --color-primary-950: 8 21 38;
 
-  /* Accent - Teal/Cyan */
-  --color-accent-50: 236 254 255;
-  --color-accent-100: 207 250 254;
-  --color-accent-200: 165 243 252;
-  --color-accent-300: 103 232 249;
-  --color-accent-400: 34 211 238;
-  --color-accent-500: 6 182 212;
-  --color-accent-600: 8 145 178;
-  --color-accent-700: 14 116 144;
-  --color-accent-800: 21 94 117;
-  --color-accent-900: 22 78 99;
+  /* Accent - Analog Blue (#2E7CB8, harmonized with primary) */
+  --color-accent-50: 240 247 252;
+  --color-accent-100: 220 237 248;
+  --color-accent-200: 183 217 240;
+  --color-accent-300: 134 191 228;
+  --color-accent-400: 85 159 212;
+  --color-accent-500: 46 124 184;
+  --color-accent-600: 37 100 143;
+  --color-accent-700: 31 85 120;
+  --color-accent-800: 27 72 100;
+  --color-accent-900: 22 58 80;
+  --color-accent-950: 13 35 49;
 
-  /* Success - Emerald */
+  /* Success - Emerald (harmonized) */
   --color-success-50: 236 253 245;
   --color-success-100: 209 250 229;
   --color-success-200: 167 243 208;
   --color-success-300: 110 231 183;
   --color-success-400: 52 211 153;
-  --color-success-500: 16 185 129;
-  --color-success-600: 5 150 105;
-  --color-success-700: 4 120 87;
-  --color-success-800: 6 95 70;
-  --color-success-900: 6 78 59;
+  --color-success-500: 31 157 107;
+  --color-success-600: 23 128 90;
+  --color-success-700: 18 102 74;
+  --color-success-800: 15 81 57;
+  --color-success-900: 12 65 46;
+  --color-success-950: 5 46 31;
 
-  /* Warning - Amber */
+  /* Warning - Amber (harmonized) */
   --color-warning-50: 255 251 235;
   --color-warning-100: 254 243 199;
   --color-warning-200: 253 230 138;
   --color-warning-300: 252 211 77;
-  --color-warning-400: 251 191 36;
-  --color-warning-500: 245 158 11;
-  --color-warning-600: 217 119 6;
-  --color-warning-700: 180 83 9;
-  --color-warning-800: 146 64 14;
-  --color-warning-900: 120 53 15;
+  --color-warning-400: 245 182 25;
+  --color-warning-500: 214 137 16;
+  --color-warning-600: 179 111 11;
+  --color-warning-700: 143 89 10;
+  --color-warning-800: 116 72 13;
+  --color-warning-900: 99 61 15;
+  --color-warning-950: 58 35 6;
 
-  /* Danger - Rose */
+  /* Danger - Rose (harmonized) */
   --color-danger-50: 255 241 242;
   --color-danger-100: 255 228 230;
   --color-danger-200: 254 205 211;
   --color-danger-300: 253 164 175;
-  --color-danger-400: 251 113 133;
-  --color-danger-500: 244 63 94;
-  --color-danger-600: 225 29 72;
-  --color-danger-700: 190 18 60;
-  --color-danger-800: 159 18 57;
-  --color-danger-900: 136 19 55;
+  --color-danger-400: 244 112 127;
+  --color-danger-500: 196 56 77;
+  --color-danger-600: 166 45 64;
+  --color-danger-700: 137 38 55;
+  --color-danger-800: 114 35 51;
+  --color-danger-900: 98 33 47;
+  --color-danger-950: 54 14 22;
 
   /* Neutral - Slate */
   --color-slate-50: 248 250 252;
@@ -120,7 +125,7 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --shadow-glow: 0 0 20px rgb(99 102 241 / 0.3);
+  --shadow-glow: 0 0 20px rgb(33 65 109 / 0.3);
 
   /* === Transitions === */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -155,6 +160,61 @@
   --text-muted: var(--color-slate-500);
   --border-default: var(--color-slate-800);
   --border-subtle: var(--color-slate-900);
+}
+
+/* === Role accents (sidebar identity) ===
+   The sidebar paints its identity surfaces (active item, section label, role
+   badge) from these variables, so the visual identity can follow the active
+   business membership role while the rest of the UI keeps the brand palette.
+
+   Only the sidebar consumes them: `data-role` is set on the sidebar root, so
+   the variables resolve to the brand navy everywhere else. Defaults mirror
+   `primary`, so an unresolved role (legacy single-tenant install) renders
+   exactly as before. Values are RGB triplets, matching the palette above. */
+:root,
+[data-role="owner"],
+[data-role="super-admin"] {
+  --role-accent-50: var(--color-primary-50);
+  --role-accent-100: var(--color-primary-100);
+  --role-accent-200: var(--color-primary-200);
+  --role-accent-300: var(--color-primary-300);
+  --role-accent-400: var(--color-primary-400);
+  --role-accent-500: var(--color-primary-500);
+  --role-accent-600: var(--color-primary-600);
+  --role-accent-700: var(--color-primary-700);
+  --role-accent-800: var(--color-primary-800);
+  --role-accent-900: var(--color-primary-900);
+  --role-accent-950: var(--color-primary-950);
+}
+
+/* Manager: analog blue. */
+[data-role="manager"] {
+  --role-accent-50: var(--color-accent-50);
+  --role-accent-100: var(--color-accent-100);
+  --role-accent-200: var(--color-accent-200);
+  --role-accent-300: var(--color-accent-300);
+  --role-accent-400: var(--color-accent-400);
+  --role-accent-500: var(--color-accent-500);
+  --role-accent-600: var(--color-accent-600);
+  --role-accent-700: var(--color-accent-700);
+  --role-accent-800: var(--color-accent-800);
+  --role-accent-900: var(--color-accent-900);
+  --role-accent-950: var(--color-accent-950);
+}
+
+/* Staff (POS): harmonized teal, tuned to sit next to the brand navy. */
+[data-role="staff"] {
+  --role-accent-50: 239 250 247;
+  --role-accent-100: 215 242 236;
+  --role-accent-200: 176 229 219;
+  --role-accent-300: 127 210 196;
+  --role-accent-400: 75 184 168;
+  --role-accent-500: 25 158 140;
+  --role-accent-600: 18 126 112;
+  --role-accent-700: 15 102 89;
+  --role-accent-800: 13 82 73;
+  --role-accent-900: 11 67 61;
+  --role-accent-950: 5 38 31;
 }
 
 /* === Base Styles === */

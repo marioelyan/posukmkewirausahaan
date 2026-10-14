@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Tenancy\FinancialOwnershipScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,6 +12,7 @@ class Payable extends Model
 
     protected $fillable = [
         'supplier_id',
+        'business_id',
         'document_number',
         'total',
         'paid',
@@ -18,18 +20,32 @@ class Payable extends Model
         'status',
         'note',
         'purchase_order_id',
+        'ownership_status',
+        'ownership_evaluated_at',
+        'ownership_note',
     ];
 
     protected $casts = [
         'total' => 'float',
         'paid' => 'float',
         'due_date' => 'date',
+        'ownership_evaluated_at' => 'datetime',
     ];
 
     protected $appends = [
         'remaining',
         'aging_bucket',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new FinancialOwnershipScope);
+    }
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
 
     public function supplier()
     {

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Support\Tenancy\TenantUnique;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateOutletRequest extends FormRequest
 {
@@ -18,7 +18,7 @@ class UpdateOutletRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:100'],
-            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('outlets', 'code')->ignore($outlet)],
+            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', TenantUnique::for('outlets', 'code', $outlet?->id)],
             'address' => ['nullable', 'string', 'max:500'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
