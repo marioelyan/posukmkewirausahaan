@@ -15,7 +15,7 @@ export const BRAND = {
     url: "https://posukmkewirausahaan.web.id",
     github: "https://github.com/marioelyan/posukmkewirausahaan",
     docs: "https://github.com/marioelyan/posukmkewirausahaan/blob/main/docs/getting-started.md",
-    credit: "Mario",
+    credit: "Mario Elyansyah",
     license: "MIT",
 };
 
