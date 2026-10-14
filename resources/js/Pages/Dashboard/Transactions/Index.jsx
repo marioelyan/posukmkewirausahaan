@@ -618,8 +618,7 @@ export default function Index({
                     break;
                 case "F2":
                     e.preventDefault();
-                    if (carts.length > 0 && selectedCustomer)
-                        handleSubmitTransaction();
+                    if (carts.length > 0) handleSubmitTransaction();
                     break;
                 case "F3":
                     e.preventDefault();
@@ -1040,9 +1039,9 @@ export default function Index({
                             customers={customers}
                             selected={selectedCustomer}
                             onSelect={setSelectedCustomer}
-                            placeholder="Pilih pelanggan..."
+                            placeholder="Umum (Tanpa Nama)"
                             error={errors?.customer_id}
-                            label="Pelanggan"
+                            label="Pelanggan (opsional)"
                             tierOptions={loyaltyTierOptions}
                         />
                     </div>
@@ -1248,6 +1247,20 @@ export default function Index({
                                     </span>
                                 </label>
                             </div>
+
+                            {payLater && !selectedCustomer && (
+                                <div className="flex items-start gap-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:border-warning-900/50 dark:bg-warning-950/30 dark:text-warning-300">
+                                    <IconAlertTriangle
+                                        size={14}
+                                        className="mt-0.5 shrink-0"
+                                    />
+                                    <span>
+                                        Nota barang memerlukan pelanggan.
+                                        Pilih pelanggan dulu sebelum
+                                        menyelesaikan transaksi.
+                                    </span>
+                                </div>
+                            )}
 
                             {payLater && (
                                 <div>
@@ -1964,7 +1977,6 @@ export default function Index({
                             onClick={handleSubmitTransaction}
                             disabled={
                                 !carts.length ||
-                                !selectedCustomer ||
                                 (!payLater &&
                                     paymentMethod === "cash" &&
                                     cash < payable) ||
@@ -1973,9 +1985,8 @@ export default function Index({
                             }
                             className={`w-full h-12 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
                                 carts.length &&
-                                selectedCustomer &&
-                                (paymentMethod !== "cash" || cash >= payable)
-                                    && !isLoadingPricing
+                                (paymentMethod !== "cash" || cash >= payable) &&
+                                !isLoadingPricing
                                     ? "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-lg shadow-primary-500/30"
                                     : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
                             }`}
@@ -1988,8 +1999,6 @@ export default function Index({
                                     <span>
                                         {!carts.length
                                             ? "Keranjang Kosong"
-                                            : !selectedCustomer
-                                            ? "Pilih Pelanggan"
                                             : paymentMethod === "cash" &&
                                               cash < payable
                                             ? `Kurang ${formatPrice(
