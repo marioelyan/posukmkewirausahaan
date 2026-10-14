@@ -46,7 +46,7 @@ export default function Navbar({ toggleSidebar, themeSwitcher, darkMode }) {
 
     return (
         <header
-            className="sticky top-0 z-30 h-16 flex items-center justify-between gap-3 px-4 md:px-6
+            className="safe-header sticky top-0 z-30 flex items-center justify-between gap-3 px-4 md:px-6
             bg-white dark:bg-slate-900
             border-b border-slate-200 dark:border-slate-800
             transition-colors duration-200"

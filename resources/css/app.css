@@ -43,3 +43,53 @@
     }
 }
 
+/* === Overscroll containment ===
+   Android Chrome turns a downward overscroll at the top of a scroll container
+   into pull-to-refresh, which reloads the whole SPA — during checkout that
+   throws away the cart. Disabling it on the root scroller is the only reliable
+   place (pull-to-refresh is a viewport gesture, not a pane one); inner panes
+   additionally use `contain` so their scroll does not chain to the root. */
+html {
+    overscroll-behavior-y: none;
+}
+
+.overscroll-contain-y {
+    overscroll-behavior-y: contain;
+}
+
+/* === Safe-area insets ===
+   `env(safe-area-inset-*)` only resolves to a non-zero value when the viewport
+   meta declares `viewport-fit=cover` (see resources/views/app.blade.php).
+   Without a notch every inset is 0px, so these are no-ops on desktop/Android —
+   they only push content clear of the notch and home indicator on iOS. */
+.safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Sticky app header (Dashboard navbar, POS header). Keeps the 4rem bar and
+   adds the status-bar inset *above* it, so the controls stay tappable. */
+.safe-header {
+    height: calc(4rem + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Drops a panel flush under `.safe-header` (e.g. the POS mobile menu). */
+.top-safe-header {
+    top: calc(4rem + env(safe-area-inset-top, 0px));
+}
+
+/* Offsets content below the fixed public navbar, including the notch inset.
+   Keeps `68px` in one place instead of an arbitrary Tailwind value. */
+.pt-public-nav {
+    padding-top: calc(68px + env(safe-area-inset-top, 0px));
+}
+

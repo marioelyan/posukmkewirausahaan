@@ -26,7 +26,7 @@ export default function PublicLayout({ children, active = "" }) {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
             {/* ============ NAVBAR ============ */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+            <nav className="safe-top safe-x fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
                     <Link href="/" className="flex min-w-0 items-center gap-2.5">
                         <BrandMark size={36} rounded="rounded-xl" />
@@ -137,10 +137,10 @@ export default function PublicLayout({ children, active = "" }) {
             </nav>
 
             {/* ============ CONTENT ============ */}
-            <main className="flex-1 pt-[68px]">{children}</main>
+            <main className="flex-1 pt-public-nav">{children}</main>
 
             {/* ============ FOOTER ============ */}
-            <footer className="py-10 px-6 border-t border-slate-200 dark:border-slate-800">
+            <footer className="safe-bottom safe-x py-10 px-6 border-t border-slate-200 dark:border-slate-800">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
                         <BrandMark size={32} rounded="rounded-lg" />
