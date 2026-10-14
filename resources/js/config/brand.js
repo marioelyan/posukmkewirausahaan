@@ -13,9 +13,9 @@ export const BRAND = {
     description:
         "Sistem kasir (POS) untuk UMKM — multi-warehouse, PPN, CRM & WhatsApp, hingga mode offline.",
     url: "https://posukmkewirausahaan.web.id",
-    github: "https://github.com/aryadwiputra/point-of-sales",
-    docs: "https://github.com/aryadwiputra/point-of-sales/blob/main/docs/getting-started.md",
-    credit: "Arya Dwi Putra",
+    github: "https://github.com/marioelyan/posukmkewirausahaan",
+    docs: "https://github.com/marioelyan/posukmkewirausahaan/blob/main/docs/getting-started.md",
+    credit: "Mario",
     license: "MIT",
 };
 

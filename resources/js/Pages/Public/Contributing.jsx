@@ -12,10 +12,10 @@ import {
     IconShieldCheck,
 } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
+const GITHUB_URL = BRAND.github;
 
-const setupCommands = `git clone https://github.com/aryadwiputra/point-of-sales
-cd point-of-sales
+const setupCommands = `git clone ${BRAND.github}
+cd posukmkewirausahaan
 cp .env.example .env
 composer install && npm install
 php artisan key:generate

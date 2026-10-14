@@ -3,7 +3,7 @@ import PublicLayout from "@/Layouts/PublicLayout";
 import { BRAND } from "@/config/brand";
 import { IconBook2, IconArrowRight, IconBrandGithub } from "@tabler/icons-react";
 
-const GITHUB_URL = "https://github.com/aryadwiputra/point-of-sales";
+const GITHUB_URL = BRAND.github;
 const DOCS_BASE = `${GITHUB_URL}/blob/main/docs`;
 const REPO_BASE = `${GITHUB_URL}/blob/main`;
 
