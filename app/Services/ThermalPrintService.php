@@ -32,7 +32,7 @@ class ThermalPrintService
         $lines[] = $this->left('Kasir: '.($transaction->cashier?->name ?? '-'), $maxWidth);
         $lines[] = $this->left('Pelanggan: '.($transaction->customer?->name ?? 'Umum'), $maxWidth);
         if ($transaction->order_type) {
-            $labels = ['in_store' => 'Di Tempat', 'takeaway' => 'Bawa Pulang', 'delivery' => 'Diantar'];
+            $labels = ['in_store' => 'Di Tempat', 'takeaway' => 'Diambil', 'delivery' => 'Diantar'];
             $lines[] = $this->left('Tipe: '.($labels[$transaction->order_type] ?? $transaction->order_type), $maxWidth);
         }
         $lines[] = $this->line($maxWidth);

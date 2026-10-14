@@ -165,7 +165,7 @@ export default function Print({ transaction }) {
     const receiptData = useMemo(() => {
         const orderTypeLabels = {
             in_store: "Di Tempat",
-            takeaway: "Bawa Pulang",
+            takeaway: "Diambil",
             delivery: "Diantar",
         };
         const discountTotal =
@@ -647,7 +647,7 @@ export default function Print({ transaction }) {
                                             )}
                                             {transaction.order_type && (
                                                 <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                                                    {{ in_store: "Di Tempat", takeaway: "Bawa Pulang", delivery: "Diantar" }[transaction.order_type] ?? transaction.order_type}
+                                                    {{ in_store: "Di Tempat", takeaway: "Diambil", delivery: "Diantar" }[transaction.order_type] ?? transaction.order_type}
                                                 </span>
                                             )}
                                             {transaction.payment_method ===

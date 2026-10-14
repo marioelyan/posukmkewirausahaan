@@ -87,7 +87,7 @@ export default function Index({
     const [redeemPointsInput, setRedeemPointsInput] = useState("");
     const [cashInput, setCashInput] = useState("");
     const [shippingInput, setShippingInput] = useState("");
-    const [orderType, setOrderType] = useState("in_store");
+    const [orderType, setOrderType] = useState("takeaway");
     const [orderNote, setOrderNote] = useState("");
     const [paymentMethod, setPaymentMethod] = useState(
         defaultPaymentGateway ?? "cash"
@@ -827,7 +827,7 @@ export default function Index({
                     setPaymentMethod(defaultPaymentGateway ?? "cash");
                     setPayLater(false);
                     setDueDate("");
-                    setOrderType("in_store");
+                    setOrderType("takeaway");
                     setOrderNote("");
                     setIsSubmitting(false);
                     toast.success("Transaksi berhasil!");
@@ -1286,10 +1286,9 @@ export default function Index({
                                     <label className="mb-2 block text-xs font-medium text-slate-600 dark:text-slate-400">
                                         Tipe Pesanan
                                     </label>
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         {[
-                                            { value: "in_store", label: "Di Tempat" },
-                                            { value: "takeaway", label: "Bawa Pulang" },
+                                            { value: "takeaway", label: "Diambil" },
                                             { value: "delivery", label: "Diantar" },
                                         ].map((type) => (
                                             <button
