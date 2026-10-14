@@ -68,7 +68,7 @@ export default function AppLayout({ children }) {
                     themeSwitcher={themeSwitcher}
                     darkMode={darkMode}
                 />
-                <main className="dashboard-scrollbar flex-1 overflow-y-auto">
+                <main className="dashboard-scrollbar safe-bottom overscroll-contain-y flex-1 overflow-y-auto">
                     <div className="w-full px-4 py-6 md:px-6 lg:px-8">
                         {showSecurityWarnings && (
                             <div className="mb-6 rounded-2xl border border-warning-200 bg-warning-50 px-4 py-4 text-warning-800 dark:border-warning-800 dark:bg-warning-950/30 dark:text-warning-200">
@@ -86,6 +86,10 @@ export default function AppLayout({ children }) {
                         )}
                         <Toaster
                             position="top-right"
+                            containerStyle={{
+                                top: "calc(16px + env(safe-area-inset-top, 0px))",
+                                bottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
+                            }}
                             toastOptions={{
                                 className: "text-sm",
                                 duration: 3000,

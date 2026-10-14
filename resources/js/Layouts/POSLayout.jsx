@@ -106,9 +106,9 @@ export default function POSLayout({ children }) {
     return (
         <div className="h-viewport flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
             {/* Top Navigation Bar */}
-            <header className="sticky top-0 z-50 h-16 flex items-center justify-between px-4 lg:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+            <header className="safe-header sticky top-0 z-50 flex items-center justify-between px-4 lg:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
                 {/* Left Section - Logo & Time */}
-                <div className="flex items-center gap-4 lg:gap-6">
+                <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
                     {/* Mobile Menu Toggle */}
                     <button
                         onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -142,10 +142,13 @@ export default function POSLayout({ children }) {
                         </span>
                     </Link>
 
-                    {/* Outlet / Warehouse Context */}
+                    {/* Outlet / Warehouse Context — visible on phones too: the
+                        cashier must be able to tell which outlet they are
+                        selling from. The code is enough on a narrow screen, the
+                        full name returns from `sm` up. */}
                     {showOutletContext && (
                         <div
-                            className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-800"
+                            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-3 dark:border-slate-700 dark:bg-slate-800"
                             title={
                                 shiftWarehouse?.name
                                     ? `${currentOutlet.name} — Gudang ${shiftWarehouse.name}`
@@ -157,7 +160,10 @@ export default function POSLayout({ children }) {
                                 className="shrink-0 text-primary-500"
                             />
                             <span className="max-w-40 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
-                                {currentOutlet.code} · {currentOutlet.name}
+                                <span className="sm:hidden">{currentOutlet.code}</span>
+                                <span className="hidden sm:inline">
+                                    {currentOutlet.code} · {currentOutlet.name}
+                                </span>
                             </span>
                             {shiftWarehouse?.code && (
                                 <span className="hidden lg:inline text-xs text-slate-500 dark:text-slate-400">
@@ -257,13 +263,20 @@ export default function POSLayout({ children }) {
 
                     {/* User Info - Simplified */}
                     <div className="flex items-center gap-2 pl-2 lg:pl-3 border-l border-slate-200 dark:border-slate-700">
+                        {/* Shift indicator — was `hidden lg:flex`, so on a phone
+                            the cashier could not tell that a drawer was open. The
+                            chip is just the wallet icon below `sm` (title/aria-label
+                            carry the nominal, and the mobile menu shows it in full),
+                            and the amount from `sm` up. */}
                         {activeCashierShift && (
                             <Link
                                 href={route("cashier-shifts.show", activeCashierShift.id)}
-                                className="hidden lg:flex items-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 transition hover:bg-success-100 dark:bg-success-950/40 dark:text-success-300 dark:hover:bg-success-950/60"
+                                title={`Shift aktif • Rp ${new Intl.NumberFormat("id-ID").format(activeCashierShift.expected_cash || 0)}`}
+                                aria-label={`Shift aktif • Rp ${new Intl.NumberFormat("id-ID").format(activeCashierShift.expected_cash || 0)}`}
+                                className="flex min-h-touch min-w-touch items-center justify-center gap-2 rounded-lg bg-success-50 px-2 py-2 text-xs font-semibold text-success-700 transition hover:bg-success-100 sm:px-3 dark:bg-success-950/40 dark:text-success-300 dark:hover:bg-success-950/60"
                             >
-                                <IconWallet size={16} />
-                                <span>
+                                <IconWallet size={16} className="shrink-0" />
+                                <span className="hidden sm:inline">
                                     Shift aktif •{" "}
                                     {new Intl.NumberFormat("id-ID").format(
                                         activeCashierShift.expected_cash || 0
@@ -271,7 +284,10 @@ export default function POSLayout({ children }) {
                                 </span>
                             </Link>
                         )}
-                        <p className="max-w-[5.5rem] truncate text-sm font-medium text-slate-700 dark:text-slate-200 sm:max-w-[10rem]">
+                        {/* The operator knows who they are, and the mobile menu
+                            links to Profil; dropping the name here is what frees
+                            the room for the outlet + shift chips at 360px. */}
+                        <p className="hidden truncate text-sm font-medium text-slate-700 dark:text-slate-200 sm:block sm:max-w-[10rem]">
                             {auth.user.name}
                         </p>
                     </div>
@@ -308,10 +324,50 @@ export default function POSLayout({ children }) {
                     onClick={() => setShowMobileMenu(false)}
                 >
                     <div
-                        className="absolute top-16 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-lg animate-slide-up"
+                        className="top-safe-header absolute left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-lg animate-slide-up"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <nav className="p-4 space-y-2">
+                            {/* Outlet + shift context — the header shows these
+                                terse on phones, so the menu carries the full
+                                detail (and links to the shift page). */}
+                            <div className="mb-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                                {showOutletContext && (
+                                    <div className="flex items-start gap-2">
+                                        <IconBuildingStore
+                                            size={18}
+                                            className="mt-0.5 shrink-0 text-primary-500"
+                                        />
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                                {currentOutlet.code} · {currentOutlet.name}
+                                            </div>
+                                            {shiftWarehouse?.name && (
+                                                <div className="truncate text-xs text-slate-500 dark:text-slate-400">
+                                                    Gudang {shiftWarehouse.name}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {activeCashierShift && (
+                                    <Link
+                                        href={route("cashier-shifts.show", activeCashierShift.id)}
+                                        className="flex min-h-touch items-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 dark:bg-success-950/40 dark:text-success-300"
+                                    >
+                                        <IconWallet size={16} className="shrink-0" />
+                                        <span className="truncate">
+                                            Shift aktif • Rp{" "}
+                                            {new Intl.NumberFormat("id-ID").format(
+                                                activeCashierShift.expected_cash || 0
+                                            )}
+                                        </span>
+                                    </Link>
+                                )}
+                                <div className="pt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Masuk sebagai {auth.user.name}
+                                </div>
+                            </div>
                             <Link
                                 href={route("dashboard")}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
@@ -350,10 +406,17 @@ export default function POSLayout({ children }) {
                 </div>
             )}
 
-            {/* Main Content - fills the space left by the header and any banner */}
-            <main className="min-h-0 flex-1 overflow-y-auto">
+            {/* Main Content - fills the space left by the header and any banner.
+                `overscroll-contain-y` keeps an inner scroll from chaining to the
+                root, and `safe-bottom` lifts the pay button clear of the home
+                indicator. */}
+            <main className="safe-bottom overscroll-contain-y min-h-0 flex-1 overflow-y-auto">
                 <Toaster
                     position="top-right"
+                    containerStyle={{
+                        top: "calc(16px + env(safe-area-inset-top, 0px))",
+                        bottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
+                    }}
                     toastOptions={{
                         className: "text-sm",
                         duration: 3000,
