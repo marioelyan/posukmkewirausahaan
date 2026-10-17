@@ -1,10 +1,5 @@
 import React from "react";
-import {
-    IconShoppingBag,
-    IconMinus,
-    IconPlus,
-    IconPackage,
-} from "@tabler/icons-react";
+import { IconShoppingBag, IconPlus } from "@tabler/icons-react";
 
 const formatPrice = (value = 0) =>
     Number(value || 0).toLocaleString("id-ID", {
@@ -43,40 +38,30 @@ function ProductCard({ product, onAddToCart, isAdding, inCart = 0 }) {
     return (
         <div
             className={`
-                group relative flex flex-col bg-white dark:bg-slate-900
-                rounded-2xl border border-slate-200 dark:border-slate-800
-                overflow-hidden transition-all duration-200
-                ${hasStock ? "hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-lg" : "opacity-60"}
+                relative flex flex-col bg-white dark:bg-slate-900
+                rounded-xl border border-slate-200 dark:border-slate-800
+                p-2.5 transition-all duration-200
+                ${hasStock ? "hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-md" : "opacity-60"}
             `}
         >
-            {/* Product Icon (display only — use the + button below to add) */}
-            <div className="relative aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="w-full h-full flex items-center justify-center">
-                    <IconPackage
-                        size={48}
-                        className="text-slate-300 dark:text-slate-600 group-hover:scale-105 transition-transform duration-300"
-                        strokeWidth={1}
-                    />
-                </div>
-
-                {showBadge && (
-                    <span className="absolute left-2 top-2 max-w-[70%] truncate rounded-full bg-danger-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-lg">
-                        {promoBadge.label}
-                    </span>
-                )}
-
-                {/* Out of Stock Overlay */}
-                {!hasStock && (
-                    <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
-                        <span className="px-3 py-1 bg-danger-500 text-white text-xs font-semibold rounded-full">
+            {/* Badge promo / stok habis */}
+            {(showBadge || !hasStock) && (
+                <div className="mb-1.5 flex flex-wrap items-center gap-1">
+                    {showBadge && (
+                        <span className="max-w-full truncate rounded-full bg-danger-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                            {promoBadge.label}
+                        </span>
+                    )}
+                    {!hasStock && (
+                        <span className="rounded-full bg-danger-500 px-2 py-0.5 text-[10px] font-semibold text-white">
                             Habis
                         </span>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
 
             {/* Product Info */}
-            <div className="flex flex-1 flex-col gap-2 p-3">
+            <div className="flex flex-1 flex-col gap-2">
                 <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight">
                     {product.title}
                 </h3>
@@ -304,7 +289,7 @@ export default function ProductGrid({
             {/* Products Grid */}
             <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
                 {filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7">
                         {filteredProducts.map((product) => (
                             <ProductCard
                                 key={product.id}
