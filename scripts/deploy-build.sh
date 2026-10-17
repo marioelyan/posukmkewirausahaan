@@ -45,10 +45,20 @@ php artisan about > /dev/null || fail "php artisan about error"
 echo "==> [5/7] Staging ke ${STAGING}/"
 rm -rf "$STAGING"
 mkdir -p "$STAGING"
+# Catatan: setiap pola di bawah menjaga file .gitignore placeholder (rsync
+# tidak menganggap '*' cocok dengan nama berawalan titik), tapi membuang data
+# runtime lokal: DB dev, file contoh, upload, cache, sesi, font dompdf, log.
 rsync -a \
     --exclude='public/hot' \
     --exclude='public/storage' \
+    --exclude='database/*.sqlite' \
+    --exclude='database/samples/' \
+    --exclude='storage/app/public/*' \
+    --exclude='storage/fonts/*' \
     --exclude='storage/framework/views/*.php' \
+    --exclude='storage/framework/cache/*' \
+    --exclude='storage/framework/sessions/*' \
+    --exclude='storage/framework/testing/*' \
     --exclude='storage/logs/*.log' \
     --exclude='storage/pail/*.pail' \
     --exclude='bootstrap/cache/*.php' \
@@ -69,6 +79,8 @@ for bad in .env .env.example .env.production node_modules .git public/hot \
 done
 [ -z "$(find "$STAGING/storage" -type f ! -name .gitignore)" ] || fail "ada artefak lokal di storage/"
 [ -z "$(find "$STAGING/bootstrap/cache" -type f ! -name .gitignore)" ] || fail "ada cache lokal di bootstrap/cache/"
+[ -z "$(find "$STAGING/database" -maxdepth 1 -name '*.sqlite*' -print -quit)" ] || fail "ada file sqlite lokal di database/ (jangan pernah dikirim ke produksi)"
+[ ! -e "$STAGING/database/samples" ] || fail "database/samples/ (data contoh lokal) tidak boleh masuk package"
 [ -z "$(find "$STAGING" -type l)" ] || fail "ada symlink di staging (public/storage laptop tidak boleh ikut)"
 if grep -rIl 'APP_KEY=base64:' "$STAGING" > /dev/null 2>&1; then
     fail "ditemukan APP_KEY terisi di staging"
