@@ -1,6 +1,6 @@
 import React from "react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import {
     IconArrowLeft,
     IconCoins,
@@ -37,6 +37,7 @@ export default function Show({
     rewardHistory,
     vouchers,
 }) {
+    const { multiBusinessEnabled } = usePage().props;
     const segmentForm = useForm({
         segment_ids: manualSegmentIds,
     });
@@ -339,85 +340,90 @@ export default function Show({
                             </div>
                         </section>
 
-                        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="mb-4 flex items-center gap-2">
-                                <IconTags size={18} className="text-primary-500" />
-                                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    Tag Manual
-                                </h2>
-                            </div>
-                            {manualSegmentOptions.length > 0 ? (
-                                <form onSubmit={submitSegments} className="space-y-4">
-                                    <div className="space-y-3">
-                                        {manualSegmentOptions.map((segment) => (
-                                            <label
-                                                key={segment.value}
-                                                className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={segmentForm.data.segment_ids.includes(
-                                                        segment.value
-                                                    )}
-                                                    onChange={(event) => {
-                                                        const nextIds = event.target.checked
-                                                            ? [
-                                                                  ...segmentForm.data
-                                                                      .segment_ids,
-                                                                  segment.value,
-                                                              ]
-                                                            : segmentForm.data.segment_ids.filter(
-                                                                  (value) =>
-                                                                      value !==
-                                                                      segment.value
-                                                              );
-                                                        segmentForm.setData(
-                                                            "segment_ids",
-                                                            nextIds
-                                                        );
-                                                    }}
-                                                    className="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-                                                />
-                                                <div>
-                                                    <p className="font-medium text-slate-900 dark:text-white">
-                                                        {segment.label}
-                                                    </p>
-                                                    {segment.description ? (
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                            {segment.description}
-                                                        </p>
-                                                    ) : null}
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
-                                    {segmentForm.errors.segment_ids && (
-                                        <p className="text-sm text-danger-600">
-                                            {segmentForm.errors.segment_ids}
-                                        </p>
-                                    )}
-                                    <button
-                                        type="submit"
-                                        disabled={segmentForm.processing}
-                                        className="inline-flex items-center justify-center rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
-                                    >
-                                        {segmentForm.processing
-                                            ? "Menyimpan..."
-                                            : "Simpan Segment"}
-                                    </button>
-                                </form>
-                            ) : (
-                                <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center dark:bg-slate-800/50">
-                                    <IconDatabaseOff
-                                        size={28}
-                                        className="mx-auto mb-3 text-slate-400"
-                                    />
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        Belum ada segment manual yang tersedia.
-                                    </p>
+                        {/* Segment management fails closed server-side while tenancy
+                            is enabled (no outlet ownership on segment definitions),
+                            so the write surface is hidden to avoid a dead submit. */}
+                        {!multiBusinessEnabled && (
+                            <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                                <div className="mb-4 flex items-center gap-2">
+                                    <IconTags size={18} className="text-primary-500" />
+                                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                                        Tag Manual
+                                    </h2>
                                 </div>
-                            )}
-                        </section>
+                                {manualSegmentOptions.length > 0 ? (
+                                    <form onSubmit={submitSegments} className="space-y-4">
+                                        <div className="space-y-3">
+                                            {manualSegmentOptions.map((segment) => (
+                                                <label
+                                                    key={segment.value}
+                                                    className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={segmentForm.data.segment_ids.includes(
+                                                            segment.value
+                                                        )}
+                                                        onChange={(event) => {
+                                                            const nextIds = event.target.checked
+                                                                ? [
+                                                                      ...segmentForm.data
+                                                                          .segment_ids,
+                                                                      segment.value,
+                                                                  ]
+                                                                : segmentForm.data.segment_ids.filter(
+                                                                      (value) =>
+                                                                          value !==
+                                                                          segment.value
+                                                                  );
+                                                            segmentForm.setData(
+                                                                "segment_ids",
+                                                                nextIds
+                                                            );
+                                                        }}
+                                                        className="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                                    />
+                                                    <div>
+                                                        <p className="font-medium text-slate-900 dark:text-white">
+                                                            {segment.label}
+                                                        </p>
+                                                        {segment.description ? (
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                                {segment.description}
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {segmentForm.errors.segment_ids && (
+                                            <p className="text-sm text-danger-600">
+                                                {segmentForm.errors.segment_ids}
+                                            </p>
+                                        )}
+                                        <button
+                                            type="submit"
+                                            disabled={segmentForm.processing}
+                                            className="inline-flex items-center justify-center rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+                                        >
+                                            {segmentForm.processing
+                                                ? "Menyimpan..."
+                                                : "Simpan Segment"}
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center dark:bg-slate-800/50">
+                                        <IconDatabaseOff
+                                            size={28}
+                                            className="mx-auto mb-3 text-slate-400"
+                                        />
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                                            Belum ada segment manual yang tersedia.
+                                        </p>
+                                    </div>
+                                )}
+                            </section>
+                        )}
 
                         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                             <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">

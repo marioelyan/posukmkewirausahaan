@@ -222,7 +222,11 @@ export default function Menu() {
             href: route("customer-segments.index"),
             active: under("/dashboard/customer-segments"),
             icon: glyph(IconUsers),
-            permissions: hasAnyPermission(["customer-segments-access"]),
+            // Segment definitions have no outlet ownership, so the server fails
+            // the whole surface closed (404) while tenancy is enabled. Hide the
+            // entry point to avoid a dead link; the guard stays in place.
+            permissions:
+                !multiBusinessEnabled && hasAnyPermission(["customer-segments-access"]),
         },
         crmCampaigns: {
             title: t("sidebar.items.crmCampaigns"),
