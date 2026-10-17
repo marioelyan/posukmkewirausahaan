@@ -277,7 +277,9 @@ class ReportIsolationTest extends TestCase
 
         $this->actingAs($this->userA)
             ->withSession(['active_business_id' => $this->businessA->id])
-            ->get(route('reports.insights.index'))
+            // The seeded rows sit outside the page's default 30-day window, and
+            // this test is about tenant scoping, so query all time on purpose.
+            ->get(route('reports.insights.index', ['all_time' => 1]))
             ->assertOk()
             ->assertInertia(function (Assert $page) {
                 $props = $this->props($page);

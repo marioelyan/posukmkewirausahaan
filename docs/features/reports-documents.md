@@ -22,6 +22,7 @@ Menyediakan visibilitas operasional melalui laporan dan dokumen siap cetak / sha
 - `dashboard/reports/sales`
 - `dashboard/reports/profits`
 - `dashboard/reports/insights`
+- `dashboard/reports/insights/export`
 - `pdf.transactions.invoice`
 - `pdf.transactions.receipt`
 - `pdf.transactions.shipping`
@@ -56,6 +57,31 @@ Menyediakan visibilitas operasional melalui laporan dan dokumen siap cetak / sha
 Dashboard insights menyediakan metrik operasional seperti penjualan per jam,
 performa kasir, repeat customer, dan ringkasan tren yang membantu pemilik mengambil
 keputusan berbasis data.
+
+Perilaku periode:
+
+- saat dibuka tanpa tanggal, halaman memakai jendela default **30 hari terakhir**
+  agar dua belas agregasi tetap terbatas (lihat `DEFAULT_WINDOW_DAYS`). Kartu
+  ringkasan menampilkan label periode aktif.
+- tombol **Tampilkan semua waktu** / **Kembali ke 30 hari** mengalihkan antara
+  jendela default dan seluruh riwayat (`?all_time=1`).
+- kartu ringkasan menampilkan delta persentase terhadap **periode pembanding**
+  dengan panjang sama tepat sebelum periode aktif (null saat tanpa batas periode,
+  atau saat nilai pembanding 0).
+
+Ekspor:
+
+- `GET dashboard/reports/insights/export` (permission `reports-access`) menghasilkan
+  XLSX multi-sheet (Ringkasan, Penjualan Harian/Per Jam, Produk Terlaris/Kurang Laku,
+  Margin Produk/Kategori, Performa Kasir, Coverage Stok) mengikuti filter aktif dan
+  scope business yang sama dengan halaman.
+
+Scoping:
+
+- dropdown kasir dibatasi ke anggota aktif business beserta super-admin saat
+  multi-business aktif.
+- panel statistik segment disembunyikan saat multi-business aktif (segment tetap
+  fail-closed / 404).
 
 ## Efek Bisnis Penting
 

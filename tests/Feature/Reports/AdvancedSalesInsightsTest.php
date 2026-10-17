@@ -79,7 +79,7 @@ class AdvancedSalesInsightsTest extends TestCase
             ['product' => $revenueProduct, 'qty' => 1, 'line_total' => 50_000],
         ]);
 
-        $response = $this->actingAs($user)->get(route('reports.insights.index'));
+        $response = $this->actingAs($user)->get(route('reports.insights.index', ['all_time' => 1]));
         $response->assertInertia(function (Assert $page) {
             $props = $page->toArray()['props'];
 
@@ -155,7 +155,7 @@ class AdvancedSalesInsightsTest extends TestCase
             ['product' => $product, 'qty' => 2, 'line_total' => 30_000],
         ]);
 
-        $response = $this->actingAs($user)->get(route('reports.insights.index'));
+        $response = $this->actingAs($user)->get(route('reports.insights.index', ['all_time' => 1]));
         $response->assertInertia(function (Assert $page) {
             $props = $page->toArray()['props'];
             $bucket09 = collect($props['salesByHour'])->firstWhere('hour', 9);
@@ -199,7 +199,7 @@ class AdvancedSalesInsightsTest extends TestCase
             ['product' => $product, 'qty' => 1, 'line_total' => 20_000],
         ]);
 
-        $response = $this->actingAs($user)->get(route('reports.insights.index'));
+        $response = $this->actingAs($user)->get(route('reports.insights.index', ['all_time' => 1]));
         $response->assertInertia(function (Assert $page) {
             $props = $page->toArray()['props'];
 
@@ -405,6 +405,181 @@ class AdvancedSalesInsightsTest extends TestCase
             $this->assertSame(1, $props['crmOperations']['summary']['campaigns_ready']);
             $this->assertSame(1, $props['crmOperations']['summary']['queue_ready_to_send']);
         });
+    }
+
+    public function test_insights_default_to_a_bounded_window_and_report_it(): void
+    {
+        $user = $this->createUser();
+        $category = Category::create([
+            'name' => 'Window Category',
+            'description' => 'Testing',
+            'image' => 'category.png',
+        ]);
+        $customer = Customer::create([
+            'name' => 'Window Customer',
+            'no_telp' => '62818888888',
+            'address' => 'Jl. Window',
+        ]);
+        $cashier = User::factory()->create();
+        $product = $this->createProduct($category, 'Window Product', 'WIN-001', 10_000, 20_000, 10);
+
+        $this->createTransactionWithDetails($cashier, $customer, Carbon::now()->startOfDay()->addHour(), [
+            ['product' => $product, 'qty' => 2, 'line_total' => 40_000],
+        ]);
+        $this->createTransactionWithDetails($cashier, $customer, Carbon::now()->subDays(60), [
+            ['product' => $product, 'qty' => 5, 'line_total' => 100_000],
+        ]);
+
+        $response = $this->actingAs($user)->get(route('reports.insights.index'));
+
+        $response->assertInertia(function (Assert $page) {
+            $props = $page->toArray()['props'];
+
+            // Only the transaction inside the default 30-day window counts.
+            $this->assertSame(1, $props['summary']['orders_count']);
+            $this->assertSame(40_000, $props['summary']['revenue_total']);
+            $this->assertSame(2, $props['summary']['items_sold']);
+
+            $this->assertTrue($props['range']['is_default']);
+            $this->assertFalse($props['range']['all_time']);
+            $this->assertSame(30, $props['range']['default_window_days']);
+            $this->assertSame(Carbon::now()->toDateString(), $props['range']['end_date']);
+
+            // The empty form fields stay empty even though a window was applied.
+            $this->assertSame('', $props['filters']['start_date'] ?? '');
+            $this->assertSame('', $props['filters']['end_date'] ?? '');
+        });
+    }
+
+    public function test_insights_all_time_flag_includes_transactions_outside_the_default_window(): void
+    {
+        $user = $this->createUser();
+        $category = Category::create([
+            'name' => 'All Time Category',
+            'description' => 'Testing',
+            'image' => 'category.png',
+        ]);
+        $customer = Customer::create([
+            'name' => 'All Time Customer',
+            'no_telp' => '62819999999',
+            'address' => 'Jl. All Time',
+        ]);
+        $cashier = User::factory()->create();
+        $product = $this->createProduct($category, 'All Time Product', 'ALL-001', 10_000, 20_000, 10);
+
+        $this->createTransactionWithDetails($cashier, $customer, Carbon::now()->startOfDay()->addHour(), [
+            ['product' => $product, 'qty' => 2, 'line_total' => 40_000],
+        ]);
+        $this->createTransactionWithDetails($cashier, $customer, Carbon::now()->subDays(60), [
+            ['product' => $product, 'qty' => 5, 'line_total' => 100_000],
+        ]);
+
+        $response = $this->actingAs($user)->get(route('reports.insights.index', ['all_time' => 1]));
+
+        $response->assertInertia(function (Assert $page) {
+            $props = $page->toArray()['props'];
+
+            $this->assertSame(2, $props['summary']['orders_count']);
+            $this->assertSame(140_000, $props['summary']['revenue_total']);
+            $this->assertSame(7, $props['summary']['items_sold']);
+
+            $this->assertTrue($props['range']['all_time']);
+            $this->assertFalse($props['range']['is_default']);
+            // No bounded period means no meaningful previous period to compare.
+            $this->assertNull($props['summary']['comparison']);
+        });
+    }
+
+    public function test_insights_summary_compares_against_the_previous_period(): void
+    {
+        $user = $this->createUser();
+        $category = Category::create([
+            'name' => 'Compare Category',
+            'description' => 'Testing',
+            'image' => 'category.png',
+        ]);
+        $customer = Customer::create([
+            'name' => 'Compare Customer',
+            'no_telp' => '62810000001',
+            'address' => 'Jl. Compare',
+        ]);
+        $cashier = User::factory()->create();
+        $product = $this->createProduct($category, 'Compare Product', 'CMP-001', 10_000, 20_000, 10);
+
+        $start = Carbon::now()->subDays(6)->startOfDay();
+        $end = Carbon::now()->startOfDay();
+
+        // Current 7-day window.
+        $this->createTransactionWithDetails($cashier, $customer, Carbon::now()->startOfDay()->addHour(), [
+            ['product' => $product, 'qty' => 2, 'line_total' => 200_000],
+        ]);
+        // Immediately preceding 7-day window.
+        $this->createTransactionWithDetails($cashier, $customer, Carbon::now()->subDays(10), [
+            ['product' => $product, 'qty' => 1, 'line_total' => 100_000],
+        ]);
+
+        $response = $this->actingAs($user)->get(route('reports.insights.index', [
+            'start_date' => $start->toDateString(),
+            'end_date' => $end->toDateString(),
+        ]));
+
+        $response->assertInertia(function (Assert $page) {
+            $props = $page->toArray()['props'];
+            $comparison = $props['summary']['comparison'];
+
+            $this->assertNotNull($comparison);
+            $this->assertSame(200_000, $props['summary']['revenue_total']);
+            $this->assertSame(100_000, $comparison['previous']['revenue_total']);
+            $this->assertEquals(100.0, $comparison['revenue_delta']);
+            $this->assertEquals(0.0, $comparison['orders_delta']);
+            $this->assertSame(Carbon::now()->subDays(13)->toDateString(), $comparison['start_date']);
+            $this->assertSame(Carbon::now()->subDays(7)->toDateString(), $comparison['end_date']);
+        });
+    }
+
+    public function test_insights_can_be_exported_to_a_spreadsheet(): void
+    {
+        $user = $this->createUser();
+        $category = Category::create([
+            'name' => 'Export Category',
+            'description' => 'Testing',
+            'image' => 'category.png',
+        ]);
+        $customer = Customer::create([
+            'name' => 'Export Customer',
+            'no_telp' => '62810000002',
+            'address' => 'Jl. Export',
+        ]);
+        $cashier = User::factory()->create();
+        $product = $this->createProduct($category, 'Export Product', 'EXP-001', 10_000, 20_000, 10);
+
+        $this->createTransactionWithDetails($cashier, $customer, Carbon::now()->startOfDay()->addHour(), [
+            ['product' => $product, 'qty' => 3, 'line_total' => 60_000],
+        ]);
+
+        $response = $this->actingAs($user)->get(route('reports.insights.export', [
+            'start_date' => Carbon::now()->subDays(6)->toDateString(),
+            'end_date' => Carbon::now()->toDateString(),
+        ]));
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'attachment',
+            (string) $response->headers->get('content-disposition')
+        );
+        $this->assertStringContainsString(
+            '.xlsx',
+            (string) $response->headers->get('content-disposition')
+        );
+    }
+
+    public function test_insights_export_requires_reports_permission(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('reports.insights.export'))
+            ->assertForbidden();
     }
 
     private function createUser(): User

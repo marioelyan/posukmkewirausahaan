@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Exports\InsightsExport;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\BusinessUser;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\CustomerCampaign;
@@ -24,6 +26,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdvancedSalesInsightsController extends Controller
 {
@@ -32,6 +35,13 @@ class AdvancedSalesInsightsController extends Controller
      * disabled (no scoping); an empty collection means tenancy is enabled but no
      * business context exists, which fails closed.
      */
+    /**
+     * Window applied when the operator opens the page without an explicit
+     * period. Keeps the twelve aggregations bounded instead of scanning the
+     * whole sales history on every visit.
+     */
+    private const DEFAULT_WINDOW_DAYS = 30;
+
     private ?Collection $businessOutletIds = null;
 
     private bool $businessOutletIdsResolved = false;
@@ -42,76 +52,46 @@ class AdvancedSalesInsightsController extends Controller
 
     public function index(Request $request)
     {
-        $warehouseIds = $this->outletAccessService->warehousesFor($request->user())->pluck('id');
+        $warehouseIds = $this->warehouseIdsFor($request);
         $activeOutlet = $this->outletAccessService->activeOutlet($request);
-        if ($activeOutlet) {
-            $warehouseIds = $this->outletAccessService->warehousesFor($request->user())
-                ->where('outlet_id', $activeOutlet->id)
-                ->pluck('id');
-        }
-        $filters = [
-            'start_date' => $request->input('start_date'),
-            'end_date' => $request->input('end_date'),
-            'cashier_id' => $request->input('cashier_id'),
-            'customer_id' => $request->input('customer_id'),
-            'category_id' => $request->input('category_id'),
-            'warehouse_ids' => $warehouseIds,
-            // Legacy rows without a warehouse cannot be proven to belong to the
-            // active business, so they are only folded in when tenancy is off.
-            'include_legacy' => ! config('multi_business.enabled') && Outlet::active()->count() <= 1,
-        ];
 
-        $transactionQuery = $this->applyTransactionFilters(
-            Transaction::query(),
-            $filters
-        );
+        $filters = $this->buildFilters($request, $warehouseIds);
+        $queryFilters = $this->applyDefaultRange($filters);
 
-        $transactionIds = (clone $transactionQuery)->pluck('id');
-        $transactionCount = $transactionIds->count();
+        $summary = $this->summaryMetrics($queryFilters);
 
-        $summaryRaw = (clone $transactionQuery)
-            ->selectRaw('COUNT(*) as orders_count, COALESCE(SUM(grand_total), 0) as revenue_total, COALESCE(SUM(discount), 0) as manual_discount_total')
-            ->first();
-
-        $itemsSold = $transactionIds->isNotEmpty()
-            ? DB::table('transaction_details')
-                ->whereIn('transaction_id', $transactionIds)
-                ->sum('qty')
-            : 0;
-
-        $profitTotal = $transactionIds->isNotEmpty()
-            ? DB::table('profits')
-                ->whereIn('transaction_id', $transactionIds)
-                ->sum('total')
-            : 0;
-
-        $topSellingProducts = $this->topSellingProducts($filters);
-        $lowPerformingProducts = $this->lowPerformingProducts($filters);
-        $marginByProduct = $this->marginByProduct($filters);
-        $marginByCategory = $this->marginByCategory($filters);
-        $salesByHour = $this->salesByHour($filters);
-        $salesByDay = $this->salesByDay($filters);
-        $cashierPerformance = $this->cashierPerformance($filters);
-        $repeatCustomerMetrics = $this->repeatCustomerMetrics($filters);
-        $stockCoverage = $this->stockCoverageAnalysis($filters);
+        $topSellingProducts = $this->topSellingProducts($queryFilters);
+        $lowPerformingProducts = $this->lowPerformingProducts($queryFilters);
+        $marginByProduct = $this->marginByProduct($queryFilters);
+        $marginByCategory = $this->marginByCategory($queryFilters);
+        $salesByHour = $this->salesByHour($queryFilters);
+        $salesByDay = $this->salesByDay($queryFilters);
+        $cashierPerformance = $this->cashierPerformance($queryFilters);
+        $repeatCustomerMetrics = $this->repeatCustomerMetrics($queryFilters);
+        $stockCoverage = $this->stockCoverageAnalysis($queryFilters);
         $promoMonitor = $this->promoMonitor($activeOutlet?->id);
-        $loyaltyPerformance = $this->loyaltyPerformance($filters, $activeOutlet?->id);
-        $crmOperations = $this->crmOperations($filters, $activeOutlet?->id);
+        $loyaltyPerformance = $this->loyaltyPerformance($queryFilters, $activeOutlet?->id);
+        $crmOperations = $this->crmOperations($queryFilters, $activeOutlet?->id);
 
         return Inertia::render('Dashboard/Reports/Insights', [
+            // Effective period actually queried, so the page can show what it is
+            // looking at even when the operator did not pick dates.
+            'range' => [
+                'start_date' => $queryFilters['start_date'],
+                'end_date' => $queryFilters['end_date'],
+                'is_default' => (bool) ($queryFilters['is_default_range'] ?? false),
+                'all_time' => (bool) $filters['all_time'],
+                'default_window_days' => self::DEFAULT_WINDOW_DAYS,
+            ],
             'filters' => $filters,
-            'cashiers' => User::select('id', 'name')->orderBy('name')->get(),
+            'cashiers' => $this->cashierOptions(),
             'customers' => Customer::select('id', 'name')->orderBy('name')->get(),
             'categories' => Category::select('id', 'name')->orderBy('name')->get(),
-            'summary' => [
-                'orders_count' => (int) ($summaryRaw->orders_count ?? 0),
-                'revenue_total' => (int) ($summaryRaw->revenue_total ?? 0),
-                'manual_discount_total' => (int) ($summaryRaw->manual_discount_total ?? 0),
-                'items_sold' => (int) $itemsSold,
-                'profit_total' => (int) $profitTotal,
-                'average_order' => $transactionCount > 0
-                    ? (int) round(($summaryRaw->revenue_total ?? 0) / $transactionCount)
-                    : 0,
+            'summary' => $summary + [
+                'comparison' => $this->buildComparison(
+                    $summary,
+                    $this->previousPeriodSummary($queryFilters)
+                ),
             ],
             'salesByHour' => $salesByHour,
             'salesByDay' => $salesByDay,
@@ -126,6 +106,217 @@ class AdvancedSalesInsightsController extends Controller
             'loyaltyPerformance' => $loyaltyPerformance,
             'crmOperations' => $crmOperations,
         ]);
+    }
+
+    /**
+     * Export the tabular insights (respecting the active filters and tenancy
+     * scope) as a multi-sheet spreadsheet.
+     */
+    public function export(Request $request)
+    {
+        $warehouseIds = $this->warehouseIdsFor($request);
+        $filters = $this->applyDefaultRange($this->buildFilters($request, $warehouseIds));
+
+        $data = [
+            'summary' => $this->summaryMetrics($filters),
+            'rangeStart' => $filters['start_date'],
+            'rangeEnd' => $filters['end_date'],
+            'salesByDay' => $this->salesByDay($filters),
+            'salesByHour' => $this->salesByHour($filters),
+            'topSellingProducts' => $this->topSellingProducts($filters),
+            'lowPerformingProducts' => $this->lowPerformingProducts($filters),
+            'marginByProduct' => $this->marginByProduct($filters),
+            'marginByCategory' => $this->marginByCategory($filters),
+            'cashierPerformance' => $this->cashierPerformance($filters),
+            'stockCoverage' => $this->stockCoverageAnalysis($filters),
+        ];
+
+        $periodLabel = $filters['start_date'] && $filters['end_date']
+            ? $filters['start_date'].'_'.$filters['end_date']
+            : 'semua-waktu';
+
+        return Excel::download(new InsightsExport($data), 'insights-'.$periodLabel.'.xlsx');
+    }
+
+    /**
+     * Warehouse ids the operator may query, narrowed to the active outlet when
+     * one is selected.
+     */
+    private function warehouseIdsFor(Request $request): Collection
+    {
+        $warehouses = $this->outletAccessService->warehousesFor($request->user());
+        $activeOutlet = $this->outletAccessService->activeOutlet($request);
+
+        if ($activeOutlet) {
+            $warehouses = $warehouses->where('outlet_id', $activeOutlet->id);
+        }
+
+        return $warehouses->pluck('id');
+    }
+
+    /**
+     * Raw operator input. `start_date`/`end_date` stay empty when the operator
+     * never picked a period, so the form keeps showing blank inputs even though
+     * a default window is queried.
+     */
+    private function buildFilters(Request $request, Collection $warehouseIds): array
+    {
+        return [
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
+            'cashier_id' => $request->input('cashier_id'),
+            'customer_id' => $request->input('customer_id'),
+            'category_id' => $request->input('category_id'),
+            'all_time' => $request->boolean('all_time'),
+            'warehouse_ids' => $warehouseIds,
+            // Legacy rows without a warehouse cannot be proven to belong to the
+            // active business, so they are only folded in when tenancy is off.
+            'include_legacy' => ! config('multi_business.enabled') && Outlet::active()->count() <= 1,
+        ];
+    }
+
+    /**
+     * Fill in the default bounded window when the operator did not pick a
+     * period and did not ask for all time.
+     */
+    private function applyDefaultRange(array $filters): array
+    {
+        $filters['is_default_range'] = false;
+
+        if ($filters['all_time']) {
+            return $filters;
+        }
+
+        if (! $filters['start_date'] && ! $filters['end_date']) {
+            $filters['end_date'] = now()->toDateString();
+            $filters['start_date'] = now()->subDays(self::DEFAULT_WINDOW_DAYS - 1)->toDateString();
+            $filters['is_default_range'] = true;
+        }
+
+        return $filters;
+    }
+
+    /**
+     * Headline totals for a filter set. Item and profit totals are summed with a
+     * subquery on the filtered transaction id set instead of materialising every
+     * id in PHP, which keeps large periods within database limits.
+     */
+    private function summaryMetrics(array $filters): array
+    {
+        $totals = $this->applyTransactionFilters(Transaction::query(), $filters)
+            ->selectRaw('COUNT(*) as orders_count, COALESCE(SUM(grand_total), 0) as revenue_total, COALESCE(SUM(discount), 0) as manual_discount_total')
+            ->first();
+
+        $ordersCount = (int) ($totals->orders_count ?? 0);
+        $revenueTotal = (int) ($totals->revenue_total ?? 0);
+
+        $itemsSold = (int) DB::table('transaction_details')
+            ->whereIn('transaction_id', $this->applyTransactionFilters(Transaction::query(), $filters)->select('transactions.id'))
+            ->sum('qty');
+
+        $profitTotal = (int) DB::table('profits')
+            ->whereIn('transaction_id', $this->applyTransactionFilters(Transaction::query(), $filters)->select('transactions.id'))
+            ->sum('total');
+
+        return [
+            'orders_count' => $ordersCount,
+            'revenue_total' => $revenueTotal,
+            'manual_discount_total' => (int) ($totals->manual_discount_total ?? 0),
+            'items_sold' => $itemsSold,
+            'profit_total' => $profitTotal,
+            'average_order' => $ordersCount > 0 ? (int) round($revenueTotal / $ordersCount) : 0,
+        ];
+    }
+
+    /**
+     * Headline totals for the equal-length period immediately before the active
+     * one. Null when the active period has no bounds (all time).
+     */
+    private function previousPeriodSummary(array $filters): ?array
+    {
+        if (empty($filters['start_date']) || empty($filters['end_date'])) {
+            return null;
+        }
+
+        $start = Carbon::parse($filters['start_date']);
+        $end = Carbon::parse($filters['end_date']);
+        $windowDays = max(1, (int) $start->diffInDays($end) + 1);
+
+        $previousEnd = $start->copy()->subDay();
+        $previousStart = $previousEnd->copy()->subDays($windowDays - 1);
+
+        return $this->summaryMetrics(array_merge($filters, [
+            'start_date' => $previousStart->toDateString(),
+            'end_date' => $previousEnd->toDateString(),
+        ])) + [
+            'start_date' => $previousStart->toDateString(),
+            'end_date' => $previousEnd->toDateString(),
+        ];
+    }
+
+    /**
+     * Percentage deltas against the previous period for the summary cards.
+     * Deltas are null when there is no previous period or no previous value to
+     * compare against, so the UI can hide the badge instead of showing "infinity".
+     */
+    private function buildComparison(array $current, ?array $previous): ?array
+    {
+        if ($previous === null) {
+            return null;
+        }
+
+        $delta = fn (int $now, int $before): ?float => $before > 0
+            ? round((($now - $before) / $before) * 100, 2)
+            : null;
+
+        return [
+            'start_date' => $previous['start_date'],
+            'end_date' => $previous['end_date'],
+            'revenue_delta' => $delta($current['revenue_total'], $previous['revenue_total']),
+            'profit_delta' => $delta($current['profit_total'], $previous['profit_total']),
+            'items_delta' => $delta($current['items_sold'], $previous['items_sold']),
+            'orders_delta' => $delta($current['orders_count'], $previous['orders_count']),
+            'previous' => [
+                'orders_count' => $previous['orders_count'],
+                'revenue_total' => $previous['revenue_total'],
+                'profit_total' => $previous['profit_total'],
+                'items_sold' => $previous['items_sold'],
+                'average_order' => $previous['average_order'],
+            ],
+        ];
+    }
+
+    /**
+     * Cashier filter options. Under tenancy the list is limited to members of
+     * the active business (plus platform super-admins, who may cashier in any
+     * business) so an operator in one business never sees another business's
+     * staff.
+     */
+    private function cashierOptions(): Collection
+    {
+        if (! config('multi_business.enabled')) {
+            return User::select('id', 'name')->orderBy('name')->get();
+        }
+
+        $businessId = app(BusinessContext::class)->businessId();
+
+        if ($businessId === null) {
+            return collect();
+        }
+
+        $memberIds = BusinessUser::query()
+            ->active()
+            ->forBusiness($businessId)
+            ->pluck('user_id');
+
+        return User::query()
+            ->where(function ($query) use ($memberIds) {
+                $query->whereIn('users.id', $memberIds)
+                    ->orWhereHas('roles', fn ($role) => $role->where('name', 'super-admin'));
+            })
+            ->select('users.id', 'users.name')
+            ->orderBy('users.name')
+            ->get();
     }
 
     protected function applyTransactionFilters(Builder $query, array $filters): Builder
@@ -556,7 +747,7 @@ class AdvancedSalesInsightsController extends Controller
                     'revenue_total' => (int) round($row->revenue_total),
                     'average_daily_qty' => $averageDailyQty,
                     'coverage_days' => $coverageDays,
-                    'coverage_status' => $this->coverageStatus($currentStock, $qtySold, $coverageDays),
+                    'coverage_status' => $this->coverageStatus($qtySold, $coverageDays),
                     'last_sold_at' => $row->last_sold_at
                         ? Carbon::parse($row->last_sold_at)->toIso8601String()
                         : null,
@@ -623,12 +814,13 @@ class AdvancedSalesInsightsController extends Controller
         );
     }
 
-    protected function coverageStatus(int $currentStock, int $qtySold, ?float $coverageDays): string
+    /**
+     * Coverage bucket for a stocked product. Products with no stock are excluded
+     * by the query itself (coverage only measures what is still on the shelf),
+     * so only the four reachable buckets are derived here.
+     */
+    protected function coverageStatus(int $qtySold, ?float $coverageDays): string
     {
-        if ($currentStock <= 0) {
-            return 'out_of_stock';
-        }
-
         if ($qtySold <= 0 || $coverageDays === null) {
             return 'no_movement';
         }

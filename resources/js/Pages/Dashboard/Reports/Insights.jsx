@@ -1,7 +1,7 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import InputSelect from "@/Components/Dashboard/InputSelect";
 import Table from "@/Components/Dashboard/Table";
-import { Head, router } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Chart from "chart.js/auto";
 import {
@@ -9,6 +9,7 @@ import {
     IconClock,
     IconCoin,
     IconDatabaseOff,
+    IconDownload,
     IconFilter,
     IconPackage,
     IconReceipt2,
@@ -25,6 +26,7 @@ const defaultFilters = {
     cashier_id: "",
     customer_id: "",
     category_id: "",
+    all_time: "",
 };
 
 const formatCurrency = (value = 0) =>
@@ -39,6 +41,15 @@ const formatPercentage = (value = 0) =>
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
     }).format(value);
+
+const formatShortDate = (value) =>
+    value
+        ? new Intl.DateTimeFormat("id-ID", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+          }).format(new Date(`${value}T00:00:00`))
+        : "";
 
 const formatDateTime = (value) =>
     value
@@ -108,7 +119,28 @@ const crmCampaignTypeLabel = {
     repeat_order_reminder: "Repeat Order",
 };
 
-function SummaryCard({ title, value, description, icon: Icon, gradient }) {
+function DeltaBadge({ delta }) {
+    if (delta === null || delta === undefined) {
+        return null;
+    }
+
+    const isUp = delta >= 0;
+
+    return (
+        <span
+            className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                isUp ? "bg-white/25" : "bg-black/25"
+            }`}
+            title={`${isUp ? "Naik" : "Turun"} ${formatPercentage(Math.abs(delta))}% vs periode sebelumnya`}
+        >
+            {isUp ? <IconTrendingUp size={13} /> : <IconTrendingDown size={13} />}
+            {isUp ? "+" : "-"}
+            {formatPercentage(Math.abs(delta))}%
+        </span>
+    );
+}
+
+function SummaryCard({ title, value, description, icon: Icon, gradient, delta }) {
     return (
         <div
             className={`relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br ${gradient} text-white shadow-lg`}
@@ -124,6 +156,7 @@ function SummaryCard({ title, value, description, icon: Icon, gradient }) {
                 </div>
                 <p className="text-2xl font-bold">{value}</p>
                 <p className="mt-1 text-sm opacity-80">{description}</p>
+                <DeltaBadge delta={delta} />
             </div>
         </div>
     );
@@ -168,6 +201,7 @@ function ChartCard({ title, subtitle, chartRef, hasData }) {
 
 export default function Insights({
     filters,
+    range,
     cashiers,
     customers,
     categories,
@@ -185,6 +219,7 @@ export default function Insights({
     loyaltyPerformance,
     crmOperations,
 }) {
+    const { multiBusinessEnabled } = usePage().props;
     const [showFilters, setShowFilters] = useState(false);
     const [marginView, setMarginView] = useState("product");
     const [filterData, setFilterData] = useState({
@@ -328,6 +363,41 @@ export default function Insights({
         });
     };
 
+    // Switch between the default bounded window and the full history while
+    // keeping the entity filters the operator already picked.
+    const applyRangePreset = (allTime) => {
+        const next = {
+            ...filterData,
+            start_date: "",
+            end_date: "",
+            all_time: allTime ? "1" : "",
+        };
+        setFilterData(next);
+        router.get(route("reports.insights.index"), next, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
+    const exportParams = useMemo(() => {
+        const params = {};
+
+        ["start_date", "end_date", "cashier_id", "customer_id", "category_id"].forEach(
+            (key) => {
+                if (filterData[key]) {
+                    params[key] = filterData[key];
+                }
+            }
+        );
+
+        if (filterData.all_time) {
+            params.all_time = 1;
+        }
+
+        return params;
+    }, [filterData]);
+
     const marginRows =
         marginView === "product" ? marginByProduct : marginByCategory;
     const repeatSummary = repeatCustomerMetrics?.summary || {};
@@ -342,6 +412,25 @@ export default function Insights({
     const loyaltyTopMembers = loyaltyPerformance?.top_members || [];
     const crmSummary = crmOperations?.summary || {};
     const crmRecentCampaigns = crmOperations?.recent_campaigns || [];
+
+    const appliedRange = range || {};
+    const comparison = summary?.comparison || null;
+    const isDefaultRange = appliedRange.is_default === true;
+    const isAllTime = appliedRange.all_time === true;
+    const periodLabel =
+        appliedRange.start_date && appliedRange.end_date
+            ? `${formatShortDate(appliedRange.start_date)} – ${formatShortDate(appliedRange.end_date)}`
+            : "";
+    const comparisonLabel = comparison
+        ? `${formatShortDate(comparison.start_date)} – ${formatShortDate(comparison.end_date)}`
+        : "";
+    const rangeText = isAllTime
+        ? "Menampilkan seluruh periode."
+        : isDefaultRange
+          ? `Menampilkan ${appliedRange.default_window_days ?? 30} hari terakhir (${periodLabel}).`
+          : periodLabel
+            ? `Periode: ${periodLabel}.`
+            : "Periode: hanya satu batas tanggal yang dipilih.";
 
     return (
         <>
@@ -365,19 +454,49 @@ export default function Insights({
                             performa kasir dalam satu dashboard.
                         </p>
                     </div>
-                    <button
-                        onClick={() => setShowFilters((value) => !value)}
-                        aria-expanded={showFilters}
-                        aria-controls="insights-filters"
-                        className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
-                            showFilters || hasActiveFilters
-                                ? "border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800 dark:bg-primary-950/50 dark:text-primary-400"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                        }`}
-                    >
-                        <IconFilter size={18} />
-                        Filter
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={route("reports.insights.export", exportParams)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                            <IconDownload size={18} />
+                            Export
+                        </a>
+                        <button
+                            onClick={() => setShowFilters((value) => !value)}
+                            aria-expanded={showFilters}
+                            aria-controls="insights-filters"
+                            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+                                showFilters || hasActiveFilters
+                                    ? "border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-800 dark:bg-primary-950/50 dark:text-primary-400"
+                                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                            }`}
+                        >
+                            <IconFilter size={18} />
+                            Filter
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                    <span>{rangeText}</span>
+                    {isAllTime ? (
+                        <button
+                            type="button"
+                            onClick={() => applyRangePreset(false)}
+                            className="self-start rounded-lg px-2 py-1 font-medium text-primary-600 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 sm:self-auto dark:text-primary-400 dark:hover:bg-primary-950/50"
+                        >
+                            Kembali ke 30 hari
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => applyRangePreset(true)}
+                            className="self-start rounded-lg px-2 py-1 font-medium text-primary-600 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 sm:self-auto dark:text-primary-400 dark:hover:bg-primary-950/50"
+                        >
+                            Tampilkan semua waktu
+                        </button>
+                    )}
                 </div>
 
                 <div data-tour="reports-summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -387,6 +506,7 @@ export default function Insights({
                         description={`${summary?.orders_count ?? 0} transaksi`}
                         icon={IconReceipt2}
                         gradient="from-primary-500 to-primary-700"
+                        delta={comparison?.revenue_delta}
                     />
                     <SummaryCard
                         title="Profit"
@@ -394,6 +514,7 @@ export default function Insights({
                         description={`Rata-rata ${formatCurrency(summary?.average_order ?? 0)}`}
                         icon={IconCoin}
                         gradient="from-success-500 to-success-700"
+                        delta={comparison?.profit_delta}
                     />
                     <SummaryCard
                         title="Item Terjual"
@@ -401,6 +522,7 @@ export default function Insights({
                         description={`Diskon manual ${formatCurrency(summary?.manual_discount_total ?? 0)}`}
                         icon={IconPackage}
                         gradient="from-warning-500 to-warning-700"
+                        delta={comparison?.items_delta}
                     />
                     <SummaryCard
                         title="Kasir Aktif di Filter"
@@ -410,6 +532,12 @@ export default function Insights({
                         gradient="from-fuchsia-500 to-fuchsia-700"
                     />
                 </div>
+
+                {comparison && (
+                    <p className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        Delta dibanding periode {comparisonLabel}.
+                    </p>
+                )}
 
                 {showFilters && (
                     <div
@@ -1192,15 +1320,27 @@ export default function Insights({
                 </div>
 
                 <Table.Card title="CRM Operational Snapshot">
-                    <div className="mb-4 grid gap-3 md:grid-cols-4">
-                        <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Segment Aktif
-                            </p>
-                            <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
-                                {(crmSummary.segments_active ?? 0).toLocaleString("id-ID")}
-                            </p>
-                        </div>
+                    {multiBusinessEnabled && (
+                        <p className="mb-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+                            Statistik segment tidak ditampilkan saat
+                            multi-business aktif.
+                        </p>
+                    )}
+                    <div
+                        className={`mb-4 grid gap-3 ${
+                            multiBusinessEnabled ? "md:grid-cols-3" : "md:grid-cols-4"
+                        }`}
+                    >
+                        {!multiBusinessEnabled && (
+                            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    Segment Aktif
+                                </p>
+                                <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
+                                    {(crmSummary.segments_active ?? 0).toLocaleString("id-ID")}
+                                </p>
+                            </div>
+                        )}
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
                                 Campaign Draft/Ready
@@ -1234,24 +1374,28 @@ export default function Insights({
                         </div>
                     </div>
                     <div className="mb-4 flex flex-wrap gap-2">
-                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            Manual Segment:{" "}
-                            {Number(
-                                crmSummary.segments_manual ?? 0
-                            ).toLocaleString("id-ID")}
-                        </span>
-                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            Auto Segment:{" "}
-                            {Number(
-                                crmSummary.segments_auto ?? 0
-                            ).toLocaleString("id-ID")}
-                        </span>
-                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            Memberships:{" "}
-                            {Number(
-                                crmSummary.memberships_total ?? 0
-                            ).toLocaleString("id-ID")}
-                        </span>
+                        {!multiBusinessEnabled && (
+                            <>
+                                <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                    Manual Segment:{" "}
+                                    {Number(
+                                        crmSummary.segments_manual ?? 0
+                                    ).toLocaleString("id-ID")}
+                                </span>
+                                <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                    Auto Segment:{" "}
+                                    {Number(
+                                        crmSummary.segments_auto ?? 0
+                                    ).toLocaleString("id-ID")}
+                                </span>
+                                <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                    Memberships:{" "}
+                                    {Number(
+                                        crmSummary.memberships_total ?? 0
+                                    ).toLocaleString("id-ID")}
+                                </span>
+                            </>
+                        )}
                         <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                             Campaign Processed:{" "}
                             {Number(
