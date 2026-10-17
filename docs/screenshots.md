@@ -1,6 +1,6 @@
 # Screenshots Gallery
 
-Berikut adalah seluruh screenshot fitur KasirnyaKWU.
+Berikut adalah seluruh screenshot fitur KasirKwu.
 
 ---
 

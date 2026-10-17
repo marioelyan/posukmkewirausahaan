@@ -1,11 +1,11 @@
 /* =====================================================
-   KASIRNYAKWU - DESIGN TOKENS
+   KASIRKWU - DESIGN TOKENS
    Modern POS-optimized design system
    ===================================================== */
 
 /* === Color Palette === */
 :root {
-  /* Primary - KasirnyaKWU Navy (#21416D) */
+  /* Primary - KasirKwu Navy (#21416D) */
   --color-primary-50: 243 247 252;
   --color-primary-100: 228 236 247;
   --color-primary-200: 197 214 236;

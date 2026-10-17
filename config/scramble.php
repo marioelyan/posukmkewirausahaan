@@ -58,12 +58,12 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'REST API untuk KasirnyaKWU — sistem kasir (POS) open source untuk UMKM Indonesia. '
+        'description' => 'REST API untuk KasirKwu — sistem kasir (POS) open source untuk UMKM Indonesia. '
             .'Semua endpoint (kecuali login/register/webhooks) memerlukan Bearer token dari POST /api/v1/auth/login.',
     ],
 
     'ui' => [
-        'title' => 'KasirnyaKWU API Documentation',
+        'title' => 'KasirKwu API Documentation',
     ],
 
     'renderer' => 'elements',

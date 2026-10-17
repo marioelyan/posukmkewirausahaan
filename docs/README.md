@@ -1,4 +1,4 @@
-# Dokumentasi KasirnyaKWU
+# Dokumentasi KasirKwu
 
 Dokumentasi ini ditujukan untuk developer yang ingin setup, memahami alur modul, dan melakukan maintenance aplikasi.
 

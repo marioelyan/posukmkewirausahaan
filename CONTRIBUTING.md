@@ -1,4 +1,4 @@
-# Contributing to KasirnyaKWU
+# Contributing to KasirKwu
 
 Terima kasih sudah tertarik untuk berkontribusi! 🎉
 

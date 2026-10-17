@@ -1,4 +1,4 @@
-# Multi-Business Open Decisions — KasirnyaKWU
+# Multi-Business Open Decisions — KasirKwu
 
 - **Status:** keputusan owner tercatat di register (§13: ID stabil `AUTH-*`/`SETTINGS-*`/`FIN-*`/`SCHED-*`/`UNIQUE-*`/`GOV-*`). **Terwujud/selesai:** Q1 (§13.25), Q2/Q3 (§13.14 AUTH), Q4/UNIQUE-10/11 (§13.20–§13.22), Q5 (§13.14 SETTINGS), Q6 (§13.19), Q7/Q9 (§13.13/§13.15/§13.16 FIN + backfill/bootstrap), Q8 (§13.14 SCHED), Q10–Q16 (§13.23/§13.24). **Q1 = A (§13.25) terimplementasi** — `completed` = `payment_status='paid'`, filter diterapkan di dashboard/laporan + test regresi.
 - **Basis:** audit `multi-business-tenant-audit.md` §14 + temuan tambahan pada 2026-10-10.

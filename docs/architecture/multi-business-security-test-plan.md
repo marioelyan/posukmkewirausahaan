@@ -1,4 +1,4 @@
-# Multi-Business Security Test Plan — KasirnyaKWU
+# Multi-Business Security Test Plan — KasirKwu
 
 - **Status:** PERENCANAAN / DOKUMENTASI ONLY. Tidak ada test yang dibuat atau dijalankan dalam tugas ini.
 - **Basis:** celah terverifikasi di kode pada 2026-10-10 + konvensi test repo (`AGENTS.md`).

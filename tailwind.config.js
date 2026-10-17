@@ -25,7 +25,7 @@ export default {
                 ],
             },
             colors: {
-                // Primary - KasirnyaKWU Navy (#21416D)
+                // Primary - KasirKwu Navy (#21416D)
                 primary: {
                     50: "#f3f7fc",
                     100: "#e4ecf7",

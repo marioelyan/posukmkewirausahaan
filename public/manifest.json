@@ -1,7 +1,7 @@
 {
-    "name": "KasirnyaKWU",
-    "short_name": "KasirnyaKWU",
-    "description": "Bergerak cepat, bertumbuh hebat — sistem kasir (POS) open source untuk UMKM Indonesia.",
+    "name": "KasirKwu",
+    "short_name": "KasirKwu",
+    "description": "Sistem kasir (POS) open source untuk UMKM Indonesia.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",

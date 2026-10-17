@@ -191,9 +191,6 @@ export default function Sidebar({ sidebarOpen }) {
                     <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center">
                         {BRAND.name} {appVersion}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-slate-300 dark:text-slate-700 text-center">
-                        {BRAND.tagline}
-                    </p>
                 </div>
             )}
         </div>

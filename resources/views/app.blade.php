@@ -5,9 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#21416D">
-    <meta name="description" content="KasirnyaKWU — sistem kasir (POS) open source untuk UMKM Indonesia. Multi-warehouse, PPN, loyalty & CRM, WhatsApp gateway, offline mode. Gratis, MIT License.">
-    <meta property="og:site_name" content="KasirnyaKWU">
-    <meta property="og:title" content="KasirnyaKWU — Sistem Kasir Open Source untuk UMKM">
+    <meta name="description" content="KasirKwu — sistem kasir (POS) open source untuk UMKM Indonesia. Multi-warehouse, PPN, loyalty & CRM, WhatsApp gateway, offline mode. Gratis, MIT License.">
+    <meta property="og:site_name" content="KasirKwu">
+    <meta property="og:title" content="KasirKwu — Sistem Kasir Open Source untuk UMKM">
     <meta property="og:description" content="POS gratis & open source: multi-warehouse, PPN, loyalty & CRM, WhatsApp gateway, offline mode. Laravel 13 + React 19.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ config('app.url') }}/">
@@ -15,18 +15,18 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="KasirnyaKWU — Sistem Kasir Open Source untuk UMKM">
+    <meta name="twitter:title" content="KasirKwu — Sistem Kasir Open Source untuk UMKM">
     <meta name="twitter:description" content="POS gratis & open source: multi-warehouse, PPN, loyalty & CRM, WhatsApp gateway, offline mode.">
     <meta name="twitter:image" content="{{ config('app.url') }}/images/og-image.png">
     <link rel="icon" href="/images/icon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="/images/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="KasirnyaKWU">
-    <meta name="application-name" content="KasirnyaKWU">
+    <meta name="apple-mobile-web-app-title" content="KasirKwu">
+    <meta name="application-name" content="KasirKwu">
     <link rel="manifest" href="/manifest.json">
 
-    <title data-inertia>{{ config('app.name', 'KasirnyaKWU') }}</title>
+    <title data-inertia>{{ config('app.name', 'KasirKwu') }}</title>
 
     <!-- Fonts - Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -149,7 +149,7 @@ export default function PublicLayout({ children, active = "" }) {
                                 {BRAND.name}
                             </div>
                             <div className="text-xs text-slate-500">
-                                {BRAND.tagline}
+                                {BRAND.description}
                             </div>
                         </div>
                     </div>

@@ -8,8 +8,7 @@
  * Jangan menyalin string brand secara hardcoded di komponen — impor dari sini.
  */
 export const BRAND = {
-    name: "KasirnyaKWU",
-    tagline: "Bergerak cepat, bertumbuh hebat",
+    name: "KasirKwu",
     description:
         "Sistem kasir (POS) untuk UMKM — multi-warehouse, PPN, CRM & WhatsApp, hingga mode offline.",
     url: "https://posukmkewirausahaan.web.id",

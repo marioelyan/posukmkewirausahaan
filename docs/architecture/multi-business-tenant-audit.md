@@ -1,4 +1,4 @@
-# Audit Arsitektur SaaS Multi-Business (Tenant) — KasirnyaKWU
+# Audit Arsitektur SaaS Multi-Business (Tenant) — KasirKwu
 
 Kembali ke indeks dokumentasi: `docs/README.md`
 

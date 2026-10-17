@@ -21,8 +21,7 @@
     </g>
   </g>
 
-  <!-- Wordmark + tagline -->
-  <text x="272" y="238" font-family="DejaVu Sans" font-size="80" font-weight="bold" fill="#ffffff">KasirnyaKWU</text>
-  <text x="274" y="288" font-family="DejaVu Sans" font-size="34" fill="#9DBBDC">Bergerak cepat, bertumbuh hebat</text>
-  <text x="274" y="330" font-family="DejaVu Sans" font-size="28" fill="#6E93C6">posukmkewirausahaan.web.id</text>
+  <!-- Wordmark -->
+  <text x="272" y="238" font-family="DejaVu Sans" font-size="80" font-weight="bold" fill="#ffffff">KasirKwu</text>
+  <text x="274" y="300" font-family="DejaVu Sans" font-size="28" fill="#6E93C6">posukmkewirausahaan.web.id</text>
 </svg>

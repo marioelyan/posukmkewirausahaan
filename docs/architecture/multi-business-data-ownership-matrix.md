@@ -1,4 +1,4 @@
-# Multi-Business Data Ownership Matrix — KasirnyaKWU
+# Multi-Business Data Ownership Matrix — KasirKwu
 
 - **Status:** PERENCANAAN / DOKUMENTASI ONLY. Tidak ada perubahan skema, data, atau kode.
 - **Basis:** `database/migrations/` + model + controller yang diverifikasi pada 2026-10-10.

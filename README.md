@@ -1,6 +1,6 @@
-# KasirnyaKWU
+# KasirKwu
 
-Bergerak cepat, bertumbuh hebat — sistem kasir berbasis Laravel + Inertia + React untuk transaksi penjualan, inventory audit, purchasing, finance, CRM, loyalty, dan observability operasional — dengan dukungan multi-warehouse, PPN, dan offline mode.
+Sistem kasir berbasis Laravel + Inertia + React untuk transaksi penjualan, inventory audit, purchasing, finance, CRM, loyalty, dan observability operasional — dengan dukungan multi-warehouse, PPN, dan offline mode.
 
 > 200+ GitHub stars • Open-source • MIT License
 
@@ -122,7 +122,7 @@ Ingin langsung mencoba dengan data contoh? Jalankan `php artisan seed:demo --for
 
 ## REST API (OpenAPI)
 
-KasirnyaKWU menyediakan REST API untuk integrasi mobile app / pihak ketiga. Dokumentasi interaktif otomatis (Scramble) tersedia di:
+KasirKwu menyediakan REST API untuk integrasi mobile app / pihak ketiga. Dokumentasi interaktif otomatis (Scramble) tersedia di:
 
 - **UI docs:** `/docs/api` — coba endpoint langsung dari browser (Try It)
 - **OpenAPI spec:** `/docs/api.json` — untuk generate client (Postman, OpenAPI Generator, Swagger Codegen)
