@@ -16,6 +16,8 @@ export const BRAND = {
     docs: "https://github.com/marioelyan/posukmkewirausahaan/blob/main/docs/getting-started.md",
     credit: "Mario Elyansyah",
     license: "MIT",
+    /** Brand mark platform (512×512, sudut sudah membulat di dalam SVG). */
+    mark: "/images/icon.svg",
 };
 
 export default BRAND;

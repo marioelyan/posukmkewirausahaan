@@ -10,13 +10,22 @@ Legenda prioritas:
 
 ---
 
-## 1. Brand Mark (huruf "K" gradient) — **Wajib**
+## 1. Brand Mark (huruf "K" gradient) — **SELESAI** ✅
 
-Kotak gradient navy dengan glyph huruf **"K"** dari Tabler (`IconLetterK`) adalah
-placeholder resmi brand. Kode menandainya eksplisit: *"kotak mark platform
-(placeholder, mudah ditukar nanti)"* — `resources/js/Components/BrandLogo.jsx`.
+Dulu: kotak gradient navy dengan glyph huruf **"K"** dari Tabler (`IconLetterK`).
+Sekarang: fallback platform memakai aset final `public/images/icon.svg`
+(perangkat POS, gradien biru `#2563EB`) lewat `BRAND.mark`.
 
-**Fallback aktif saat:** store profile belum upload logo (default instalasi baru).
+- Kode: `resources/js/Components/BrandLogo.jsx` — fallback `IconLetterK` dihapus,
+  diganti `<img src={BRAND.mark}>`; prop `variant` yang tak terpakai ikut dihapus.
+- Sumber tunggal: `BRAND.mark` di `resources/js/config/brand.js`.
+- Aset `public/images/brand-mark.svg` yang dulu diminta **tidak diperlukan** —
+  `icon.svg` dipakai ganda sebagai favicon/PWA dan brand mark in-app.
+- Urutan prioritas tetap: logo toko (Settings → Store) → inisial nama toko →
+  brand platform.
+
+**Fallback aktif saat:** store profile belum punya logo maupun nama (halaman
+publik, auth, dan wizard setup).
 
 | Lokasi render | Ukuran tampil | Rounded |
 |---|---|---|
@@ -30,26 +39,20 @@ placeholder resmi brand. Kode menandainya eksplisit: *"kotak mark platform
 | `Pages/Setup/Wizard.jsx` — wizard instalasi | 48px | rounded-xl |
 | `Pages/Auth/{Login,Register,ForgotPassword,ConfirmPassword}.jsx` | 48px | rounded-xl |
 
-**Aset diminta:**
+Tidak ada aset tambahan yang diminta.
 
-- `public/images/brand-mark.svg` — square, viewBox `0 0 512 512`, bentuk sudah
-  membulat di dalam SVG (render di kotak `rounded-xl/2xl` ukuran 32–72px).
-- Gaya sekarang: gradient `#456FAF → #1B3559`, glyph putih.
-- Implementasi: ganti fallback `IconLetterK` di `BrandLogo.jsx` dengan `<img src="/images/brand-mark.svg">`.
+## 2. Ikon Aplikasi / PWA / Favicon — **SELESAI** ✅
 
-## 2. Ikon Aplikasi / PWA / Favicon — **Wajib**
+Aset final (ikon perangkat POS, gradien `#2563EB`) sudah dipasang:
 
-Saat ini semua berisi glyph "K" yang sama (`public/images/icon.svg`):
+| File | Spesifikasi | Status |
+|---|---|---|
+| `public/images/icon.svg` | 512×512, favicon modern (`type="image/svg+xml"`) | ✅ diganti |
+| `public/images/icon-192.png` | 192×192 — apple-touch-icon + manifest | ✅ diregenerasi |
+| `public/images/icon-512.png` | 512×512 — manifest PWA | ✅ diregenerasi |
+| `public/favicon.ico` | fallback browser lama (16/32/48) | ✅ diregenerasi |
 
-| File | Spesifikasi |
-|---|---|
-| `public/images/icon.svg` | 512×512, dipakai sebagai favicon modern (`type="image/svg+xml"`) |
-| `public/images/icon-192.png` | 192×192 — apple-touch-icon + manifest |
-| `public/images/icon-512.png` | 512×512 — manifest PWA |
-| `public/favicon.ico` | fallback browser lama |
-
-**Aset diminta:** `icon.svg` baru (isi ulang file yang sama); PNG & ICO bisa
-dibenerasi dari SVG tersebut (atau saya generate otomatis).
+Tidak ada aset tambahan yang diminta.
 
 ## 3. OG Image (social preview) — **Wajib**
 
@@ -66,7 +69,7 @@ desainnya masih placeholder.
 (gambar "foto produk"). Direferensikan dari `resources/js/Utils/imageUrl.js`
 (`getProductImageUrl()`), namun **kedua consumer utamanya sudah dilepas**:
 grid POS (`ProductGrid.jsx`) dan tabel `Pages/Dashboard/Products/Index.jsx`
-(WIP, belum di-commit) tidak lagi menampilkan area gambar produk.
+(keduanya sudah di-commit: `86c1978`) tidak lagi menampilkan area gambar produk.
 
 - Jika foto produk tidak akan ditampilkan: `imageUrl.js` + file ini bisa dihapus.
 - Jika akan dipakai lagi: siapkan `product-placeholder.svg` baru 1:1.
@@ -95,18 +98,20 @@ siapkan mis. `public/images/empty-{products,transactions,reports,customers}.svg`
 
 ## Ringkasan file yang perlu disiapkan
 
-| # | File baru / isi ulang | Ukuran | Prioritas |
-|---|---|---|---|
-| 1 | `public/images/brand-mark.svg` | 512×512 square | Wajib |
-| 2 | `public/images/icon.svg` | 512×512 | Wajib |
-| 3 | `public/images/og-image.svg` | 1200×630 | Wajib |
-| 4 | `public/images/product-placeholder.svg` | 400×400 (rasio 1:1) | Wajib* |
-| 5 | `public/images/category-placeholder.svg` | rasio 3:2 | Opsional |
-| 6 | `public/images/empty-*.svg` | ~160×120 | Opsional |
+| # | File baru / isi ulang | Ukuran | Prioritas | Status |
+|---|---|---|---|---|
+| 1 | ~~`public/images/brand-mark.svg`~~ (dipakai `icon.svg`) | 512×512 square | Wajib | ✅ selesai |
+| 2 | `public/images/icon.svg` (+192/512 png, favicon.ico) | 512×512 | Wajib | ✅ selesai |
+| 3 | `public/images/og-image.svg` | 1200×630 | Wajib | ⬜ tersisa |
+| 4 | `public/images/product-placeholder.svg` | 400×400 (rasio 1:1) | Wajib* | ⬜ opsional |
+| 5 | `public/images/category-placeholder.svg` | rasio 3:2 | Opsional | ⬜ tersisa |
+| 6 | `public/images/empty-*.svg` | ~160×120 | Opsional | ⬜ tersisa |
 
 \* Hentikan jika foto produk tidak ditampilkan lagi di UI.
 
-Setelah file ditaruh di `public/images/`, saya yang pasang:
-- fallback `BrandLogo.jsx` → `<img>`
-- raster PNG (icon-192/512, og-image.png, favicon.ico) dari SVG
-  (bisa ditambahkan script `scripts/build-brand-assets.sh`).
+Sudah dipasang:
+- fallback `BrandLogo.jsx` → `<img src={BRAND.mark}>` (huruf "K" dihapus)
+- raster ikon aplikasi (icon-192/512, favicon.ico) dari `icon.svg`
+
+Sisa: raster `og-image.png` dari `og-image.svg` final (dan opsional
+`scripts/build-brand-assets.sh` untuk otomatisasi).

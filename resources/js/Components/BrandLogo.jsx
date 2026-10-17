@@ -1,13 +1,14 @@
 import React from "react";
-import { IconLetterK } from "@tabler/icons-react";
 import { BRAND } from "@/config/brand";
 
 /**
- * BrandMark — kotak mark platform (placeholder, mudah ditukar nanti).
+ * BrandMark — kotak mark platform.
  *
  * - `logoSrc` diisi (mis. logo toko dari Settings → Store) → render <img>.
  * - `label` diisi (mis. inisial nama toko) → huruf di dalam kotak gradient.
- * - Tanpa keduanya → glyph brand default (huruf "K").
+ * - Tanpa keduanya → brand mark platform (BRAND.mark, `public/images/icon.svg`).
+ *
+ * Urutannya sengaja: logo/nama toko selalu menang atas brand platform.
  */
 export function BrandMark({
     size = 40,
@@ -16,12 +17,15 @@ export function BrandMark({
     rounded = "rounded-xl",
     className = "",
     alt = null,
-    variant = "solid",
 }) {
-    if (logoSrc) {
+    // `label` dihormati lebih dulu: kalau toko punya nama tapi belum punya logo,
+    // inisial nama toko yang tampil — bukan brand platform.
+    const src = logoSrc || (label ? null : BRAND.mark);
+
+    if (src) {
         return (
             <img
-                src={logoSrc}
+                src={src}
                 alt={alt || label || BRAND.name}
                 width={size}
                 height={size}
@@ -31,31 +35,13 @@ export function BrandMark({
         );
     }
 
-    const glyph = label ? (
-        <span style={{ fontSize: Math.round(size * 0.4) }}>{label}</span>
-    ) : (
-        <IconLetterK size={Math.round(size * 0.6)} strokeWidth={2.2} />
-    );
-
-    if (variant === "plain") {
-        return (
-            <span
-                style={{ width: size, height: size }}
-                className={`flex shrink-0 items-center justify-center ${className}`}
-                aria-label={alt || label || BRAND.name}
-            >
-                {glyph}
-            </span>
-        );
-    }
-
     return (
         <div
             style={{ width: size, height: size }}
             className={`flex shrink-0 items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700 text-white font-bold ${rounded} ${className}`}
             aria-label={alt || label || BRAND.name}
         >
-            {glyph}
+            <span style={{ fontSize: Math.round(size * 0.4) }}>{label}</span>
         </div>
     );
 }
