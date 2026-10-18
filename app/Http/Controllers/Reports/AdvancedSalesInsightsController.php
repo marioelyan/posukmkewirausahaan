@@ -390,7 +390,7 @@ class AdvancedSalesInsightsController extends Controller
                 'tx',
                 fn ($join) => $join->on('tx.transaction_id', '=', 'td.transaction_id')
             )
-            ->groupBy('td.product_id', 'p.title', 'p.sku', 'c.name', 'ws.current_stock')
+            ->groupBy('td.product_id', 'p.title', 'p.sku', 'c.name', 'ws.current_stock', 'p.stock')
             ->orderByDesc('qty_sold')
             ->orderByDesc('revenue_total')
             ->limit(10)
