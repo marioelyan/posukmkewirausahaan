@@ -568,12 +568,16 @@ class PosApiController extends Controller
             return $this->error('Tanggal jatuh tempo wajib diisi untuk nota barang.', 422);
         }
 
+        $isStaticQris = false;
         if ($paymentGateway) {
             $paymentSetting = PaymentSetting::forOutlet($outlet);
-            $gatewayReady = $paymentSetting && ($paymentGateway === 'qris'
+            $isStaticQris = $paymentGateway === PaymentSetting::GATEWAY_QRIS
+                && (bool) $paymentSetting?->isStaticQrisReady();
+
+            $gatewayReady = $isStaticQris || ($paymentSetting && ($paymentGateway === 'qris'
                 ? $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_MIDTRANS)
                     || $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_XENDIT)
-                : $paymentSetting->isGatewayReady($paymentGateway));
+                : $paymentSetting->isGatewayReady($paymentGateway)));
 
             if (! $gatewayReady) {
                 return $this->error('Gateway pembayaran belum dikonfigurasi.', 422);
@@ -646,6 +650,10 @@ class PosApiController extends Controller
             );
         }
 
+        if ($isStaticQris) {
+            $transaction->update(['payment_status' => 'paid']);
+        }
+
         // Payment gateway
         if ($useTenders) {
             $gatewayTenders = $transaction->tenders()
@@ -671,7 +679,7 @@ class PosApiController extends Controller
                 // Gateway failure — transaction still valid, just no payment URL
                 $transaction->update(['payment_status' => 'pending']);
             }
-        } elseif ($paymentGateway) {
+        } elseif ($paymentGateway && ! $isStaticQris) {
             try {
                 $paymentResponse = $paymentGateway === 'qris'
                     ? $paymentGatewayManager->createQrisPayment($transaction, $paymentSetting)

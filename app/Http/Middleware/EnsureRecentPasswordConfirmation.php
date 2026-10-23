@@ -18,7 +18,11 @@ class EnsureRecentPasswordConfirmation
             return $next($request);
         }
 
-        $intendedUrl = $request->headers->get('referer') ?: route('dashboard.access');
+        // Tanpa referer jangan dijatuhkan ke halaman "tidak ada akses": pemakai
+        // yang sampai di sini sudah lolos `permission:` + `business.required`
+        // pada request yang sama, jadi dashboard aman baginya. Sengaja selaras
+        // dengan fallback ConfirmablePasswordController (route('dashboard')).
+        $intendedUrl = $request->headers->get('referer') ?: route('dashboard');
         $request->session()->put('url.intended', $intendedUrl);
         $request->session()->put('security.step_up_context', [
             'route' => $request->route()?->getName(),

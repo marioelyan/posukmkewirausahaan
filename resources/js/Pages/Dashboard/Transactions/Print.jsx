@@ -20,7 +20,7 @@ import { useAuthorization } from "@/Utils/authorization";
 import { hasCachedPrinter, kickDrawer, printReceipt } from "@/Utils/escpos";
 import toast from "react-hot-toast";
 
-export default function Print({ transaction }) {
+export default function Print({ transaction, qrisImageUrl = null }) {
     const { storeProfile, printerSettings } = usePage().props;
     const { can } = useAuthorization();
     const [printMode, setPrintMode] = useState("invoice"); // 'invoice' | 'thermal80' | 'thermal58'
@@ -423,6 +423,25 @@ export default function Print({ transaction }) {
                                     </span>
                                 </div>
                             )}
+
+                            {qrisImageUrl &&
+                                paymentMethodKey === "qris" &&
+                                !showQris && (
+                                    <div className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-success-200 dark:border-success-800 bg-success-50/60 dark:bg-success-950/30 w-full sm:w-auto print:hidden">
+                                        <img
+                                            src={qrisImageUrl}
+                                            alt="QRIS Merchant"
+                                            className="w-44 h-44 rounded-lg bg-white object-contain p-2"
+                                        />
+                                        <p className="text-xs font-semibold text-success-700 dark:text-success-300">
+                                            QRIS Merchant
+                                        </p>
+                                        <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                            <span className="w-2 h-2 rounded-full bg-success-500" />
+                                            Pembayaran dikonfirmasi lunas oleh kasir
+                                        </span>
+                                    </div>
+                                )}
 
                             <button
                                 type="button"

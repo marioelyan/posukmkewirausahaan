@@ -7,6 +7,7 @@ use App\Models\PaymentSetting;
 use App\Services\AuditLogService;
 use App\Services\OutletAccessService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -57,6 +58,9 @@ class PaymentSettingController extends Controller
             'setting' => [
                 'default_gateway' => $setting->default_gateway,
                 'bank_transfer_enabled' => (bool) $setting->bank_transfer_enabled,
+                'qris_enabled' => (bool) $setting->qris_enabled,
+                'qris_merchant_name' => $setting->qris_merchant_name,
+                'qris_image_url' => $setting->staticQrisImageUrl(),
                 'midtrans_enabled' => (bool) $setting->midtrans_enabled,
                 'midtrans_client_key' => $setting->midtrans_client_key,
                 'midtrans_production' => (bool) $setting->midtrans_production,
@@ -68,6 +72,7 @@ class PaymentSettingController extends Controller
             'supportedGateways' => [
                 ['value' => 'cash', 'label' => 'Tunai'],
                 ['value' => PaymentSetting::GATEWAY_BANK_TRANSFER, 'label' => 'Transfer Bank'],
+                ['value' => PaymentSetting::GATEWAY_QRIS, 'label' => 'QRIS'],
                 ['value' => PaymentSetting::GATEWAY_MIDTRANS, 'label' => 'Midtrans'],
                 ['value' => PaymentSetting::GATEWAY_XENDIT, 'label' => 'Xendit'],
             ],
@@ -87,9 +92,19 @@ class PaymentSettingController extends Controller
         $data = $request->validate([
             'default_gateway' => [
                 'required',
-                Rule::in(['cash', PaymentSetting::GATEWAY_BANK_TRANSFER, PaymentSetting::GATEWAY_MIDTRANS, PaymentSetting::GATEWAY_XENDIT]),
+                Rule::in([
+                    'cash',
+                    PaymentSetting::GATEWAY_BANK_TRANSFER,
+                    PaymentSetting::GATEWAY_QRIS,
+                    PaymentSetting::GATEWAY_MIDTRANS,
+                    PaymentSetting::GATEWAY_XENDIT,
+                ]),
             ],
             'bank_transfer_enabled' => ['boolean'],
+            'qris_enabled' => ['boolean'],
+            'qris_image' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'qris_merchant_name' => ['nullable', 'string', 'max:100'],
+            'remove_qris_image' => ['boolean'],
             'midtrans_enabled' => ['boolean'],
             'midtrans_server_key' => ['nullable', 'string'],
             'midtrans_client_key' => ['nullable', 'string'],
@@ -100,6 +115,21 @@ class PaymentSettingController extends Controller
             'xendit_callback_token' => ['nullable', 'string', 'max:255'],
             'xendit_production' => ['boolean'],
         ]);
+
+        $qrisEnabled = (bool) ($data['qris_enabled'] ?? false);
+        $qrisImageUploaded = $request->hasFile('qris_image');
+        $removeQrisImage = $request->boolean('remove_qris_image');
+        // Keep the current path unless the user uploads or removes the image.
+        // Deletion is deferred until every validation rule has passed.
+        $qrisImagePath = $qrisImageUploaded
+            ? 'pending-upload'
+            : ($removeQrisImage ? null : $setting->qris_image_path);
+
+        if ($qrisEnabled && blank($qrisImagePath)) {
+            return back()->withErrors([
+                'qris_image' => 'Gambar QRIS merchant wajib diunggah saat mengaktifkan QRIS.',
+            ])->withInput();
+        }
 
         $midtransEnabled = (bool) ($data['midtrans_enabled'] ?? false);
         $xenditEnabled = (bool) ($data['xendit_enabled'] ?? false);
@@ -134,16 +164,30 @@ class PaymentSettingController extends Controller
         if (
             $data['default_gateway'] !== 'cash'
             && ! (($data['default_gateway'] === PaymentSetting::GATEWAY_MIDTRANS && $midtransEnabled)
-                || ($data['default_gateway'] === PaymentSetting::GATEWAY_XENDIT && $xenditEnabled))
+                || ($data['default_gateway'] === PaymentSetting::GATEWAY_XENDIT && $xenditEnabled)
+                || ($data['default_gateway'] === PaymentSetting::GATEWAY_QRIS && $qrisEnabled && filled($qrisImagePath)))
         ) {
             return back()->withErrors([
                 'default_gateway' => 'Gateway default harus dalam kondisi aktif.',
             ])->withInput();
         }
 
+        $qrisImagePath = $setting->qris_image_path;
+
+        if ($qrisImageUploaded || $removeQrisImage) {
+            $this->deleteQrisImageIfUnused($qrisImagePath, $setting);
+
+            $qrisImagePath = $qrisImageUploaded
+                ? $request->file('qris_image')->store('payment/qris', 'public')
+                : null;
+        }
+
         $setting->update([
             'default_gateway' => $data['default_gateway'],
             'bank_transfer_enabled' => (bool) ($data['bank_transfer_enabled'] ?? false),
+            'qris_enabled' => $qrisEnabled,
+            'qris_image_path' => $qrisImagePath,
+            'qris_merchant_name' => $data['qris_merchant_name'] ?? null,
             'midtrans_enabled' => $midtransEnabled,
             'midtrans_server_key' => $setting->secretManagedByEnvironment('midtrans_server_key')
                 ? $setting->getRawOriginal('midtrans_server_key')
@@ -169,6 +213,9 @@ class PaymentSettingController extends Controller
             before: [
                 'default_gateway' => $beforeState->default_gateway,
                 'bank_transfer_enabled' => (bool) $beforeState->bank_transfer_enabled,
+                'qris_enabled' => (bool) $beforeState->qris_enabled,
+                'qris_merchant_name' => $beforeState->qris_merchant_name,
+                'qris_image' => filled($beforeState->qris_image_path) ? 'configured' : 'empty',
                 'midtrans_enabled' => (bool) $beforeState->midtrans_enabled,
                 'midtrans_production' => (bool) $beforeState->midtrans_production,
                 'xendit_enabled' => (bool) $beforeState->xendit_enabled,
@@ -182,6 +229,9 @@ class PaymentSettingController extends Controller
             after: [
                 'default_gateway' => $setting->default_gateway,
                 'bank_transfer_enabled' => (bool) $setting->bank_transfer_enabled,
+                'qris_enabled' => (bool) $setting->qris_enabled,
+                'qris_merchant_name' => $setting->qris_merchant_name,
+                'qris_image' => filled($setting->qris_image_path) ? 'configured' : 'empty',
                 'midtrans_enabled' => (bool) $setting->midtrans_enabled,
                 'midtrans_production' => (bool) $setting->midtrans_production,
                 'xendit_enabled' => (bool) $setting->xendit_enabled,
@@ -214,6 +264,27 @@ class PaymentSettingController extends Controller
         return redirect()
             ->route('settings.payments.edit')
             ->with('success', 'Konfigurasi payment gateway berhasil disimpan.');
+    }
+
+    /**
+     * Outlet settings are replicated from the global row, so the same image
+     * path can be shared by multiple outlets. Only delete the file when no
+     * other setting still references it.
+     */
+    private function deleteQrisImageIfUnused(?string $path, PaymentSetting $setting): void
+    {
+        if (blank($path)) {
+            return;
+        }
+
+        $usedElsewhere = PaymentSetting::query()
+            ->where('qris_image_path', $path)
+            ->whereKeyNot($setting->getKey())
+            ->exists();
+
+        if (! $usedElsewhere) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     private function isLocalAppUrl(string $appUrl): bool

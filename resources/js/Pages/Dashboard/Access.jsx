@@ -72,8 +72,9 @@ function AccessPage() {
                         Pilih Akses
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Halaman ini muncul ketika Anda tidak memiliki akses
-                        dashboard.
+                        {visibleCards.length
+                            ? "Pilih modul di bawah untuk mulai bekerja."
+                            : "Halaman ini muncul ketika Anda tidak memiliki akses dashboard."}
                     </p>
                 </div>
 

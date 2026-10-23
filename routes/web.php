@@ -52,6 +52,7 @@ use App\Http\Controllers\SetupController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\UserController;
 use App\Models\Setting;
+use App\Services\BusinessContext;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -60,11 +61,25 @@ Route::get('/', function () {
         return redirect()->route('setup.index');
     }
 
+    $user = auth()->user();
+
+    if (! $user) {
+        return redirect()->route('login');
+    }
+
     // Landing: belum login -> form login; udah login -> dashboard.
-    return auth()->check()
-        ? redirect()->route('dashboard.access')
-        : redirect()->route('login');
-});
+    //
+    // `business` dipakai supaya penilaian konteks bisnisnya identik dengan yang
+    // dijalankan `/dashboard` (ResolveBusinessContext), bukan tebakan: user yang
+    // lolos `dashboard-access` tapi konteksnya tidak bisa diselesaikan tetap
+    // dikirim ke pemilih akses, karena `/dashboard` sendiri menjawab 403.
+    $routeName = $user->can('dashboard-access')
+        && app(BusinessContext::class)->hasActiveBusiness()
+        ? 'dashboard'
+        : 'dashboard.access';
+
+    return redirect()->route($routeName);
+})->middleware('business');
 
 // First-install setup wizard (locked out once app_setup_completed = true)
 Route::middleware('setup.notinstalled')->group(function () {

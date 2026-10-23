@@ -1,0 +1,101 @@
+barcode,sku,nama,deskripsi,kategori,harga_beli,harga_jual,stok,min_stok,max_stok,tipe_pajak,tarif_pajak
+8990000000013,MKN-001,"Nasi Goreng Spesial","Nasi goreng telur, ayam dan sosis dengan kerupuk",Makanan,12000,25000,43,6,300,exclusive,11
+8990000000020,MKN-002,"Nasi Goreng Ayam","Nasi goreng dengan suwiran ayam dan telur",Makanan,11000,23000,35,7,275,exclusive,11
+8990000000037,MKN-003,"Nasi Goreng Seafood","Nasi goreng udang, cumi dan telur",Makanan,15000,32000,48,8,250,exclusive,11
+8990000000044,MKN-004,"Nasi Goreng Kampung","Nasi goreng ikan asin, teri dan kangkung",Makanan,10000,21000,40,9,225,exclusive,11
+8990000000051,MKN-005,"Nasi Goreng Pete","Nasi goreng pete dengan telur dan sambal",Makanan,12000,26000,32,10,200,exclusive,11
+8990000000068,MKN-006,"Mie Goreng Spesial","Mie goreng telur, sayur dan ayam",Makanan,10000,22000,45,11,175,exclusive,11
+8990000000075,MKN-007,"Mie Goreng Jawa","Mie goreng bumbu Jawa dengan ayam",Makanan,9500,21000,37,12,150,exclusive,11
+8990000000082,MKN-008,"Kwetiau Goreng","Kwetiau goreng sapi dan sayuran",Makanan,12000,25000,50,5,125,exclusive,11
+8990000000099,MKN-009,"Bihun Goreng","Bihun goreng sayur dan telur",Makanan,9000,20000,42,6,100,exclusive,11
+8990000000105,MKN-010,"Nasi Ayam Geprek","Ayam geprek sambal bawang dengan nasi",Makanan,11000,23000,34,7,300,exclusive,11
+8990000000112,MKN-011,"Nasi Ayam Bakar","Ayam bakar bumbu kecap dengan nasi",Makanan,13000,27000,47,8,275,exclusive,11
+8990000000129,MKN-012,"Nasi Ayam Katsu","Ayam katsu tepung dengan saus dan nasi",Makanan,14000,29000,39,9,250,exclusive,11
+8990000000136,MKN-013,"Nasi Uduk Komplit","Nasi uduk, bihun, tempe dan sambal",Makanan,12000,25000,31,10,225,exclusive,11
+8990000000143,MKN-014,"Nasi Kuning Komplit","Nasi kuning ayam, telur dan serundeng",Makanan,13000,26000,44,11,200,exclusive,11
+8990000000150,MKN-015,"Nasi Rames","Nasi rames sayur, tempe dan telur",Makanan,10000,21000,36,12,175,exclusive,11
+8990000000167,MKN-016,"Nasi Rendang","Nasi dengan rendang daging sapi",Makanan,16000,33000,49,5,150,exclusive,11
+8990000000174,MKN-017,"Nasi Ayam Pop","Ayam pop khas Padang dengan sambal",Makanan,14000,29000,41,6,125,exclusive,11
+8990000000181,MKN-018,"Sate Ayam 10 Tusuk","Sate ayam bumbu kacang 10 tusuk",Makanan,15000,30000,33,7,100,exclusive,11
+8990000000198,MKN-019,"Sate Kambing 10 Tusuk","Sate kambing muda 10 tusuk",Makanan,22000,42000,46,8,300,exclusive,11
+8990000000204,MKN-020,"Soto Ayam","Soto ayam kuah kuning dengan nasi",Makanan,10000,21000,38,9,275,exclusive,11
+8990000000211,MKN-021,"Soto Betawi","Soto betawi kuah santan dan daging",Makanan,13000,27000,30,10,250,exclusive,11
+8990000000228,MKN-022,"Rawon Sapi","Rawon daging sapi kuah kluwek",Makanan,15000,31000,43,11,225,exclusive,11
+8990000000235,MKN-023,"Bakso Sapi","Bakso sapi kuah dengan mie dan tahu",Makanan,10000,22000,35,12,200,exclusive,11
+8990000000242,MKN-024,"Mie Ayam","Mie ayam bumbu kecap dan pangsit",Makanan,9000,19000,48,5,175,exclusive,11
+8990000000259,MKN-025,"Mie Ayam Bakso","Mie ayam dengan tambahan bakso sapi",Makanan,11000,23000,40,6,150,exclusive,11
+8990000000266,MKN-026,Gado-Gado,"Gado-gado sayur dengan bumbu kacang",Makanan,9000,19000,32,7,125,exclusive,11
+8990000000273,MKN-027,Karedok,"Karedok sayur mentah bumbu kacang",Makanan,8500,18000,45,8,100,exclusive,11
+8990000000280,MKN-028,"Capcay Kuah","Capcay sayur kuah dengan ayam",Makanan,11000,23000,37,9,300,exclusive,11
+8990000000297,MKN-029,"Capcay Goreng","Capcay sayur goreng dengan bakso",Makanan,11000,23000,50,10,275,exclusive,11
+8990000000303,MKN-030,"Ayam Penyet","Ayam penyet sambal terasi dan lalapan",Makanan,12000,25000,42,11,250,exclusive,11
+8990000000310,MKN-031,"Ikan Nila Bakar","Ikan nila bakar bumbu kecap",Makanan,14000,29000,34,12,225,exclusive,11
+8990000000327,MKN-032,"Ikan Lele Goreng","Lele goreng garing dengan sambal",Makanan,10000,21000,47,5,200,exclusive,11
+8990000000334,MKN-033,"Udang Goreng Tepung","Udang goreng tepung crispy",Makanan,16000,33000,39,6,175,exclusive,11
+8990000000341,MKN-034,"Tahu Tempe Goreng","Tahu dan tempe goreng dengan sambal kecap",Makanan,5000,12000,31,7,150,exclusive,11
+8990000000358,MNM-001,"Es Teh Manis","Teh manis dingin dengan es batu",Minuman,2500,7000,64,8,125,exclusive,11
+8990000000365,MNM-002,"Teh Tawar Panas","Teh tawar panas tanpa gula",Minuman,1500,5000,56,9,100,exclusive,11
+8990000000372,MNM-003,"Teh Manis Panas","Teh manis hangat",Minuman,2000,6000,69,10,300,exclusive,11
+8990000000389,MNM-004,"Es Jeruk","Perasan jeruk segar dengan es",Minuman,3500,9000,61,11,275,exclusive,11
+8990000000396,MNM-005,"Jeruk Panas","Perasan jeruk hangat",Minuman,3500,9000,53,12,250,exclusive,11
+8990000000402,MNM-006,"Es Lemon Tea","Teh lemon dingin dengan es",Minuman,4000,10000,66,5,225,exclusive,11
+8990000000419,MNM-007,"Es Teh Tarik","Teh susu tarik dingin",Minuman,5000,12000,58,6,200,exclusive,11
+8990000000426,MNM-008,"Es Susu Putih","Susu putih dingin dengan es",Minuman,4000,10000,50,7,175,exclusive,11
+8990000000433,MNM-009,"Susu Putih Panas","Susu putih hangat",Minuman,4000,10000,63,8,150,exclusive,11
+8990000000440,MNM-010,"Es Cokelat","Minuman cokelat dingin",Minuman,5000,13000,55,9,125,exclusive,11
+8990000000457,MNM-011,"Cokelat Panas","Minuman cokelat hangat",Minuman,5000,13000,68,10,100,exclusive,11
+8990000000464,MNM-012,"Es Milo","Milo dingin dengan es dan susu",Minuman,6000,15000,60,11,300,exclusive,11
+8990000000471,MNM-013,"Es Kelapa Muda","Air kelapa muda segar dengan es",Minuman,6000,15000,52,12,275,exclusive,11
+8990000000488,MNM-014,"Jus Alpukat","Jus alpukat dengan susu cokelat",Minuman,8000,18000,65,5,250,exclusive,11
+8990000000495,MNM-015,"Es Alpukat","Es alpukat susu dan gula",Minuman,8000,18000,57,6,225,exclusive,11
+8990000000501,MNM-016,"Jus Mangga","Jus mangga manis segar",Minuman,7000,16000,70,7,200,exclusive,11
+8990000000518,MNM-017,"Jus Jeruk","Jus jeruk peras tanpa gula tambahan",Minuman,6000,14000,62,8,175,exclusive,11
+8990000000525,MNM-018,"Jus Melon","Jus melon segar",Minuman,6000,14000,54,9,150,exclusive,11
+8990000000532,MNM-019,"Jus Semangka","Jus semangka tanpa gula",Minuman,6000,14000,67,10,125,exclusive,11
+8990000000549,MNM-020,"Jus Wortel","Jus wortel dengan sedikit gula",Minuman,6000,14000,59,11,100,exclusive,11
+8990000000556,MNM-021,"Es Soda Gembira","Soda susu sirup merah dengan es",Minuman,6000,15000,51,12,300,exclusive,11
+8990000000563,MNM-022,"Air Mineral 600ml","Air mineral botol 600 ml",Minuman,2500,5000,64,5,275,exclusive,11
+8990000000570,MNM-023,"Air Mineral 1500ml","Air mineral botol 1500 ml",Minuman,4000,8000,56,6,250,exclusive,11
+8990000000587,MNM-024,"Es Teh Melati","Teh melati dingin dengan es",Minuman,3000,8000,69,7,225,exclusive,11
+8990000000594,KOP-001,Espresso,"Espresso single shot",Kopi,6000,15000,51,8,200,exclusive,11
+8990000000600,KOP-002,"Americano Panas","Espresso dengan air panas",Kopi,7000,18000,43,9,175,exclusive,11
+8990000000617,KOP-003,"Americano Dingin","Espresso dengan es dan air",Kopi,7000,18000,56,10,150,exclusive,11
+8990000000624,KOP-004,"Kopi Hitam Tubruk","Kopi tubruk dengan gula batu",Kopi,4000,10000,48,11,125,exclusive,11
+8990000000631,KOP-005,"Kopi Susu Panas","Kopi susu kental manis hangat",Kopi,6000,16000,40,12,100,exclusive,11
+8990000000648,KOP-006,"Es Kopi Susu","Kopi susu dingin dengan es",Kopi,7000,18000,53,5,300,exclusive,11
+8990000000655,KOP-007,"Es Kopi Susu Gula Aren","Kopi susu gula aren dingin",Kopi,8000,20000,45,6,275,exclusive,11
+8990000000662,KOP-008,Cappuccino,"Cappuccino dengan foam susu",Kopi,9000,22000,58,7,250,exclusive,11
+8990000000679,KOP-009,"Caffe Latte","Latte espresso dengan susu steamed",Kopi,9000,22000,50,8,225,exclusive,11
+8990000000686,KOP-010,"Caramel Macchiato","Macchiato dengan saus karamel",Kopi,10000,25000,42,9,200,exclusive,11
+8990000000693,KOP-011,"Mocha Latte","Latte cokelat dengan espresso",Kopi,10000,24000,55,10,175,exclusive,11
+8990000000709,KOP-012,"Kopi Vietnam Drip","Kopi drip Vietnam susu kental",Kopi,8000,20000,47,11,150,exclusive,11
+8990000000716,SNK-001,"Kentang Goreng","Kentang goreng dengan saus sambal",Snack,5000,13000,55,12,125,exclusive,11
+8990000000723,SNK-002,"French Fries Jumbo","Kentang goreng porsi jumbo",Snack,8000,19000,47,5,100,exclusive,11
+8990000000730,SNK-003,"Pisang Goreng","Pisang goreng tepung crispy",Snack,4000,10000,39,6,300,exclusive,11
+8990000000747,SNK-004,"Tahu Crispy","Tahu goreng tepung crispy",Snack,4000,10000,52,7,275,exclusive,11
+8990000000754,SNK-005,"Tempe Mendoan","Tempe mendoan tepung gurih",Snack,4000,10000,44,8,250,exclusive,11
+8990000000761,SNK-006,"Roti Bakar Keju","Roti bakar isi keju mozzarella",Snack,6000,15000,36,9,225,exclusive,11
+8990000000778,SNK-007,"Roti Bakar Cokelat","Roti bakar isi cokelat kacang",Snack,6000,15000,49,10,200,exclusive,11
+8990000000785,SNK-008,"Onion Ring","Bawang bombay goreng tepung",Snack,6000,15000,41,11,175,exclusive,11
+8990000000792,SNK-009,"Chicken Wings","Sayap ayam goreng bumbu madu",Snack,9000,21000,54,12,150,exclusive,11
+8990000000808,SNK-010,"Chicken Tenders","Ayam fillet tepung crispy",Snack,9000,21000,46,5,125,exclusive,11
+8990000000815,SNK-011,Cireng,"Cireng aci goreng dengan sambal",Snack,3500,9000,38,6,100,exclusive,11
+8990000000822,SNK-012,Cilok,"Cilok aci dengan bumbu kacang",Snack,3500,9000,51,7,300,exclusive,11
+8990000000839,SNK-013,"Dimsum Ayam","Dimsum ayam kukus isi 4 pcs",Snack,7000,17000,43,8,275,exclusive,11
+8990000000846,SNK-014,"Lumpia Semarang","Lumpia rebung goreng isi 2 pcs",Snack,5000,13000,35,9,250,exclusive,11
+8990000000853,SNK-015,"Risoles Mayo","Risoles isi mayones dan telur",Snack,5000,13000,48,10,225,exclusive,11
+8990000000860,SNK-016,"Pangsit Goreng","Pangsit goreng crispy",Snack,5000,13000,40,11,200,exclusive,11
+8990000000877,SNK-017,Otak-Otak,"Otak-otak ikan bakar",Snack,4000,10000,53,12,175,exclusive,11
+8990000000884,SNK-018,"Tahu Walik","Tahu walik goreng crispy",Snack,4000,11000,45,5,150,exclusive,11
+8990000000891,DSR-001,"Es Krim Vanilla","Es krim vanilla satu scoop",Dessert,4000,10000,22,6,125,exclusive,11
+8990000000907,DSR-002,"Es Krim Cokelat","Es krim cokelat satu scoop",Dessert,4000,10000,35,7,100,exclusive,11
+8990000000914,DSR-003,"Es Krim Strawberry","Es krim strawberry satu scoop",Dessert,4000,10000,27,8,300,exclusive,11
+8990000000921,DSR-004,"Puding Cokelat","Puding cokelat dengan vla",Dessert,5000,12000,40,9,275,exclusive,11
+8990000000938,DSR-005,"Puding Susu","Puding susu lembut dengan saus",Dessert,5000,12000,32,10,250,exclusive,11
+8990000000945,DSR-006,"Es Pisang Ijo","Pisang ijo dengan bubur sumsum",Dessert,7000,16000,24,11,225,exclusive,11
+8990000000952,DSR-007,"Es Campur","Es campur buah dan kolang kaling",Dessert,8000,18000,37,12,200,exclusive,11
+8990000000969,DSR-008,"Es Doger","Es doger kelapa dan ketan hitam",Dessert,7000,16000,29,5,175,exclusive,11
+8990000000976,DSR-009,"Es Teler","Es teler alpukat, kelapa dan nangka",Dessert,8000,18000,21,6,150,exclusive,11
+8990000000983,DSR-010,"Pancake Madu","Pancake dengan madu dan mentega",Dessert,7000,17000,34,7,125,exclusive,11
+8990000000990,DSR-011,"Waffle Cokelat","Waffle dengan saus cokelat",Dessert,8000,19000,26,8,100,exclusive,11
+8990000001003,DSR-012,"Brownies Ice Cream","Brownies hangat dengan es krim",Dessert,9000,22000,39,9,300,exclusive,11

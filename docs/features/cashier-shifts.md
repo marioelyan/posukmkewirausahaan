@@ -14,6 +14,8 @@ Mengontrol sesi kerja kasir agar transaksi kasir memiliki konteks shift yang jel
 - close shift
 - force close untuk user berwenang
 - ringkasan expected cash, actual cash, selisih, transaksi, dan sales return
+- riwayat kas masuk/keluar per shift (waktu, tipe, nominal, keterangan, pencatat)
+- kolom total kas masuk dan kas keluar di tabel histori shift
 
 ## Halaman dan Route
 
@@ -34,12 +36,14 @@ Mengontrol sesi kerja kasir agar transaksi kasir memiliki konteks shift yang jel
 1. kasir membuka shift dengan opening cash
 2. route transaksi tertentu mewajibkan shift aktif
 3. selama shift aktif, transaksi dan sales return tercatat dalam konteks shift
-4. saat penutupan, kasir mengisi actual cash
-5. sistem menghitung selisih dan summary shift
+4. kasir dapat mencatat kas masuk/keluar beserta keterangannya selama shift aktif
+5. saat penutupan, kasir mengisi actual cash
+6. sistem menghitung selisih dan summary shift, lalu menyimpan total kas masuk/keluar
 
 ## Integrasi Data
 
-- `cashier_shifts`
+- `cashier_shifts` (termasuk `cash_in_total` dan `cash_out_total`)
+- `shift_cash_movements`
 - transaksi cash / non-cash
 - sales returns
 - middleware `active_shift`

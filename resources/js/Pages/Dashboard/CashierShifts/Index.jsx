@@ -411,6 +411,8 @@ export default function Index({
                                 <Table.Th>Buka</Table.Th>
                                 <Table.Th>Tutup</Table.Th>
                                 <Table.Th>Expected Cash</Table.Th>
+                                <Table.Th>Kas Masuk</Table.Th>
+                                <Table.Th>Kas Keluar</Table.Th>
                                 <Table.Th>Selisih</Table.Th>
                                 <Table.Th className="w-24 text-center">Aksi</Table.Th>
                             </tr>
@@ -449,6 +451,8 @@ export default function Index({
                                         <Table.Td>{formatDateTime(shift.opened_at)}</Table.Td>
                                         <Table.Td>{formatDateTime(shift.closed_at)}</Table.Td>
                                         <Table.Td>{formatCurrency(shift.expected_cash)}</Table.Td>
+                                        <Table.Td>{formatCurrency(shift.cash_in_total)}</Table.Td>
+                                        <Table.Td>{formatCurrency(shift.cash_out_total)}</Table.Td>
                                         <Table.Td>
                                             {shift.cash_difference === null
                                                 ? "-"
@@ -466,7 +470,7 @@ export default function Index({
                                 ))
                             ) : (
                                 <Table.Empty
-                                    colSpan={7}
+                                    colSpan={9}
                                     message={
                                         <div className="text-slate-500 dark:text-slate-400">
                                             Belum ada histori shift kasir.

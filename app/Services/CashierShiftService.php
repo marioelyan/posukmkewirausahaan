@@ -216,6 +216,8 @@ class CashierShiftService
                 'non_cash_sales_total' => $summary['non_cash_sales_total'],
                 'cash_refund_total' => $summary['cash_refund_total'],
                 'non_cash_refund_total' => $summary['non_cash_refund_total'],
+                'cash_in_total' => $summary['cash_in_total'],
+                'cash_out_total' => $summary['cash_out_total'],
                 'transactions_count' => $summary['transactions_count'],
                 'sales_returns_count' => $summary['sales_returns_count'],
                 'cash_difference' => $cashDifference,

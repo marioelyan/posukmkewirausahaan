@@ -35,6 +35,7 @@ import {
     IconCash,
     IconCreditCard,
     IconBuildingBank,
+    IconQrcode,
     IconAlertTriangle,
     IconWallet,
 } from "@tabler/icons-react";
@@ -59,6 +60,7 @@ export default function Index({
     initialPricingPreview = { items: [], summary: {} },
     paymentGateways = [],
     defaultPaymentGateway = "cash",
+    qrisImageUrl = null,
     bankAccounts = [],
     warehouses = [],
     loyaltyTierOptions = [],
@@ -758,6 +760,11 @@ export default function Index({
             }
         }
 
+        if (!navigator.onLine && !splitMode && paymentMethod === "qris") {
+            toast.error("QRIS tidak tersedia saat offline");
+            return;
+        }
+
         setIsSubmitting(true);
 
         if (!navigator.onLine && splitMode) {
@@ -1451,6 +1458,9 @@ export default function Index({
                                                     <IconBuildingBank
                                                         size={16}
                                                     />
+                                                ) : method.value ===
+                                                  "qris" ? (
+                                                    <IconQrcode size={16} />
                                                 ) : (
                                                     <IconCreditCard size={16} />
                                                 )}
@@ -1470,6 +1480,29 @@ export default function Index({
                                         </button>
                                     ))}
                                 </div>
+                                {!splitMode &&
+                                    !payLater &&
+                                    paymentMethod === "qris" &&
+                                    qrisImageUrl && (
+                                        <div className="mt-3 flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50/60 p-3 dark:border-primary-800 dark:bg-primary-950/30">
+                                            <img
+                                                src={qrisImageUrl}
+                                                alt="QRIS Merchant"
+                                                className="h-24 w-24 rounded-lg bg-white object-contain p-1"
+                                            />
+                                            <div className="text-xs text-slate-600 dark:text-slate-300">
+                                                <p className="font-semibold text-slate-800 dark:text-white">
+                                                    Scan QRIS Merchant
+                                                </p>
+                                                <p>
+                                                    Minta pelanggan memindai QR
+                                                    ini, lalu simpan transaksi.
+                                                    Pembayaran langsung
+                                                    ditandai lunas.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 {!payLater && (
                                     <button
                                         type="button"

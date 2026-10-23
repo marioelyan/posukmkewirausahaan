@@ -71,7 +71,7 @@ class CashierShiftController extends Controller
         $cashierShift = $this->resolveVisibleShift($request, $cashierShift);
 
         return Inertia::render('Dashboard/CashierShifts/Show', [
-            'cashierShift' => $this->transformShift($cashierShift),
+            'cashierShift' => $this->transformShift($cashierShift, includeCashMovements: true),
             'canForceClose' => $request->user()->isSuperAdmin() || $request->user()->can('cashier-shifts-force-close'),
         ]);
     }
@@ -182,12 +182,32 @@ class CashierShiftController extends Controller
             'note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $this->cashierShiftService->recordCashMovement(
+        $movement = $this->cashierShiftService->recordCashMovement(
             shift: $cashierShift,
             actor: $request->user(),
             type: $validated['type'],
             amount: (int) $validated['amount'],
             note: $validated['note'] ?? null,
+        );
+
+        $this->auditLogService->log(
+            event: 'cashier_shift.cash_movement_recorded',
+            module: 'cashier_shifts',
+            auditable: $movement,
+            description: $validated['type'] === ShiftCashMovement::TYPE_IN
+                ? 'Kas masuk shift dicatat.'
+                : 'Kas keluar shift dicatat.',
+            after: [
+                'cashier_shift_id' => $cashierShift->id,
+                'type' => $movement->type,
+                'amount' => $movement->amount,
+                'note' => $movement->note,
+                'user_id' => $movement->user_id,
+            ],
+            meta: [
+                'shift_id' => $cashierShift->id,
+                'cashier_id' => $cashierShift->user_id,
+            ],
         );
 
         return back()->with('success', 'Pergerakan kas berhasil dicatat.');
@@ -208,7 +228,15 @@ class CashierShiftController extends Controller
     private function resolveVisibleShift(Request $request, CashierShift $cashierShift): CashierShift
     {
         $query = CashierShift::query()
-            ->with(['user:id,name', 'openedBy:id,name', 'closedBy:id,name', 'warehouse:id,code,name'])
+            ->with([
+                'user:id,name',
+                'openedBy:id,name',
+                'closedBy:id,name',
+                'warehouse:id,code,name',
+                'cashMovements' => fn ($movements) => $movements
+                    ->with('user:id,name')
+                    ->latest(),
+            ])
             ->whereKey($cashierShift->id);
 
         $query = $this->cashierShiftService->visibleToUser($query, $request->user());
@@ -245,9 +273,15 @@ class CashierShiftController extends Controller
             ->get(['id', 'name']);
     }
 
-    private function transformShift(CashierShift $shift): array
+    private function transformShift(CashierShift $shift, bool $includeCashMovements = false): array
     {
         $summary = $this->cashierShiftService->calculateSummary($shift);
+
+        $cashMovements = $includeCashMovements
+            ? ($shift->relationLoaded('cashMovements')
+                ? $shift->cashMovements
+                : $shift->cashMovements()->with('user:id,name')->latest()->get())
+            : collect();
 
         return [
             'id' => $shift->id,
@@ -266,10 +300,7 @@ class CashierShiftController extends Controller
             'non_cash_refund_total' => $shift->isOpen() ? $summary['non_cash_refund_total'] : (int) $shift->non_cash_refund_total,
             'cash_in_total' => $shift->isOpen() ? $summary['cash_in_total'] : ($summary['cash_in_total'] ?: 0),
             'cash_out_total' => $shift->isOpen() ? $summary['cash_out_total'] : ($summary['cash_out_total'] ?: 0),
-            'cash_movements' => $shift->cashMovements()
-                ->with('user:id,name')
-                ->latest()
-                ->get()
+            'cash_movements' => $cashMovements
                 ->map(fn (ShiftCashMovement $movement) => [
                     'id' => $movement->id,
                     'type' => $movement->type,

@@ -3,6 +3,12 @@
 Audit permukaan UI yang masih menampilkan grafis placeholder (bukan aset desain final).
 Daftar ini disusun agar aset SVG final bisa disiapkan dan tinggal ditukar.
 
+> **Status per 18 Okt 2026** — diverifikasi ulang terhadap kode dan isi
+> `public/images/`. Selesai: item 1 (brand mark) dan 2 (ikon aplikasi/favicon/PWA).
+> Belum berubah: item 3 (OG image), 4 (product placeholder), 5 (category
+> placeholder), 6 (empty-state illustration). Ringkasan terverifikasi ada di
+> bagian [Ringkasan terverifikasi](#ringkasan-terverifikasi-18-okt-2026).
+
 Legenda prioritas:
 
 - **Wajib** — placeholder terlihat jelas di UI publik/aplikasi.
@@ -54,16 +60,26 @@ Aset final (ikon perangkat POS, gradien `#2563EB`) sudah dipasang:
 
 Tidak ada aset tambahan yang diminta.
 
-## 3. OG Image (social preview) — **Wajib**
+## 3. OG Image (social preview) — **Wajib** ⬜ belum berubah
 
 `public/images/og-image.svg` (+ hasil raster `og-image.png`) — 1200×630.
-Sekarang masih SVG "digambar manual": gradient navy + mark K + wordmark
-"KasirKwu" + domain. Sudah saya perbarui teksnya (nama + hapus slogan), tapi
-desainnya masih placeholder.
+Diverifikasi 18 Okt 2026: desainnya **masih placeholder** dan **belum memakai
+ikon baru**.
 
-**Aset diminta:** `og-image.svg` final 1200×630. PNG bisa dirender dari SVG.
+- `og-image.svg` masih memakai gradient lama `#21416D → #102138` dan mark lama
+  bergradient `#456FAF → #1B3559` dengan glyph chevron — bukan ikon perangkat
+  POS `#2563EB` yang sudah dipakai di favicon/PWA/brand mark in-app.
+- Teks sudah dibereskan (wordmark "KasirKwu" + domain, slogan sudah hilang).
+- **PNG-nya lebih tua dari SVG-nya**: `og-image.png` (14 Okt 18:17) <
+  `og-image.svg` (17 Okt 16:23), jadi PNG itu **bukan hasil render SVG terbaru**.
+  `resources/views/app.blade.php` menunjuk `og:image`/`twitter:image` ke PNG
+  tersebut, sehingga preview sosial yang benar-benar tampil masih versi pra-rebrand.
+- Belum ada script rasterisasi (`scripts/` hanya berisi `deploy-build.sh`).
 
-## 4. Product Image Placeholder — **Wajib (jika foto produk dipakai lagi)**
+**Aset diminta:** `og-image.svg` final 1200×630 (pakai ikon `#2563EB`), lalu
+raster ulang `og-image.png` dari SVG itu.
+
+## 4. Product Image Placeholder — **Wajib (jika foto produk dipakai lagi)** ⬜ belum berubah
 
 `public/images/product-placeholder.svg` — 400×400, ilustrasi kotak abu
 (gambar "foto produk"). Direferensikan dari `resources/js/Utils/imageUrl.js`
@@ -74,7 +90,10 @@ grid POS (`ProductGrid.jsx`) dan tabel `Pages/Dashboard/Products/Index.jsx`
 - Jika foto produk tidak akan ditampilkan: `imageUrl.js` + file ini bisa dihapus.
 - Jika akan dipakai lagi: siapkan `product-placeholder.svg` baru 1:1.
 
-## 5. Category Image Placeholder — **Opsional**
+Diverifikasi 18 Okt 2026: `public/images/product-placeholder.svg` dan
+`resources/js/Utils/imageUrl.js` masih ada apa adanya (belum diubah atau dihapus).
+
+## 5. Category Image Placeholder — **Opsional** ⬜ belum berubah
 
 `Pages/Dashboard/Categories/Index.jsx` — card grid menampilkan area gambar
 `aspect-[3/2]` dengan fallback `IconCategory` 48px bila kategori belum punya
@@ -82,7 +101,10 @@ gambar. Halaman Create/Edit memakai `IconPhoto` untuk area upload.
 
 **Aset diminta (opsional):** `public/images/category-placeholder.svg` — rasio 3:2.
 
-## 6. Empty-State Illustrations — **Opsional (polish)**
+Diverifikasi 18 Okt 2026: file belum ada; `Categories/Index.jsx` masih memakai
+`aspect-[3/2]` + fallback `IconCategory` dan `IconPhoto` seperti semula.
+
+## 6. Empty-State Illustrations — **Opsional (polish)** ⬜ belum berubah
 
 25+ halaman dashboard memakai glyph tabler `IconDatabaseOff` (24–28px) sebagai
 empty state, mis. `Products/Index`, `Customers/Index`, `Transactions/History`,
@@ -94,24 +116,40 @@ Ini bukan placeholder file — hanya ikon generik. Jika ingin ilustrasi khusus,
 siapkan mis. `public/images/empty-{products,transactions,reports,customers}.svg`
 (~160×120) lalu saya ganti per konteks.
 
+Diverifikasi 18 Okt 2026: tidak ada satu pun file `public/images/empty-*.svg`
+(0 file); halaman masih memakai glyph tabler seperti sebelumnya.
+
 ---
 
-## Ringkasan file yang perlu disiapkan
+## Ringkasan terverifikasi (18 Okt 2026)
 
-| # | File baru / isi ulang | Ukuran | Prioritas | Status |
-|---|---|---|---|---|
-| 1 | ~~`public/images/brand-mark.svg`~~ (dipakai `icon.svg`) | 512×512 square | Wajib | ✅ selesai |
-| 2 | `public/images/icon.svg` (+192/512 png, favicon.ico) | 512×512 | Wajib | ✅ selesai |
-| 3 | `public/images/og-image.svg` | 1200×630 | Wajib | ⬜ tersisa |
-| 4 | `public/images/product-placeholder.svg` | 400×400 (rasio 1:1) | Wajib* | ⬜ opsional |
-| 5 | `public/images/category-placeholder.svg` | rasio 3:2 | Opsional | ⬜ tersisa |
-| 6 | `public/images/empty-*.svg` | ~160×120 | Opsional | ⬜ tersisa |
+| # | File baru / isi ulang | Ukuran | Prioritas | Status | Catatan verifikasi |
+|---|---|---|---|---|---|
+| 1 | ~~`public/images/brand-mark.svg`~~ (dipakai `icon.svg`) | 512×512 square | Wajib | ✅ selesai | `BRAND.mark` + `<img>` di `BrandLogo.jsx` terpasang |
+| 2 | `public/images/icon.svg` (+192/512 png, favicon.ico) | 512×512 | Wajib | ✅ selesai | 4 file ada & terkirim ke package |
+| 3 | `public/images/og-image.svg` (+ raster `og-image.png`) | 1200×630 | Wajib | ⬜ belum berubah | Desain & mark masih lama; PNG lebih tua dari SVG |
+| 4 | `public/images/product-placeholder.svg` | 400×400 (rasio 1:1) | Wajib* | ⬜ belum berubah | File & `imageUrl.js` masih ada apa adanya |
+| 5 | `public/images/category-placeholder.svg` | rasio 3:2 | Opsional | ⬜ belum berubah | File belum ada; fallback `IconCategory` |
+| 6 | `public/images/empty-*.svg` | ~160×120 | Opsional | ⬜ belum berubah | 0 file; masih glyph tabler |
 
 \* Hentikan jika foto produk tidak ditampilkan lagi di UI.
 
-Sudah dipasang:
+### Yang belum berubah sejak audit awal
+
+- **Item 3 (OG image)** — masih placeholder, dan raster `og-image.png` justru
+  versi pra-rebrand (lebih tua dari SVG-nya). Satu-satunya item **Wajib** yang
+  benar-benar menggantung, sekaligus yang berdampak publik karena
+  `resources/views/app.blade.php` menunjuk `og:image`/`twitter:image` ke PNG ini.
+- **Item 4 (product placeholder)** — belum diputuskan: dihapus atau diganti.
+- **Item 5 (category placeholder)** — aset belum dibuat (opsional).
+- **Item 6 (empty-state illustration)** — aset belum dibuat (opsional).
+
+### Sudah dipasang
+
 - fallback `BrandLogo.jsx` → `<img src={BRAND.mark}>` (huruf "K" dihapus)
 - raster ikon aplikasi (icon-192/512, favicon.ico) dari `icon.svg`
 
-Sisa: raster `og-image.png` dari `og-image.svg` final (dan opsional
-`scripts/build-brand-assets.sh` untuk otomatisasi).
+### Sisa pekerjaan aset
+
+- Item 3: `og-image.svg` final (ikon `#2563EB`) + raster ulang `og-image.png`.
+- Opsional: `scripts/build-brand-assets.sh` untuk otomatisasi rasterisasi.

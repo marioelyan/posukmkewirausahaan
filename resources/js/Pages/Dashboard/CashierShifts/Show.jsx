@@ -2,7 +2,9 @@ import React, { useMemo, useState } from "react";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import {
+    IconArrowDownLeft,
     IconArrowLeft,
+    IconArrowUpRight,
     IconCashBanknote,
     IconPrinter,
     IconReceipt,
@@ -137,11 +139,13 @@ export default function Show({ cashierShift, canForceClose = false }) {
                     </span>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <MetricCard title="Modal Awal" value={formatCurrency(cashierShift.opening_cash)} icon={IconWallet} />
                     <MetricCard title="Expected Cash" value={formatCurrency(cashierShift.expected_cash)} icon={IconCashBanknote} />
                     <MetricCard title="Penjualan Tunai" value={formatCurrency(cashierShift.cash_sales_total)} icon={IconReceipt} />
                     <MetricCard title="Refund Tunai" value={formatCurrency(cashierShift.cash_refund_total)} icon={IconRotateClockwise2} />
+                    <MetricCard title="Kas Masuk" value={formatCurrency(cashierShift.cash_in_total)} icon={IconArrowDownLeft} />
+                    <MetricCard title="Kas Keluar" value={formatCurrency(cashierShift.cash_out_total)} icon={IconArrowUpRight} />
                 </div>
 
                 <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
@@ -279,6 +283,79 @@ export default function Show({ cashierShift, canForceClose = false }) {
                             </div>
                         )}
                     </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                            Riwayat Kas Masuk/Keluar
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            Masuk {formatCurrency(cashierShift.cash_in_total)} · Keluar {formatCurrency(cashierShift.cash_out_total)}
+                        </p>
+                    </div>
+
+                    {cashierShift.cash_movements?.length ? (
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="w-full min-w-[640px] text-left text-sm">
+                                <thead>
+                                    <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                        <th className="py-3 pr-4 font-semibold">Waktu</th>
+                                        <th className="py-3 pr-4 font-semibold">Tipe</th>
+                                        <th className="py-3 pr-4 text-right font-semibold">Nominal</th>
+                                        <th className="py-3 pr-4 font-semibold">Keterangan</th>
+                                        <th className="py-3 font-semibold">Dicatat Oleh</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {cashierShift.cash_movements.map((movement) => (
+                                        <tr
+                                            key={movement.id}
+                                            className="border-b border-slate-100 last:border-0 dark:border-slate-800"
+                                        >
+                                            <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
+                                                {formatDateTime(movement.created_at)}
+                                            </td>
+                                            <td className="py-3 pr-4">
+                                                <span
+                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                                        movement.type === "in"
+                                                            ? "bg-success-100 text-success-700 dark:bg-success-950/40 dark:text-success-400"
+                                                            : "bg-danger-100 text-danger-700 dark:bg-danger-950/40 dark:text-danger-400"
+                                                    }`}
+                                                >
+                                                    {movement.type === "in" ? "Kas Masuk" : "Kas Keluar"}
+                                                </span>
+                                            </td>
+                                            <td
+                                                className={`py-3 pr-4 text-right font-semibold ${
+                                                    movement.type === "in"
+                                                        ? "text-success-600 dark:text-success-400"
+                                                        : "text-danger-600 dark:text-danger-400"
+                                                }`}
+                                            >
+                                                {movement.type === "in" ? "+" : "-"}
+                                                {formatCurrency(movement.amount)}
+                                            </td>
+                                            <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
+                                                {movement.note || "-"}
+                                            </td>
+                                            <td className="py-3 text-slate-600 dark:text-slate-300">
+                                                {movement.user || "-"}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 py-8 text-center dark:border-slate-700">
+                            <IconCashBanknote size={28} className="text-slate-400" />
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                Belum ada kas masuk/keluar pada shift ini.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </>

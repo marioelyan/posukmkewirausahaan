@@ -57,8 +57,18 @@ export function installStepUpReplay() {
         const method = String(visit.method ?? "get").toLowerCase();
         const path = pathOf(visit.url);
 
-        // Only non-GET visits can be step-up protected. The confirmation request
-        // itself must never be captured as a replay candidate.
+        // A GET to the confirmation screen is the server redirect that lands the
+        // user there after the step-up middleware intercepted the original
+        // write. Keep that write around so it can be replayed; clearing here is
+        // what broke auto-replay under Inertia 3, which resolves the redirect as
+        // a fresh GET visit.
+        if (method === "get" && path === CONFIRM_PATH) {
+            return;
+        }
+
+        // Only non-GET visits can be step-up protected. The confirmation POST
+        // itself (and any other GET navigation) must never be captured as a
+        // replay candidate.
         if (method === "get" || path === CONFIRM_PATH) {
             lastNonGetVisit = null;
             return;
@@ -81,13 +91,18 @@ export function installStepUpReplay() {
         };
     });
 
-    router.on("navigate", (event) => {
+    // `navigate` is suppressed for replace visits, so also listen to
+    // `beforeUpdate`, which fires for every page response that swaps a page.
+    const rememberConfirmVisit = (event) => {
         const page = event?.detail?.page;
 
         if (page?.component === "Auth/ConfirmPassword" && lastNonGetVisit) {
             pendingVisit = lastNonGetVisit;
         }
-    });
+    };
+
+    router.on("beforeUpdate", rememberConfirmVisit);
+    router.on("navigate", rememberConfirmVisit);
 }
 
 export function hasPendingStepUp() {

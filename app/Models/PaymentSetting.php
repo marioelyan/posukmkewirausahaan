@@ -15,6 +15,8 @@ class PaymentSetting extends Model
 
     public const GATEWAY_BANK_TRANSFER = 'bank_transfer';
 
+    public const GATEWAY_QRIS = 'qris';
+
     public const SECRET_FIELDS = [
         'midtrans_server_key',
         'xendit_secret_key',
@@ -25,6 +27,9 @@ class PaymentSetting extends Model
         'default_gateway',
         'outlet_id',
         'bank_transfer_enabled',
+        'qris_enabled',
+        'qris_image_path',
+        'qris_merchant_name',
         'midtrans_enabled',
         'midtrans_server_key',
         'midtrans_client_key',
@@ -39,6 +44,7 @@ class PaymentSetting extends Model
     protected $casts = [
         'outlet_id' => 'integer',
         'bank_transfer_enabled' => 'boolean',
+        'qris_enabled' => 'boolean',
         'midtrans_enabled' => 'boolean',
         'midtrans_production' => 'boolean',
         'xendit_enabled' => 'boolean',
@@ -96,6 +102,14 @@ class PaymentSetting extends Model
             ];
         }
 
+        if ($this->isStaticQrisReady()) {
+            $gateways[] = [
+                'value' => self::GATEWAY_QRIS,
+                'label' => 'QRIS',
+                'description' => 'Scan QRIS toko. Pembayaran langsung dianggap lunas saat checkout.',
+            ];
+        }
+
         if ($this->isGatewayReady(self::GATEWAY_MIDTRANS)) {
             $gateways[] = [
                 'value' => self::GATEWAY_MIDTRANS,
@@ -123,10 +137,41 @@ class PaymentSetting extends Model
         return $this->bank_transfer_enabled && BankAccount::active()->forOutlet($outlet)->exists();
     }
 
+    /**
+     * Static QRIS is a merchant QR image uploaded by the outlet. It needs no
+     * gateway credentials and is settled immediately at checkout.
+     */
+    public function isStaticQrisReady(): bool
+    {
+        return $this->qris_enabled && filled($this->qris_image_path);
+    }
+
+    /**
+     * Public URL of the uploaded merchant QR image.
+     *
+     * Returns a root-relative path (`/storage/...`) so the browser resolves it
+     * against the origin actually serving the app. Building an absolute URL from
+     * `APP_URL` breaks the image whenever that value is wrong or omits a port
+     * (e.g. local dev on :8000 with APP_URL=http://localhost).
+     */
+    public function staticQrisImageUrl(): ?string
+    {
+        if (! filled($this->qris_image_path)) {
+            return null;
+        }
+
+        // Derive the public prefix (`/storage`) from the disk URL, but keep only
+        // its path so the result never depends on the configured host.
+        $prefix = parse_url((string) config('filesystems.disks.public.url', '/storage'), PHP_URL_PATH);
+
+        return rtrim($prefix ?: '/storage', '/').'/'.ltrim($this->qris_image_path, '/');
+    }
+
     public function isGatewayReady(string $gateway): bool
     {
         return match ($gateway) {
             self::GATEWAY_BANK_TRANSFER => $this->isBankTransferReady(),
+            self::GATEWAY_QRIS => $this->isStaticQrisReady(),
             self::GATEWAY_MIDTRANS => $this->midtrans_enabled
             && filled($this->resolvedSecret('midtrans_server_key'))
             && filled($this->midtrans_client_key),

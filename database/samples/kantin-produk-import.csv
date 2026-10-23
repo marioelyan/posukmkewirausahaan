@@ -1,0 +1,79 @@
+barcode,sku,nama,deskripsi,kategori,harga_beli,harga_jual,stok,min_stok,max_stok,tipe_pajak,tarif_pajak
+8999000000016,AMR-001,"Airos Pure Water 330 ml",,"Air Mineral",1500,3000,1,0,0,exclusive,0
+8999000000023,AMR-002,"Airos Pure Water 500 ml",,"Air Mineral",1875,4000,1,0,0,exclusive,0
+8999000000030,RTK-001,"Amanah Besar",,"Roti & Kue",3500,4000,1,0,0,exclusive,0
+8999000000047,RTK-002,"Amanah Kecil",,"Roti & Kue",2500,3000,1,0,0,exclusive,0
+8999000000054,RTK-003,"Aoka Besar",,"Roti & Kue",2000,3000,1,0,0,exclusive,0
+8999000000061,RTK-004,"Aoka Kecil",,"Roti & Kue",890,1500,1,0,0,exclusive,0
+8999000000078,SNK-001,Arden,,Snack,1750,3000,1,0,0,exclusive,0
+8999000000085,SNK-002,"Beng Beng",,Snack,2050,3000,1,0,0,exclusive,0
+8999000000092,SNK-003,Chocolatos,,Snack,437,1000,1,0,0,exclusive,0
+8999000000108,MSR-001,"Chocolatos Coklat Drink",,"Minuman Serbuk",2683,4000,1,0,0,exclusive,0
+8999000000115,MSR-002,"Chocolatos Matcha",,"Minuman Serbuk",2743,4000,1,0,0,exclusive,0
+8999000000122,SNK-004,Chumie,,Snack,800,1500,1,0,0,exclusive,0
+8999000000139,GRJ-001,Cibay,,"Gorengan & Jajanan",1500,2000,1,0,0,exclusive,0
+8999000000146,SNK-005,"Cocorio Dark Choco",,Snack,1143,2000,1,0,0,exclusive,0
+8999000000153,SNK-006,"Coklat Dubai",,Snack,2500,3000,1,0,0,exclusive,0
+8999000000160,GRJ-002,"Daging Crispy",,"Gorengan & Jajanan",2500,3000,1,0,0,exclusive,0
+8999000000177,SNK-007,Dilan,,Snack,1666,3000,1,0,0,exclusive,0
+8999000000184,GRJ-003,"Dimsum Keju",,"Gorengan & Jajanan",2500,3000,1,0,0,exclusive,0
+8999000000191,MSR-003,"Drink Beng Beng",,"Minuman Serbuk",2993,4000,1,0,0,exclusive,0
+8999000000207,MSR-004,Energen,,"Minuman Serbuk",3243,5000,1,0,0,exclusive,0
+8999000000214,SNK-008,Finto,,Snack,1143,2000,1,0,0,exclusive,0
+8999000000221,KOP-001,Golda,,Kopi,3225,4000,1,0,0,exclusive,0
+8999000000238,KOP-002,"Gooday Chocolate",,Kopi,2263,4000,1,0,0,exclusive,0
+8999000000245,KOP-003,"Gooday Coolin",,Kopi,2263,4000,1,0,0,exclusive,0
+8999000000252,KOP-004,"Gooday Freeze",,Kopi,3043,5000,1,0,0,exclusive,0
+8999000000269,KOP-005,"Gooday Granola",,Kopi,2793,5000,1,0,0,exclusive,0
+8999000000276,KOP-006,"Gooday Mocacino",,Kopi,2263,4000,1,0,0,exclusive,0
+8999000000283,KOP-007,"Gooday Vanila Latte",,Kopi,2263,4000,1,0,0,exclusive,0
+8999000000290,KOP-008,Indocafe,,Kopi,2533,4000,1,0,0,exclusive,0
+8999000000306,SNK-009,Kalpa,,Snack,1700,3000,1,0,0,exclusive,0
+8999000000313,KOP-009,"Kapal Api",,Kopi,2493,4000,1,0,0,exclusive,0
+8999000000320,SNK-010,"Kerang Winda",,Snack,2000,3000,1,0,0,exclusive,0
+8999000000337,SNK-011,Rambak,,Snack,1700,2500,1,0,0,exclusive,0
+8999000000344,SNK-012,"Latio Kiss Your Mouth",,Snack,450,1000,1,0,0,exclusive,0
+8999000000351,SNK-013,"Latio Panjang",,Snack,1000,2000,1,0,0,exclusive,0
+8999000000368,SNK-014,"Latio Sachet",,Snack,450,1000,1,0,0,exclusive,0
+8999000000375,SNK-015,"Makaroni Bantet",,Snack,2000,3000,1,0,0,exclusive,0
+8999000000382,SNK-016,"Makaroni Keju",,Snack,2000,3000,1,0,0,exclusive,0
+8999000000399,SNK-017,"Makaroni Naskun",,Snack,1500,2000,1,0,0,exclusive,0
+8999000000405,MSR-005,Marimas,,"Minuman Serbuk",1143,4000,1,0,0,exclusive,0
+8999000000412,MIE-001,"Mie Gelas",,"Mie Instan",1483,2000,1,0,0,exclusive,0
+8999000000429,MIE-002,"Mie Goreng Sedap",,"Mie Instan",3905,7000,1,0,0,exclusive,0
+8999000000436,MIE-003,"Mie Kuah Sedap",,"Mie Instan",3805,7000,1,0,0,exclusive,0
+8999000000443,SSM-001,Milku,,Susu,3025,4000,1,0,0,exclusive,0
+8999000000450,SNK-018,Momogi,,Snack,440,1000,1,0,0,exclusive,0
+8999000000467,RTK-005,Mooncake,,"Roti & Kue",2000,3000,1,0,0,exclusive,0
+8999000000474,MKN-001,"Naskun Nasgor",,Makanan,5000,6000,1,0,0,exclusive,0
+8999000000481,KOP-010,Nesacafe,,Kopi,2143,4000,1,0,0,exclusive,0
+8999000000498,MSR-006,Nutrisari,,"Minuman Serbuk",2073,4000,1,0,0,exclusive,0
+8999000000504,SNK-019,Opak,,Snack,2500,3000,1,0,0,exclusive,0
+8999000000511,RTK-006,Padimas,,"Roti & Kue",1800,2500,1,0,0,exclusive,0
+8999000000528,PRM-001,Permen,,Permen,144,250,1,0,0,exclusive,0
+8999000000535,MKN-002,Pizza,,Makanan,5500,6000,1,0,0,exclusive,0
+8999000000542,MIE-004,"Pop Mie",,"Mie Instan",5160,7000,1,0,0,exclusive,0
+8999000000559,SNK-020,Popcorn,,Snack,2000,2500,1,0,0,exclusive,0
+8999000000566,GRJ-004,Risol,,"Gorengan & Jajanan",2500,3000,1,0,0,exclusive,0
+8999000000573,RTK-007,"Roti Abon",,"Roti & Kue",4500,5000,1,0,0,exclusive,0
+8999000000580,RTK-008,"Roti Bulat",,"Roti & Kue",4500,5000,1,0,0,exclusive,0
+8999000000597,RTK-009,"Roti Isi",,"Roti & Kue",2200,3000,1,0,0,exclusive,0
+8999000000603,RTK-010,"Roti Ribut",,"Roti & Kue",450,750,1,0,0,exclusive,0
+8999000000610,RTK-011,"Roti Sosis",,"Roti & Kue",4500,5000,1,0,0,exclusive,0
+8999000000627,GRJ-005,"Sosis Sonice Besar",,"Gorengan & Jajanan",1700,2500,1,0,0,exclusive,0
+8999000000634,GRJ-006,"Sosis Sonice Kecil",,"Gorengan & Jajanan",800,1500,1,0,0,exclusive,0
+8999000000641,SSM-002,"Susu Coklat",,Susu,1613,4000,1,0,0,exclusive,0
+8999000000658,SSM-003,"Susu Putih",,Susu,1613,4000,1,0,0,exclusive,0
+8999000000665,SSM-004,"Susu Jahe",,Susu,2413,4000,1,0,0,exclusive,0
+8999000000672,TEH-001,"Teajus Apel",,Teh,1143,2000,1,0,0,exclusive,0
+8999000000689,TEH-002,"Teajus Gula Batu",,Teh,1143,2000,1,0,0,exclusive,0
+8999000000696,TEH-003,"Teajus Lemon",,Teh,1143,2000,1,0,0,exclusive,0
+8999000000702,TEH-004,"Teajus Melati",,Teh,1143,2000,1,0,0,exclusive,0
+8999000000719,KOP-011,"Top Cappucino",,Kopi,2713,5000,1,0,0,exclusive,0
+8999000000726,KOP-012,"Top Delfi Coklat",,Kopi,762,1500,1,0,0,exclusive,0
+8999000000733,MKN-003,"Wow Spagheti",,Makanan,4105,6000,1,0,0,exclusive,0
+8999000000740,KOP-013,"Zenlatte Dark Chocolate",,Kopi,2793,5000,1,0,0,exclusive,0
+8999000000757,KOP-014,"Zenlatte Matcha",,Kopi,2793,5000,1,0,0,exclusive,0
+8999000000764,TEH-005,"Zenlatte Teh Tarik",,Teh,2793,5000,1,0,0,exclusive,0
+8999000000771,TEH-006,"Zenlatte Thai Tea",,Teh,2793,5000,1,0,0,exclusive,0
+8999000000788,MSJ-001,"Es Teh",,"Minuman Siap Saji",1025,2000,1,0,0,exclusive,0

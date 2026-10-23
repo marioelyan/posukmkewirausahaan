@@ -51,6 +51,7 @@ class TransactionTenderService
         $normalized = [];
         $gatewayCount = 0;
         $bankTransferCount = 0;
+        $setting = $this->setting($outlet);
 
         foreach (array_values($input) as $index => $tender) {
             $method = strtolower(trim((string) ($tender['method'] ?? '')));
@@ -124,6 +125,7 @@ class TransactionTenderService
                 'bank_account_id' => $bankAccountId,
                 'payment_status' => $method === TransactionTender::METHOD_CASH
                 || $method === TransactionTender::METHOD_BANK_TRANSFER
+                || ($method === TransactionTender::METHOD_QRIS && $setting->isStaticQrisReady())
                     ? TransactionTender::STATUS_PAID
                     : TransactionTender::STATUS_PENDING,
             ];
@@ -151,11 +153,16 @@ class TransactionTenderService
 
         foreach ($normalized as $tender) {
             if (in_array($tender['method'], self::GATEWAY_METHODS, true)) {
+                // Static QRIS settles at the cashier, so no gateway is called.
+                if ($tender['method'] === TransactionTender::METHOD_QRIS && $setting->isStaticQrisReady()) {
+                    continue;
+                }
+
                 $gateway = $tender['method'] === TransactionTender::METHOD_QRIS
                      ? $this->resolveQrisGateway($outlet)
                     : $tender['method'];
 
-                if (! $gateway || ! $this->setting($outlet)->isGatewayReady($gateway)) {
+                if (! $gateway || ! $setting->isGatewayReady($gateway)) {
                     throw ValidationException::withMessages([
                         'tenders' => 'Gateway pembayaran belum dikonfigurasi.',
                     ]);

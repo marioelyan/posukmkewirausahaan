@@ -7,6 +7,7 @@ import {
     IconCheck,
     IconAlertCircle,
     IconBuildingBank,
+    IconQrcode,
 } from "@tabler/icons-react";
 
 const formatPrice = (value = 0) =>
@@ -42,6 +43,7 @@ function PaymentMethodCard({ method, isSelected, onClick }) {
     const getIcon = () => {
         if (method.value === "cash") return IconCash;
         if (method.value === "bank_transfer") return IconBuildingBank;
+        if (method.value === "qris") return IconQrcode;
         return IconCreditCard;
     };
     const IconComponent = getIcon();

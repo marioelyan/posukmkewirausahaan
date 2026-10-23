@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Head, useForm, usePage } from "@inertiajs/react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import Input from "@/Components/Dashboard/Input";
@@ -9,6 +9,7 @@ import {
     IconDeviceFloppy,
     IconBrandStripe,
     IconCash,
+    IconQrcode,
 } from "@tabler/icons-react";
 import toast from "react-hot-toast";
 
@@ -23,9 +24,14 @@ export default function Payment({
     const { can } = useAuthorization();
     const canUpdatePaymentSettings = can("payment-settings-update");
 
-    const { data, setData, put, errors, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
+        _method: "PUT",
         default_gateway: setting?.default_gateway ?? "cash",
         bank_transfer_enabled: setting?.bank_transfer_enabled ?? false,
+        qris_enabled: setting?.qris_enabled ?? false,
+        qris_merchant_name: setting?.qris_merchant_name ?? "",
+        qris_image: null,
+        remove_qris_image: false,
         midtrans_enabled: setting?.midtrans_enabled ?? false,
         midtrans_server_key: "",
         midtrans_client_key: setting?.midtrans_client_key ?? "",
@@ -37,18 +43,57 @@ export default function Payment({
         xendit_production: setting?.xendit_production ?? false,
     });
 
+    const [qrisPreview, setQrisPreview] = useState(
+        setting?.qris_image_url ?? null
+    );
+
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
+    useEffect(() => {
+        setQrisPreview(setting?.qris_image_url ?? null);
+    }, [setting?.qris_image_url]);
+
+    const handleQrisImageChange = (event) => {
+        const file = event.target.files?.[0] ?? null;
+
+        setData({
+            ...data,
+            qris_image: file,
+            remove_qris_image: false,
+        });
+
+        setQrisPreview(
+            file ? URL.createObjectURL(file) : setting?.qris_image_url ?? null
+        );
+    };
+
+    const handleRemoveQrisImage = () => {
+        setData({
+            ...data,
+            qris_image: null,
+            remove_qris_image: true,
+        });
+        setQrisPreview(null);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route("settings.payments.update"), { preserveScroll: true });
+        // Inertia 3 sends a real PUT for `put()`; PHP does not parse a multipart
+        // body on PUT, so a QRIS image upload would reach the controller empty.
+        // POST with `_method = PUT` keeps the multipart body parseable.
+        post(route("settings.payments.update"), { preserveScroll: true });
     };
 
     const isGatewaySelectable = (gateway) => {
         if (gateway === "cash") return true;
+        if (gateway === "qris") {
+            return Boolean(
+                data.qris_enabled && (data.qris_image || qrisPreview)
+            );
+        }
         if (gateway === "midtrans") return data.midtrans_enabled;
         if (gateway === "xendit") return data.xendit_enabled;
         return false;
@@ -180,6 +225,100 @@ export default function Payment({
                     >
                         Kelola Rekening Bank →
                     </a>
+                </div>
+
+                {/* Static QRIS */}
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <IconQrcode size={18} />
+                            QRIS Statis
+                        </h3>
+                        <label
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
+                                data.qris_enabled
+                                    ? "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400"
+                                    : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                            }`}
+                        >
+                            <Checkbox
+                                checked={data.qris_enabled}
+                                onChange={(e) =>
+                                    setData("qris_enabled", e.target.checked)
+                                }
+                                disabled={!canUpdatePaymentSettings}
+                            />
+                            {data.qris_enabled ? "Aktif" : "Nonaktif"}
+                        </label>
+                    </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                        Unggah gambar QRIS merchant milik toko. Pembayaran QRIS
+                        dianggap lunas langsung saat checkout, tanpa memanggil
+                        gateway dan tanpa webhook.
+                    </p>
+                    <div
+                        className={`space-y-4 ${
+                            !data.qris_enabled
+                                ? "opacity-50 pointer-events-none"
+                                : ""
+                        }`}
+                    >
+                        <Input
+                            label="Nama Merchant (opsional)"
+                            type="text"
+                            value={data.qris_merchant_name}
+                            onChange={(e) =>
+                                setData("qris_merchant_name", e.target.value)
+                            }
+                            errors={errors?.qris_merchant_name}
+                            placeholder="Nama toko pada QRIS"
+                            disabled={!canUpdatePaymentSettings}
+                        />
+                        <div>
+                            <label
+                                htmlFor="qris_image"
+                                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+                            >
+                                Gambar QRIS Merchant
+                            </label>
+                            <input
+                                id="qris_image"
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                onChange={handleQrisImageChange}
+                                disabled={!canUpdatePaymentSettings}
+                                className="block w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-950/40 dark:file:text-primary-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                            />
+                            {errors?.qris_image && (
+                                <small className="text-xs text-danger-500 mt-1">
+                                    {errors.qris_image}
+                                </small>
+                            )}
+                        </div>
+                        {qrisPreview && (
+                            <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+                                <img
+                                    src={qrisPreview}
+                                    alt="QRIS Merchant"
+                                    className="h-36 w-36 rounded-lg border border-slate-200 bg-white object-contain p-2 dark:border-slate-700"
+                                />
+                                {canUpdatePaymentSettings && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveQrisImage}
+                                        className="text-sm font-medium text-danger-600 hover:text-danger-700 dark:text-danger-400"
+                                    >
+                                        Hapus gambar
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Gunakan gambar QRIS yang jelas dan hanya milik toko
+                            ini. Pastikan pembayaran pelanggan sudah masuk
+                            sebelum transaksi disimpan.
+                        </p>
+                    </div>
                 </div>
 
                 {/* Midtrans */}

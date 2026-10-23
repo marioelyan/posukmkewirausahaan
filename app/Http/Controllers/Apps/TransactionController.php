@@ -175,6 +175,9 @@ class TransactionController extends Controller
             'initialPricingPreview' => $initialPricingPreview,
             'paymentGateways' => $paymentSetting?->enabledGateways($outlet) ?? [],
             'defaultPaymentGateway' => $defaultGateway,
+            'qrisImageUrl' => $paymentSetting?->isStaticQrisReady()
+                ? $paymentSetting->staticQrisImageUrl()
+                : null,
             'bankAccounts' => $bankAccounts,
             'warehouses' => $this->outletAccessService->salesWarehousesFor(auth()->user())->values(),
             'shiftSummary' => $this->cashierShiftService->summarizeForDisplay($activeShift),
@@ -655,13 +658,16 @@ class TransactionController extends Controller
         }
 
         $paymentSetting = null;
+        $isStaticQris = false;
         if ($paymentGateway) {
             $paymentSetting = PaymentSetting::forOutlet($outlet);
+            $isStaticQris = $paymentGateway === PaymentSetting::GATEWAY_QRIS
+                && (bool) $paymentSetting?->isStaticQrisReady();
 
-            $gatewayReady = $paymentSetting && ($paymentGateway === 'qris'
+            $gatewayReady = $isStaticQris || ($paymentSetting && ($paymentGateway === 'qris'
                 ? $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_MIDTRANS)
                     || $paymentSetting->isGatewayReady(PaymentSetting::GATEWAY_XENDIT)
-                : $paymentSetting->isGatewayReady($paymentGateway));
+                : $paymentSetting->isGatewayReady($paymentGateway)));
 
             if (! $gatewayReady) {
                 return redirect()
@@ -717,6 +723,11 @@ class TransactionController extends Controller
                 ->with('info', 'Transaksi menunggu approval supervisor.');
         }
 
+        // Static QRIS is confirmed at the cashier: no gateway call, settle now.
+        if ($isStaticQris) {
+            $result->transaction->update(['payment_status' => 'paid']);
+        }
+
         if ($useTenders) {
             $gatewayTenders = $result->transaction->tenders()
                 ->whereIn('method', [TransactionTender::METHOD_MIDTRANS, TransactionTender::METHOD_XENDIT, TransactionTender::METHOD_QRIS])
@@ -746,7 +757,7 @@ class TransactionController extends Controller
                     ->route('transactions.print', $result->transaction->invoice)
                     ->with('error', $exception->getMessage());
             }
-        } elseif ($paymentGateway) {
+        } elseif ($paymentGateway && ! $isStaticQris) {
             try {
                 $paymentResponse = $paymentGateway === 'qris'
                     ? $paymentGatewayManager->createQrisPayment($result->transaction, $paymentSetting)
@@ -770,13 +781,24 @@ class TransactionController extends Controller
     public function print(Request $request, $invoice)
     {
         // get transaction
-        $transaction = Transaction::with('details.product', 'details.pricingRule', 'cashier', 'customer', 'receivable', 'bankAccount', 'tenders')
+        $transaction = Transaction::with('details.product', 'details.pricingRule', 'cashier', 'customer', 'receivable', 'bankAccount', 'tenders', 'warehouse.outlet')
             ->where('invoice', $invoice)
             ->firstOrFail();
         $this->ensureTransactionAccess($request, $transaction);
 
+        $isStaticQris = $transaction->payment_method === PaymentSetting::GATEWAY_QRIS
+            && blank($transaction->qr_string)
+            && blank($transaction->payment_url)
+            && blank($transaction->payment_reference);
+        $qrisSetting = $isStaticQris
+            ? PaymentSetting::forOutlet($transaction->warehouse?->outlet)
+            : null;
+
         return Inertia::render('Dashboard/Transactions/Print', [
             'transaction' => $transaction,
+            'qrisImageUrl' => $qrisSetting?->isStaticQrisReady()
+                ? $qrisSetting->staticQrisImageUrl()
+                : null,
         ]);
     }
 

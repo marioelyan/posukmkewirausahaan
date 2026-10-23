@@ -9,6 +9,7 @@ use App\Models\Warehouse;
 use App\Services\CashierShiftService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -92,6 +93,62 @@ class CashMovementTest extends TestCase
         $this->assertSame(20000, $summary['cash_out_total']);
         // opening 100000 + in 50000 - out 20000 = 130000 (no sales/refunds)
         $this->assertSame(130000, $summary['expected_cash']);
+    }
+
+    public function test_shift_detail_page_exposes_cash_movement_history(): void
+    {
+        app(CashierShiftService::class)->recordCashMovement($this->shift, $this->cashier, 'in', 50000, 'Setoran tambahan');
+        app(CashierShiftService::class)->recordCashMovement($this->shift, $this->cashier, 'out', 20000, 'Beli galon');
+
+        $this->actingAs($this->cashier)
+            ->get(route('cashier-shifts.show', $this->shift))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard/CashierShifts/Show')
+                ->where('cashierShift.cash_in_total', 50000)
+                ->where('cashierShift.cash_out_total', 20000)
+                ->has('cashierShift.cash_movements', 2)
+                ->where('cashierShift.cash_movements', fn ($movements) => collect($movements)->sum('amount') === 70000
+                    && collect($movements)->where('type', 'in')->count() === 1
+                    && collect($movements)->where('type', 'out')->count() === 1
+                    && collect($movements)->every(fn ($movement) => $movement['user'] === $this->cashier->name)));
+    }
+
+    public function test_shift_history_index_exposes_cash_totals(): void
+    {
+        app(CashierShiftService::class)->recordCashMovement($this->shift, $this->cashier, 'in', 50000);
+        app(CashierShiftService::class)->recordCashMovement($this->shift, $this->cashier, 'out', 20000);
+
+        $this->actingAs($this->cashier)
+            ->get(route('cashier-shifts.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard/CashierShifts/Index')
+                ->where('shifts.data.0.id', $this->shift->id)
+                ->where('shifts.data.0.cash_in_total', 50000)
+                ->where('shifts.data.0.cash_out_total', 20000));
+    }
+
+    public function test_closed_shift_persists_cash_movement_totals(): void
+    {
+        app(CashierShiftService::class)->recordCashMovement($this->shift, $this->cashier, 'in', 50000);
+        app(CashierShiftService::class)->recordCashMovement($this->shift, $this->cashier, 'out', 20000);
+
+        $closed = app(CashierShiftService::class)->closeShift($this->shift->fresh(), $this->cashier, 130000);
+
+        $this->assertDatabaseHas('cashier_shifts', [
+            'id' => $closed->id,
+            'cash_in_total' => 50000,
+            'cash_out_total' => 20000,
+        ]);
+
+        $this->actingAs($this->cashier)
+            ->get(route('cashier-shifts.show', $closed))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('cashierShift.cash_movements', 2)
+                ->where('cashierShift.cash_in_total', 50000)
+                ->where('cashierShift.cash_out_total', 20000));
     }
 
     public function test_movement_is_rejected_on_closed_shift(): void

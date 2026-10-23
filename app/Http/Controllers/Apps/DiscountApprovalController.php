@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Apps;
 use App\Http\Controllers\Controller;
 use App\Models\DiscountApprovalLog;
 use App\Models\Outlet;
+use App\Models\PaymentSetting;
 use App\Models\Transaction;
 use App\Services\AuditLogService;
 use App\Services\OutletAccessService;
@@ -85,8 +86,12 @@ class DiscountApprovalController extends Controller
         \DB::transaction(function () use ($transaction, $status, $notes) {
             // ponytail: approval only settles the approval state — payment stays tied to the actual method.
             // grand_total already excludes the manual discount (LoyaltyService), so denying re-adds it.
+            $isStaticQris = $transaction->payment_method === PaymentSetting::GATEWAY_QRIS
+                && (bool) PaymentSetting::forOutlet($transaction->warehouse?->outlet)?->isStaticQrisReady();
+
             $paymentStatus = match ($transaction->payment_method) {
                 'cash' => 'paid',
+                'qris' => $isStaticQris ? 'paid' : 'pending',
                 'pay_later' => 'unpaid',
                 default => 'pending',
             };

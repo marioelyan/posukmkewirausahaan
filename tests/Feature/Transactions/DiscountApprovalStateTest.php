@@ -3,6 +3,7 @@
 namespace Tests\Feature\Transactions;
 
 use App\Models\BankAccount;
+use App\Models\PaymentSetting;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -106,6 +107,44 @@ class DiscountApprovalStateTest extends TestCase
         $this->assertEquals('approved', $transaction->discount_approval_status);
         $this->assertEquals('pending', $transaction->payment_status);
         $this->assertEquals(20000, $transaction->discount);
+    }
+
+    public function test_approving_static_qris_transaction_sets_paid(): void
+    {
+        PaymentSetting::create([
+            'default_gateway' => 'cash',
+            'qris_enabled' => true,
+            'qris_image_path' => 'payment/qris/merchant.png',
+        ]);
+
+        $transaction = $this->makeTransaction([
+            'payment_method' => 'qris',
+            'payment_status' => 'pending_approval',
+        ]);
+
+        $this->from(route('dashboard.access'))
+            ->post(route('discount-approvals.approve', $transaction))
+            ->assertSessionHas('success');
+
+        $transaction = $transaction->fresh();
+        $this->assertEquals('approved', $transaction->discount_approval_status);
+        $this->assertEquals('paid', $transaction->payment_status);
+    }
+
+    public function test_approving_dynamic_qris_transaction_stays_pending(): void
+    {
+        $transaction = $this->makeTransaction([
+            'payment_method' => 'qris',
+            'payment_status' => 'pending_approval',
+        ]);
+
+        $this->from(route('dashboard.access'))
+            ->post(route('discount-approvals.approve', $transaction))
+            ->assertSessionHas('success');
+
+        $transaction = $transaction->fresh();
+        $this->assertEquals('approved', $transaction->discount_approval_status);
+        $this->assertEquals('pending', $transaction->payment_status);
     }
 
     public function test_denying_transaction_removes_discount_and_marks_unpaid(): void
