@@ -80,3 +80,38 @@ Jalankan ulang salah satu perintah di atas. Seeder bersifat idempoten untuk enti
 |--------|----------------------|-----|
 | `DatabaseSeeder` (default `migrate --seed`) | Ya | Permission, role, payment setting, gudang `PUSAT` |
 | `DemoSeeder` / `seed:demo` | Tidak | Dataset demo lengkap + akun demo |
+| `KantinReferensiSeeder` | Tidak (menolak jalan di `production`) | Dataset dummy yang meniru database produksi Kantin — lihat bagian di bawah |
+
+## Dataset Referensi Produksi (Kantin)
+
+`KantinReferensiSeeder` adalah dataset dummy untuk pengembangan & pengujian
+yang **meniru pola database produksi** Kantin UKM Kewirausahaan (referensi
+ekspor 2026-10-23), bukan dataset generik seperti `DemoSeeder`:
+
+- **Katalog asli usaha**: 79 produk (nama, SKU, barcode, harga modal/jual,
+  stok akhir produksi), 16 kategori, outlet `Gudang Pusat` + `Kantin`,
+  gudang `PUSAT` + `Kantin`, bisnis `Kantin` beserta membership-nya.
+- **Semua data orang adalah rekaan**: 13 pengguna (2 super-admin, 11 manager;
+  email `*@kantin.dummy`, kata sandi `password`), 48 pelanggan nama fiktif
+  tanpa telepon/alamat (4 anggota loyalitas) — mengikuti pola isian produksi.
+- **Pola transaksi produksi**: 147 transaksi tunai lunas dalam 11 shift
+  tertutup selama 5 hari terakhir (1–3 item, qty 1–3, 3 transaksi
+  berkustomer, 2 berdiskon), 9 kas keluar belanja bahan, agregat shift
+  konsisten, dan stok akhir setiap produk sama dengan stok referensi.
+  Acakan memakai seed tetap — dataset selalu ter-regenerasi identik.
+- Tidak termasuk: order pembelian/penerimaan barang (produksi belum memakai
+  supplier), mutasi stok & audit log (terbentuk dari aktivitas aplikasi),
+  dan kunci gateway pembayaran asli (payment setting tetap default).
+
+Cara menjalankan (setelah `migrate:fresh --seed`):
+
+```bash
+php artisan db:seed --class=KantinReferensiSeeder --force
+```
+
+Login: `superadmin1@kantin.dummy` / `password` (super-admin),
+`manager01@kantin.dummy` / `password` (manager).
+
+Menyegarkan referensi: ekspor ulang database produksi, perbarui daftar
+katalog pada `katalogProduk()` di `KantinReferensiSeeder` dari ekspor
+tersebut, lalu sesuaikan angka ringkasan pada docblock seeder.
