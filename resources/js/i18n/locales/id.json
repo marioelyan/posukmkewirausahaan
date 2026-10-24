@@ -311,7 +311,8 @@
             "warehouses": "Gudang / Cabang",
             "outlets": "Outlet",
             "units": "Satuan",
-            "whatsApp": "WhatsApp"
+            "whatsApp": "WhatsApp",
+            "apiTokens": "Token API"
         },
         "menu": {
             "overview": "Overview",

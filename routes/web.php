@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Apps\AgingController;
+use App\Http\Controllers\Apps\ApiTokenController;
 use App\Http\Controllers\Apps\AuditLogController;
 use App\Http\Controllers\Apps\BankAccountController;
 use App\Http\Controllers\Apps\BusinessAdminController;
@@ -368,6 +369,14 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'business', 'bus
     Route::delete('/settings/bank-accounts/{bankAccount}', [BankAccountController::class, 'destroy'])->middleware(['permission:payment-settings-update', 'step_up'])->name('settings.bank-accounts.destroy');
     Route::patch('/settings/bank-accounts/{bankAccount}/toggle', [BankAccountController::class, 'toggleActive'])->middleware(['permission:payment-settings-update', 'step_up'])->name('settings.bank-accounts.toggle');
     Route::post('/settings/bank-accounts/order', [BankAccountController::class, 'updateOrder'])->middleware(['permission:payment-settings-update', 'step_up'])->name('settings.bank-accounts.order');
+
+    // settings api tokens — token milik sendiri, tanpa permission khusus:
+    // setiap user yang login boleh mengelola tokennya sendiri, dan abilities
+    // yang bisa dipilih dibatasi ke permission yang dimilikinya (lihat controller).
+    // store/destroy memakai step_up seperti aksi sensitif lainnya.
+    Route::get('/settings/api-tokens', [ApiTokenController::class, 'index'])->name('settings.api-tokens.index');
+    Route::post('/settings/api-tokens', [ApiTokenController::class, 'store'])->middleware('step_up')->name('settings.api-tokens.store');
+    Route::delete('/settings/api-tokens/{token}', [ApiTokenController::class, 'destroy'])->middleware('step_up')->name('settings.api-tokens.destroy');
 
     // settings price lists
     Route::resource('/settings/price-lists', PriceListController::class)

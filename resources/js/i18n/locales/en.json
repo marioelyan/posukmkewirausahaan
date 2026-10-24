@@ -310,7 +310,8 @@
             "priceLists": "Price Lists",
             "warehouses": "Warehouses / Branches",
             "units": "Units",
-            "whatsApp": "WhatsApp"
+            "whatsApp": "WhatsApp",
+            "apiTokens": "API Tokens"
         },
         "menu": {
             "overview": "Overview",

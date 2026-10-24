@@ -17,6 +17,7 @@ import {
     IconFileDescription,
     IconFolder,
     IconGift,
+    IconKey,
     IconLayout2,
     IconBuildingStore,
     IconSchool,
@@ -391,6 +392,15 @@ export default function Menu() {
             icon: glyph(IconBrandWhatsapp),
             permissions: hasAnyPermission(["whatsapp-settings-access"]),
         },
+        apiTokens: {
+            title: t("sidebar.items.apiTokens"),
+            href: route("settings.api-tokens.index"),
+            active: at("/dashboard/settings/api-tokens"),
+            icon: glyph(IconKey),
+            // Token milik sendiri: semua user yang login boleh mengelolanya,
+            // dan abilities yang bisa dipilih dibatasi ke permission si pembuat.
+            permissions: true,
+        },
     };
 
     // ── Quick actions (rendered as buttons above the sections) ───────────
@@ -421,7 +431,7 @@ export default function Menu() {
         { section: "reports", items: ["salesReport", "profitReport", "advancedInsights"] },
         { section: "operations", items: ["cashierShifts", "auditLogs"] },
         { section: "userManagement", items: ["permissions", "roles", "businesses", "users"] },
-        { section: "settings", items: ["paymentGateway", "storeProfile", "bankAccounts", "loyalty", "salesTarget", "priceLists", "warehouses", "outlets", "units", "whatsApp"] },
+        { section: "settings", items: ["paymentGateway", "storeProfile", "bankAccounts", "loyalty", "salesTarget", "priceLists", "warehouses", "outlets", "units", "whatsApp", "apiTokens"] },
     ];
 
     // ── Per-role structure ───────────────────────────────────────────────
@@ -436,7 +446,7 @@ export default function Menu() {
             { section: "sales", items: ["receivables", "aging"] },
             { section: "procurement", items: ["suppliers", "payables"] },
             { section: "customers", items: ["customers", "members"] },
-            { section: "settings", items: ["storeProfile", "loyalty", "salesTarget"] },
+            { section: "settings", items: ["storeProfile", "loyalty", "salesTarget", "apiTokens"] },
         ],
     };
 
