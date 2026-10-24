@@ -9,7 +9,10 @@
 #
 # Hasil:
 #   deploy/                      staging directory
-#   deploy-package-YYYYMMDD.zip  package untuk diunggah via File Manager/FTP
+#   deploy-package-YYYYMMDD.zip  package utama -> ekstrak ke posapp/ di server
+#   public-sync-YYYYMMDD.zip     aset public/ -> ekstrak ke public_html/ di server
+#                                (public_html adalah docroot terpisah, bukan symlink;
+#                                lihat docs/production-deployment.md §2)
 #
 # Syarat: PHP 8.3 + Composer 2, Node 18+ / npm, zip, rsync.
 
@@ -18,11 +21,15 @@ cd "$(dirname "$0")/.."
 
 STAGING="deploy"
 OUT="deploy-package-$(date +%Y%m%d).zip"
+SYNC_OUT="public-sync-$(date +%Y%m%d).zip"
 
 fail() { echo "GAGAL: $1" >&2; exit 1; }
 
 if [ -e "$OUT" ]; then
     fail "$OUT sudah ada. Hapus manual dulu jika ingin rebuild (package lama tidak ditimpa otomatis)."
+fi
+if [ -e "$SYNC_OUT" ]; then
+    fail "$SYNC_OUT sudah ada. Hapus manual dulu jika ingin rebuild (package lama tidak ditimpa otomatis)."
 fi
 
 echo "==> [1/7] Composer production install"
@@ -86,18 +93,50 @@ if grep -rIl 'APP_KEY=base64:' "$STAGING" > /dev/null 2>&1; then
     fail "ditemukan APP_KEY terisi di staging"
 fi
 
-echo "==> [7/7] Membuat ${OUT}"
+echo "==> [7/7] Normalisasi izin + membuat ${OUT} dan ${SYNC_OUT}"
+# PENTING (insiden deploy 2026-10-24): file di VM/laptop pengembang umumnya
+# bermode 0660/0770 (umask). Ekstraktor DirectAdmin mempertahankan mode dari ZIP,
+# dan nginx (user berbeda dari pemilik file) membalas file 0660 dengan 403 untuk
+# semua aset baru. Normalisasi ke 0644/0755 SEBELUM zip agar package langsung
+# bisa dilayani nginx. PHP-FPM jalan sebagai user akun, jadi kode di posapp/
+# tidak butuh mode eksekusi (dijalankan via `php artisan`, bukan ./artisan).
+find "$STAGING" -type d -exec chmod 755 {} +
+find "$STAGING" -type f -exec chmod 644 {} +
+[ -z "$(find "$STAGING" \( -type f -perm 660 -o -type d -perm 770 \) -print -quit)" ] \
+    || fail "masih ada mode 0660/0770 di staging setelah normalisasi"
 ( cd "$STAGING" && zip -qr9 "../$OUT" . )
 unzip -tq "$OUT" > /dev/null || fail "integritas ZIP rusak"
+# Sync ZIP: hanya direktori public/ yang berubah tiap build dan dilayani dari
+# docroot public_html/ (terpisah dari posapp/). Sengaja TIDAK ikut: index.php
+# custom, .htaccess, favicon.ico, manifest.json PWA, robots.txt, sw.js, dan
+# symlink storage — semuanya milik public_html/ dan tidak boleh tertimpa.
+SYNC_DIRS=()
+for d in build images inter screenshots; do
+    [ -d "$STAGING/public/$d" ] && SYNC_DIRS+=("$d")
+done
+[ "${#SYNC_DIRS[@]}" -gt 0 ] || fail "tidak ada direktori public/ untuk sync ZIP"
+( cd "$STAGING/public" && zip -qr9 "../../$SYNC_OUT" "${SYNC_DIRS[@]}" )
+unzip -tq "$SYNC_OUT" > /dev/null || fail "integritas sync ZIP rusak"
+# Verifikasi mode tersimpan di ZIP (bukan cuma di staging): tidak boleh ada
+# entri file 0660 / folder 0770.
+if zipinfo -v "$OUT" | grep -Eq '^-rw-rw----|drwxrwx---'; then
+    fail "ZIP utama masih menyimpan mode 0660/0770"
+fi
+if zipinfo -v "$SYNC_OUT" | grep -Eq '^-rw-rw----|drwxrwx---'; then
+    fail "sync ZIP masih menyimpan mode 0660/0770"
+fi
 
 echo ""
 echo "SELESAI."
-echo "  Package : $OUT ($(du -h "$OUT" | cut -f1))"
-echo "  Entries : $(zipinfo -1 "$OUT" | wc -l)"
-echo "  Staging : $STAGING/ ($(du -sh "$STAGING" | cut -f1))"
+echo "  Package utama : $OUT ($(du -h "$OUT" | cut -f1))"
+echo "  Entries       : $(zipinfo -1 "$OUT" | wc -l)"
+echo "  Sync ZIP      : $SYNC_OUT ($(du -h "$SYNC_OUT" | cut -f1)) -> ekstrak ke public_html/"
+echo "  Staging       : $STAGING/ ($(du -sh "$STAGING" | cut -f1))"
 echo ""
-echo "Langkah berikutnya (Section 3+):"
-echo "  1. Buat .env produksi TERPISAH (bukan dari repo, jangan masukkan ke ZIP)."
-echo "  2. Upload isi $OUT ke hosting, ekstrak via File Manager."
-echo "  3. Setelah upload: storage/, bootstrap/cache/ harus writable."
-echo "  4. Jalankan artisan via Cron (migrate --force, storage:link) — lihat rencana deploy."
+echo "Langkah berikutnya (docs/production-deployment.md §2):"
+echo "  1. Backup full account via panel DirectAdmin."
+echo "  2. Upload $OUT ke hosting, ekstrak ke posapp/ (Merge and overwrite; .env JANGAN tertimpa)."
+echo "  3. Upload $SYNC_OUT, ekstrak ke public_html/ (Merge and overwrite; index.php custom JANGAN tertimpa)."
+echo "  4. Setelah upload: storage/, bootstrap/cache/ harus writable."
+echo "  5. Jalankan artisan via cron sekali-jalan (migrate --force; storage:link; view:cache; scramble:cache — TANPA config:cache), lalu hapus cron-nya."
+echo "  6. Smoke test: JS/CSS baru 200, manifest hash baru, login 200; hapus ZIP dari server."
