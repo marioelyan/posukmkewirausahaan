@@ -48,6 +48,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\Reports\AdvancedSalesInsightsController;
+use App\Http\Controllers\Reports\ConsignmentReportController;
 use App\Http\Controllers\Reports\ExpenseReportController;
 use App\Http\Controllers\Reports\ProfitReportController;
 use App\Http\Controllers\Reports\SalesReportController;
@@ -447,6 +448,7 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'business', 'bus
     Route::get('/reports/insights/export', [AdvancedSalesInsightsController::class, 'export'])->middleware('permission:reports-access')->name('reports.insights.export');
     Route::get('/reports/expenses', [ExpenseReportController::class, 'expenses'])->middleware('permission:expenses-access')->name('reports.expenses.index');
     Route::get('/reports/laba-rugi', [ExpenseReportController::class, 'profitLoss'])->middleware('permission:reports-access')->name('reports.profit-loss.index');
+    Route::get('/reports/konsinyasi', [ConsignmentReportController::class, 'index'])->middleware('permission:payables-access')->name('reports.consignment.index');
 
     // aging & reminders
     Route::get('/aging', [AgingController::class, 'index'])->middleware('permission:receivables-access')->name('aging.index');

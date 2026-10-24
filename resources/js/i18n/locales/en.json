@@ -298,6 +298,7 @@
             "expenseCategories": "Expense Categories",
             "expenseReport": "Expense Report",
             "profitLossReport": "Profit & Loss Report",
+            "consignmentReport": "Consignment Report",
             "cashierShifts": "Cashier Shifts",
             "auditLogs": "Audit Logs",
             "permissions": "Permissions",

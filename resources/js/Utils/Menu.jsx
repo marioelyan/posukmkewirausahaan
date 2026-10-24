@@ -293,6 +293,13 @@ export default function Menu() {
             icon: glyph(IconChartBar),
             permissions: hasAnyPermission(["reports-access"]),
         },
+        consignmentReport: {
+            title: t("sidebar.items.consignmentReport"),
+            href: route("reports.consignment.index"),
+            active: under("/dashboard/reports/konsinyasi"),
+            icon: glyph(IconChartBar),
+            permissions: hasAnyPermission(["payables-access"]),
+        },
         cashierShifts: {
             title: t("sidebar.items.cashierShifts"),
             href: route("cashier-shifts.index"),
