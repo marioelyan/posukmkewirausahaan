@@ -360,6 +360,11 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                                         Beban: {movement.expense_category}
                                                     </span>
                                                 )}
+                                                {movement.payable_label && (
+                                                    <span className="block text-xs text-slate-400">
+                                                        Hutang: {movement.payable_label}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="py-3 text-slate-600 dark:text-slate-300">
                                                 {movement.user || "-"}

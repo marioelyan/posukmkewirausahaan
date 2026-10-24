@@ -12,6 +12,8 @@ use App\Services\OutletAccessService;
 use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
@@ -31,6 +33,7 @@ class ProductController extends Controller
         $products = Product::query()
             ->with([
                 'category',
+                'supplier',
                 'warehouses' => fn ($query) => $query->whereIn('warehouses.id', $warehouseIds),
             ])
             ->when($request->string('search')->toString(), function ($q, $search) {
@@ -60,6 +63,8 @@ class ProductController extends Controller
             'barcode' => ['required', 'string', 'max:255', TenantUnique::for('products', 'barcode')],
             'sku' => ['nullable', 'string', 'max:255', TenantUnique::for('products', 'sku')],
             'category_id' => ['nullable', 'integer', 'exists:categories,id', new BelongsToActiveBusiness('categories')],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id', new BelongsToActiveBusiness('suppliers'), Rule::requiredIf($request->boolean('is_consignment'))],
+            'is_consignment' => ['nullable', 'boolean'],
             'buy_price' => ['required', 'numeric', 'min:0'],
             'sell_price' => ['required', 'numeric', 'min:0'],
             'stock' => ['nullable', 'integer', 'min:0'],
@@ -104,7 +109,7 @@ class ProductController extends Controller
             }
         }
 
-        return $this->created(new ProductResource($product->load('category')), 'Produk berhasil dibuat');
+        return $this->created(new ProductResource($product->load(['category', 'supplier'])), 'Produk berhasil dibuat');
     }
 
     /**
@@ -115,6 +120,7 @@ class ProductController extends Controller
         $warehouseIds = $this->outletAccessService->warehousesFor($request->user())->pluck('id');
         $product->load([
             'category',
+            'supplier',
             'warehouses' => fn ($query) => $query->whereIn('warehouses.id', $warehouseIds),
         ]);
 
@@ -132,6 +138,8 @@ class ProductController extends Controller
             'barcode' => ['sometimes', 'string', 'max:255', TenantUnique::for('products', 'barcode', $product->id)],
             'sku' => ['nullable', 'string', 'max:255', TenantUnique::for('products', 'sku', $product->id)],
             'category_id' => ['nullable', 'integer', 'exists:categories,id', new BelongsToActiveBusiness('categories')],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id', new BelongsToActiveBusiness('suppliers')],
+            'is_consignment' => ['nullable', 'boolean'],
             'buy_price' => ['sometimes', 'numeric', 'min:0'],
             'sell_price' => ['sometimes', 'numeric', 'min:0'],
             'stock' => ['nullable', 'integer', 'min:0'],
@@ -143,9 +151,25 @@ class ProductController extends Controller
             'is_composite' => ['nullable', 'boolean'],
         ]);
 
+        // Partial updates: the effective consignment state is request value
+        // if sent, otherwise the stored value — a consignment product must
+        // always end up with a supplier.
+        $effectiveConsignment = array_key_exists('is_consignment', $validated)
+            ? (bool) $validated['is_consignment']
+            : (bool) $product->is_consignment;
+        $effectiveSupplier = array_key_exists('supplier_id', $validated)
+            ? $validated['supplier_id']
+            : $product->supplier_id;
+
+        if ($effectiveConsignment && ! $effectiveSupplier) {
+            throw ValidationException::withMessages([
+                'supplier_id' => 'Penitip wajib diisi untuk produk konsinyasi.',
+            ]);
+        }
+
         $product->update($validated);
 
-        return $this->ok(new ProductResource($product->load('category')), 'Produk berhasil diperbarui');
+        return $this->ok(new ProductResource($product->load(['category', 'supplier'])), 'Produk berhasil diperbarui');
     }
 
     /**

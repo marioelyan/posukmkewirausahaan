@@ -32,7 +32,7 @@ class ShiftCashMovement extends Model
         'lainnya',
     ];
 
-    protected $fillable = ['cashier_shift_id', 'type', 'kind', 'expense_id', 'amount', 'note', 'user_id'];
+    protected $fillable = ['cashier_shift_id', 'type', 'kind', 'expense_id', 'payable_id', 'amount', 'note', 'user_id'];
 
     protected function casts(): array
     {
@@ -54,5 +54,10 @@ class ShiftCashMovement extends Model
     public function expense(): BelongsTo
     {
         return $this->belongsTo(Expense::class);
+    }
+
+    public function payable(): BelongsTo
+    {
+        return $this->belongsTo(Payable::class);
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Requests\ConfirmPasswordForForceCloseRequest;
 use App\Http\Requests\StoreCashierShiftRequest;
 use App\Models\CashierShift;
 use App\Models\ExpenseCategory;
+use App\Models\Payable;
 use App\Models\Outlet;
 use App\Models\ShiftCashMovement;
 use App\Models\User;
@@ -65,6 +66,7 @@ class CashierShiftController extends Controller
             'activeShift' => $activeShift ? $this->transformShift($activeShift) : null,
             'warehouses' => $warehouses,
             'expenseCategories' => ExpenseCategory::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'openPayables' => Payable::with('supplier:id,name')->where('status', '!=', 'paid')->orderBy('document_number')->get(['id', 'supplier_id', 'document_number', 'total', 'paid', 'status']),
             'canForceClose' => $request->user()->isSuperAdmin() || $request->user()->can('cashier-shifts-force-close'),
         ]);
     }
@@ -187,6 +189,11 @@ class CashierShiftController extends Controller
                 Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'beban'),
                 'nullable', 'integer', 'exists:expense_categories,id',
             ],
+            'payable_id' => [
+                Rule::requiredIf($request->input('type') === 'out' && $request->input('kind') === 'pelunasan_hutang'),
+                Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'pelunasan_hutang'),
+                'nullable', 'integer', 'exists:payables,id',
+            ],
             'amount' => ['required', 'integer', 'min:1'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
@@ -199,6 +206,7 @@ class CashierShiftController extends Controller
             note: $validated['note'] ?? null,
             kind: $validated['kind'],
             expenseCategoryId: $validated['expense_category_id'] ?? null,
+            payableId: $validated['payable_id'] ?? null,
         );
 
         $this->auditLogService->log(
@@ -247,7 +255,7 @@ class CashierShiftController extends Controller
                 'closedBy:id,name',
                 'warehouse:id,code,name',
                 'cashMovements' => fn ($movements) => $movements
-                    ->with('user:id,name')
+                    ->with(['user:id,name', 'payable.supplier:id,name'])
                     ->latest(),
             ])
             ->whereKey($cashierShift->id);
@@ -293,7 +301,7 @@ class CashierShiftController extends Controller
         $cashMovements = $includeCashMovements
             ? ($shift->relationLoaded('cashMovements')
                 ? $shift->cashMovements
-                : $shift->cashMovements()->with(['user:id,name', 'expense.category:id,name'])->latest()->get())
+                : $shift->cashMovements()->with(['user:id,name', 'expense.category:id,name', 'payable.supplier:id,name'])->latest()->get())
             : collect();
 
         return [
@@ -320,6 +328,9 @@ class CashierShiftController extends Controller
                     'kind' => $movement->kind,
                     'expense_id' => $movement->expense_id,
                     'expense_category' => $movement->expense?->category?->name,
+                    'payable_label' => $movement->payable
+                        ? ($movement->payable->supplier?->name.' — '.$movement->payable->document_number)
+                        : null,
                     'amount' => (int) $movement->amount,
                     'note' => $movement->note,
                     'user' => $movement->user?->name,

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Cart;
+use App\Models\Payable;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\ProductWarehouse;
@@ -175,6 +176,9 @@ class CheckoutService
     ): void {
         $pricingItems = collect($pricingPreview['items']);
 
+        // K2 Konsinyasi: akumulasi hutang per penitip dalam transaksi ini.
+        $consignmentTotals = [];
+
         foreach ($carts as $cart) {
             $pricingItem = $pricingItems->firstWhere('cart_id', $cart->id);
             $lineTotal = (int) data_get($pricingItem, 'line_total', $cart->price);
@@ -185,6 +189,12 @@ class CheckoutService
             $detail = $transaction->details()->create([
                 'transaction_id' => $transaction->id,
                 'product_id' => $cart->product_id,
+                // Snapshot kondisi SAAT penjualan (lihat migrasi K2): retur
+                // nanti membalik hutang dari snapshot ini, bukan dari kondisi
+                // produk yang mungkin sudah berubah.
+                'supplier_id' => $cart->product->supplier_id,
+                'is_consignment' => (bool) $cart->product->is_consignment,
+                'buy_price' => $cart->product->buy_price,
                 'unit_id' => $cart->unit_id,
                 'conversion_factor' => $cart->conversion_factor,
                 'qty' => $cart->qty,
@@ -200,6 +210,16 @@ class CheckoutService
             ]);
 
             $product = Product::find($cart->product_id);
+
+            // K2: hutang penitip = qty laku x buy_price (per unit dasar, sama
+            // seperti HPP). Hanya produk bertanda titipan DENGAN penitip;
+            // produk biasa ber-supplier tidak membentuk hutang.
+            if ($product->is_consignment && $product->supplier_id) {
+                $consignmentAmount = $product->buy_price * $cart->qty * (float) ($cart->conversion_factor ?? 1);
+                if ($consignmentAmount > 0) {
+                    $consignmentTotals[$product->supplier_id] = ($consignmentTotals[$product->supplier_id] ?? 0) + $consignmentAmount;
+                }
+            }
 
             // HPP follows base-unit cost: cart qty is in the selling unit, buy_price is per base unit.
             if ($product->is_composite) {
@@ -326,6 +346,39 @@ class CheckoutService
                     }
                 }
             }
+        }
+
+        // Satu hutang per penitip per transaksi (agregasi di atas), dibuat
+        // dalam transaksi DB yang sama dengan penjualan: checkout gagal
+        // berarti tidak ada hutang yang tercipta.
+        $this->recordConsignmentPayables($transaction, $consignmentTotals, $warehouseId);
+    }
+
+    private function recordConsignmentPayables(Transaction $transaction, array $totals, ?int $warehouseId): void
+    {
+        foreach ($totals as $supplierId => $amount) {
+            if ($amount <= 0) {
+                continue;
+            }
+
+            // Kepemilikan mengikuti pola Receivable di checkout yang sama.
+            $ownership = $warehouseId
+                ? app(FinancialOwnershipService::class)->stampFromWarehouse($warehouseId)
+                : ['business_id' => null, 'ownership_status' => null, 'ownership_evaluated_at' => null];
+
+            Payable::create([
+                'supplier_id' => $supplierId,
+                'transaction_id' => $transaction->id,
+                'document_number' => 'KON-'.$transaction->invoice.'-S'.$supplierId,
+                'total' => $amount,
+                'paid' => 0,
+                'status' => 'unpaid',
+                'due_date' => null,
+                'note' => 'Konsinyasi dari penjualan '.$transaction->invoice,
+                'business_id' => $ownership['business_id'],
+                'ownership_status' => $ownership['ownership_status'],
+                'ownership_evaluated_at' => $ownership['ownership_evaluated_at'],
+            ]);
         }
     }
 }

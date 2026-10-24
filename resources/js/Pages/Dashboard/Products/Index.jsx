@@ -365,6 +365,7 @@ export default function Index({ products }) {
                                     <Table.Th className="w-10">No</Table.Th>
                                     <Table.Th>Produk</Table.Th>
                                     <Table.Th>Kategori</Table.Th>
+                                    <Table.Th>Penitip</Table.Th>
                                     <Table.Th>Harga Beli</Table.Th>
                                     <Table.Th>Harga Jual</Table.Th>
                                     <Table.Th>Stok</Table.Th>
@@ -399,6 +400,22 @@ export default function Index({ products }) {
                                             <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
                                                 {product.category?.name}
                                             </span>
+                                        </Table.Td>
+                                        <Table.Td>
+                                            {product.supplier ? (
+                                                <span className="space-y-0.5">
+                                                    <span className="block text-sm text-slate-700 dark:text-slate-200">
+                                                        {product.supplier.name}
+                                                    </span>
+                                                    {product.is_consignment && (
+                                                        <span className="inline-block px-2 py-0.5 text-xs font-medium bg-warning-100 text-warning-700 dark:bg-warning-900/50 dark:text-warning-400 rounded">
+                                                            Titipan
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span className="text-slate-400">-</span>
+                                            )}
                                         </Table.Td>
                                         <Table.Td>
                                             {formatCurrency(product.buy_price)}

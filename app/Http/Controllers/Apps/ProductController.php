@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductWarehouse;
+use App\Models\Supplier;
 use App\Models\Unit;
 use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
@@ -36,7 +37,7 @@ class ProductController extends Controller
     {
         $products = Product::when($request->search, function ($products, $search) {
             $products = $products->where('title', 'like', '%'.$search.'%');
-        })->with('category')->latest()->paginate($this->perPage())->withQueryString();
+        })->with(['category', 'supplier'])->latest()->paginate($this->perPage())->withQueryString();
 
         $warehouses = $this->outletAccessService->warehousesFor($request->user());
 
@@ -66,6 +67,7 @@ class ProductController extends Controller
             'categories' => $categories,
             'products' => $products,
             'units' => Unit::orderBy('code')->get(['id', 'code', 'symbol']),
+            'suppliers' => Supplier::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -86,6 +88,8 @@ class ProductController extends Controller
             'title' => 'required',
             'description' => 'nullable|string',
             'category_id' => ['required', new BelongsToActiveBusiness('categories')],
+            'supplier_id' => ['nullable', new BelongsToActiveBusiness('suppliers'), Rule::requiredIf($request->boolean('is_consignment'))],
+            'is_consignment' => ['nullable', 'boolean'],
             'buy_price' => 'required',
             'sell_price' => 'required',
             'stock' => 'required|integer|min:0',
@@ -124,6 +128,8 @@ class ProductController extends Controller
                 'title' => $request->title,
                 'description' => $request->description,
                 'category_id' => $request->category_id,
+                'supplier_id' => $request->supplier_id,
+                'is_consignment' => $request->boolean('is_consignment'),
                 'buy_price' => $request->buy_price,
                 'sell_price' => $request->sell_price,
                 'stock' => $request->stock,
@@ -187,6 +193,7 @@ class ProductController extends Controller
             'categories' => $categories,
             'products' => $products,
             'units' => Unit::orderBy('code')->get(['id', 'code', 'symbol']),
+            'suppliers' => Supplier::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -209,6 +216,8 @@ class ProductController extends Controller
             'title' => 'required',
             'description' => 'nullable|string',
             'category_id' => ['required', new BelongsToActiveBusiness('categories')],
+            'supplier_id' => ['nullable', new BelongsToActiveBusiness('suppliers'), Rule::requiredIf($request->boolean('is_consignment'))],
+            'is_consignment' => ['nullable', 'boolean'],
             'buy_price' => 'required',
             'sell_price' => 'required',
             'min_stock' => 'nullable|integer|min:0',
@@ -245,6 +254,8 @@ class ProductController extends Controller
                 'title' => $request->title,
                 'description' => $request->description,
                 'category_id' => $request->category_id,
+                'supplier_id' => $request->supplier_id,
+                'is_consignment' => $request->boolean('is_consignment'),
                 'buy_price' => $request->buy_price,
                 'sell_price' => $request->sell_price,
                 'min_stock' => $request->min_stock ?? 0,
@@ -272,6 +283,8 @@ class ProductController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'category_id' => $request->category_id,
+            'supplier_id' => $request->supplier_id,
+            'is_consignment' => $request->boolean('is_consignment'),
             'buy_price' => $request->buy_price,
             'sell_price' => $request->sell_price,
             'min_stock' => $request->min_stock ?? 0,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSalesReturnRequest;
 use App\Http\Requests\UpdateSalesReturnRequest;
 use App\Models\CustomerCredit;
+use App\Models\Payable;
 use App\Models\ProductWarehouse;
 use App\Models\Profit;
 use App\Models\SalesReturn;
@@ -274,6 +275,50 @@ class SalesReturnController extends Controller
                     'transaction_id' => $salesReturn->transaction_id,
                     'total' => -$margin,
                 ]);
+
+                // K2: balik hutang konsinyasi untuk barang titipan yang
+                // dikembalikan. Kunci dari SNAPSHOT detail (penitip, status
+                // titipan, harga beli saat penjualan) — bukan kondisi produk
+                // saat ini. Berjalan dalam transaksi yang sama dengan retur.
+                if ($detail->is_consignment && $detail->supplier_id && (int) $item->qty_return > 0) {
+                    $returnAmount = (int) round(
+                        (int) $item->qty_return
+                        * (int) ($detail->buy_price ?? 0)
+                        * (float) ($detail->conversion_factor ?? 1)
+                    );
+
+                    if ($returnAmount > 0) {
+                        $payable = Payable::where('transaction_id', $salesReturn->transaction_id)
+                            ->where('supplier_id', $detail->supplier_id)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($payable) {
+                            $oldTotal = (float) $payable->total;
+                            $paid = (float) $payable->paid;
+                            // Total tidak boleh turun di bawah yang sudah
+                            // dibayar: pembayaran adalah fakta yang tidak
+                            // ditulis ulang. Kelebihannya dicatat, bukan
+                            // dihilangkan.
+                            $newTotal = max($paid, $oldTotal - $returnAmount);
+                            $excess = $returnAmount - ($oldTotal - $newTotal);
+                            $remaining = $newTotal - $paid;
+
+                            $note = $payable->note;
+                            if ($excess > 0) {
+                                $note = trim(($note ? $note.' ' : '').'Retur '.$salesReturn->code.': kelebihan Rp'.number_format($excess, 0, ',', '.').' sudah terlanjur dibayar, selesaikan manual dengan penitip.');
+                            } elseif ($newTotal == 0) {
+                                $note = trim(($note ? $note.' ' : '').'Lunas karena retur '.$salesReturn->code.' (barang kembali semua).');
+                            }
+
+                            $payable->update([
+                                'total' => $newTotal,
+                                'status' => $remaining <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
+                                'note' => $note,
+                            ]);
+                        }
+                    }
+                }
             }
 
             $salesReturn->loadMissing('transaction.receivable');

@@ -26,6 +26,8 @@ class Product extends Model
         'min_stock' => 'integer',
         'max_stock' => 'integer',
         'is_composite' => 'boolean',
+        'supplier_id' => 'integer',
+        'is_consignment' => 'boolean',
     ];
 
     protected $fillable = [
@@ -37,6 +39,8 @@ class Product extends Model
         'buy_price',
         'sell_price',
         'category_id',
+        'supplier_id',
+        'is_consignment',
         'stock',
         'tax_type',
         'tax_rate',
@@ -49,6 +53,11 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function warehouses(): BelongsToMany

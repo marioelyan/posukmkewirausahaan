@@ -20,6 +20,7 @@ class Payable extends Model
         'status',
         'note',
         'purchase_order_id',
+        'transaction_id',
         'ownership_status',
         'ownership_evaluated_at',
         'ownership_note',
@@ -60,6 +61,11 @@ class Payable extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
     }
 
     public function getRemainingAttribute(): float

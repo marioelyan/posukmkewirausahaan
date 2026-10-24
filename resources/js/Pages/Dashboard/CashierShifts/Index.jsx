@@ -52,6 +52,7 @@ export default function Index({
     activeShift = null,
     warehouses = [],
     expenseCategories = [],
+    openPayables = [],
 }) {
     const { auth, errors } = usePage().props;
     const { can } = useAuthorization();
@@ -63,10 +64,12 @@ export default function Index({
     const [cashNote, setCashNote] = useState("");
     const [cashKind, setCashKind] = useState("lainnya");
     const [cashCategoryId, setCashCategoryId] = useState("");
+    const [cashPayableId, setCashPayableId] = useState("");
 
     const openCashModal = (type) => {
         setCashKind("lainnya");
         setCashCategoryId("");
+        setCashPayableId("");
         setCashModal(type);
     };
     const canOpenShift = can("cashier-shifts-open");
@@ -121,6 +124,9 @@ export default function Index({
         if (cashModal === "out" && cashKind === "beban" && cashCategoryId) {
             payload.expense_category_id = cashCategoryId;
         }
+        if (cashModal === "out" && cashKind === "pelunasan_hutang" && cashPayableId) {
+            payload.payable_id = cashPayableId;
+        }
 
         router.post(
             route("cashier-shifts.cash-movements.store", activeShift.id),
@@ -132,6 +138,7 @@ export default function Index({
                     setCashNote("");
                     setCashKind("lainnya");
                     setCashCategoryId("");
+                    setCashPayableId("");
                 },
             }
         );
@@ -351,6 +358,32 @@ export default function Index({
                                         <p className="mt-1 text-sm text-danger-600">{errors.kind}</p>
                                     )}
                                 </div>
+                                {cashModal === "out" && cashKind === "pelunasan_hutang" && (
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            Hutang yang Dibayar
+                                        </label>
+                                        <select
+                                            value={cashPayableId}
+                                            onChange={(event) => setCashPayableId(event.target.value)}
+                                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                            required
+                                        >
+                                            <option value="">Pilih hutang</option>
+                                            {openPayables.map((payable) => (
+                                                <option key={payable.id} value={payable.id}>
+                                                    {payable.supplier?.name} — {payable.document_number} (sisa {new Intl.NumberFormat("id-ID").format(payable.remaining ?? payable.total - payable.paid)})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.payable_id && (
+                                            <p className="mt-1 text-sm text-danger-600">{errors.payable_id}</p>
+                                        )}
+                                        <p className="mt-1 text-xs text-slate-400">
+                                            Uang keluar dari laci sekaligus mengurangi sisa hutang ini. Bukan beban, jadi laba tidak berubah.
+                                        </p>
+                                    </div>
+                                )}
                                 {cashModal === "out" && cashKind === "beban" && (
                                     <div>
                                         <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">

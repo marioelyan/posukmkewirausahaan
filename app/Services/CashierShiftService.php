@@ -6,6 +6,8 @@ use App\Models\CashierShift;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Outlet;
+use App\Models\Payable;
+use App\Models\PayablePayment;
 use App\Models\SalesReturn;
 use App\Models\ShiftCashMovement;
 use App\Models\Transaction;
@@ -157,7 +159,7 @@ class CashierShiftService
         ];
     }
 
-    public function recordCashMovement(CashierShift $shift, User $actor, string $type, int $amount, ?string $note = null, ?string $kind = null, ?int $expenseCategoryId = null): ShiftCashMovement
+    public function recordCashMovement(CashierShift $shift, User $actor, string $type, int $amount, ?string $note = null, ?string $kind = null, ?int $expenseCategoryId = null, ?int $payableId = null): ShiftCashMovement
     {
         if (! $shift->isOpen()) {
             throw ValidationException::withMessages([
@@ -204,11 +206,42 @@ class CashierShiftService
             }
         }
 
-        return DB::transaction(function () use ($shift, $actor, $type, $amount, $note, $kind, $category) {
+        // K3: pelunasan hutang dari laci wajib menunjuk hutangnya, dan
+        // hutang lain tidak boleh dikaitkan ke gerakan kas.
+        $payable = null;
+
+        if ($type === ShiftCashMovement::TYPE_OUT && $kind === 'pelunasan_hutang') {
+            $payable = Payable::query()->find($payableId);
+
+            if (! $payable) {
+                throw ValidationException::withMessages([
+                    'payable_id' => 'Hutang wajib dipilih untuk kas keluar jenis pelunasan hutang.',
+                ]);
+            }
+        } elseif ($payableId !== null) {
+            throw ValidationException::withMessages([
+                'payable_id' => 'Hutang hanya berlaku untuk kas keluar jenis pelunasan hutang.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($shift, $actor, $type, $amount, $note, $kind, $category, $payable) {
+            // Kunci baris hutang dulu: nominal dicek terhadap sisa TERKINI
+            // (pola yang sama dengan PayableController::pay).
+            if ($payable) {
+                $payable = Payable::whereKey($payable->id)->lockForUpdate()->firstOrFail();
+
+                if ($amount > $payable->remaining) {
+                    throw ValidationException::withMessages([
+                        'amount' => 'Nominal melebihi sisa hutang.',
+                    ]);
+                }
+            }
+
             $movement = ShiftCashMovement::create([
                 'cashier_shift_id' => $shift->id,
                 'type' => $type,
                 'kind' => $kind,
+                'payable_id' => $payable?->id,
                 'amount' => $amount,
                 'note' => $note,
                 'user_id' => $actor->id,
@@ -230,6 +263,30 @@ class CashierShiftService
                 ]);
 
                 $movement->update(['expense_id' => $expense->id]);
+            }
+
+            // Dual-record (cerminan dual-create beban): satu peristiwa
+            // ekonomi, dua catatan — gerakan kas mengurangi kas laci yang
+            // diharapkan, pembayaran hutang mengurangi sisa hutang. Bukan
+            // beban, jadi laba tidak berubah.
+            if ($payable) {
+                PayablePayment::create([
+                    'payable_id' => $payable->id,
+                    'paid_at' => now()->toDateString(),
+                    'amount' => $amount,
+                    'method' => 'cash',
+                    'bank_account_id' => null,
+                    'user_id' => $actor->id,
+                    'note' => trim(($note ? $note.' ' : '').'(dari laci shift #'.$shift->id.')'),
+                ]);
+
+                $newPaid = (float) $payable->paid + $amount;
+                $remaining = (float) $payable->total - $newPaid;
+
+                $payable->update([
+                    'paid' => $newPaid,
+                    'status' => $remaining <= 0 ? 'paid' : 'partial',
+                ]);
             }
 
             return $movement->fresh();

@@ -22,6 +22,11 @@ class ProductResource extends JsonResource
                 'id' => $this->category->id,
                 'name' => $this->category->name,
             ]),
+            'supplier' => $this->whenLoaded('supplier', fn () => [
+                'id' => $this->supplier->id,
+                'name' => $this->supplier->name,
+            ]),
+            'is_consignment' => (bool) $this->is_consignment,
             'buy_price' => (float) $this->buy_price,
             'sell_price' => (float) $this->sell_price,
             'stock' => (int) $this->stock,

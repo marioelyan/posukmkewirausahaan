@@ -1029,6 +1029,11 @@ class PosApiController extends Controller
                 Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'beban'),
                 'nullable', 'integer', 'exists:expense_categories,id',
             ],
+            'payable_id' => [
+                Rule::requiredIf($request->input('type') === 'out' && $request->input('kind') === 'pelunasan_hutang'),
+                Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'pelunasan_hutang'),
+                'nullable', 'integer', 'exists:payables,id',
+            ],
             'amount' => ['required', 'integer', 'min:1'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
@@ -1057,6 +1062,7 @@ class PosApiController extends Controller
             note: $validated['note'] ?? null,
             kind: $validated['kind'],
             expenseCategoryId: $validated['expense_category_id'] ?? null,
+            payableId: $validated['payable_id'] ?? null,
         );
 
         $this->auditLogService->log(
@@ -1082,7 +1088,7 @@ class PosApiController extends Controller
         );
 
         return $this->created(
-            new ShiftCashMovementResource($movement->load('expense')),
+            new ShiftCashMovementResource($movement->load(['expense', 'payable'])),
             'Pergerakan kas berhasil dicatat.'
         );
     }

@@ -17,7 +17,7 @@ import {
     IconRulerMeasure,
 } from "@tabler/icons-react";
 
-export default function Create({ categories, products, units = [] }) {
+export default function Create({ categories, products, units = [], suppliers = [] }) {
     const { errors } = usePage().props;
 
     const { data, setData, post, processing } = useForm({
@@ -25,6 +25,8 @@ export default function Create({ categories, products, units = [] }) {
         sku: "",
         title: "",
         category_id: "",
+        supplier_id: "",
+        is_consignment: false,
         description: "",
         buy_price: "",
         sell_price: "",
@@ -39,10 +41,16 @@ export default function Create({ categories, products, units = [] }) {
     });
 
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [selectedSupplier, setSelectedSupplier] = useState(null);
 
     const setSelectedCategoryHandler = (value) => {
         setSelectedCategory(value);
         setData("category_id", value?.id || "");
+    };
+
+    const setSelectedSupplierHandler = (value) => {
+        setSelectedSupplier(value);
+        setData("supplier_id", value?.id || "");
     };
 
     const toggleComposite = (checked) => {
@@ -186,6 +194,39 @@ export default function Create({ categories, products, units = [] }) {
                                         searchable={true}
                                         displayKey="name"
                                     />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <InputSelect
+                                        label="Penitip / Supplier (opsional)"
+                                        data={suppliers}
+                                        selected={selectedSupplier}
+                                        setSelected={setSelectedSupplierHandler}
+                                        placeholder="Tanpa penitip"
+                                        errors={errors.supplier_id}
+                                        searchable={true}
+                                        displayKey="name"
+                                    />
+                                </div>
+                                <div className="md:col-span-2 flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="is_consignment"
+                                        checked={data.is_consignment}
+                                        onChange={(e) => setData("is_consignment", e.target.checked)}
+                                        className="mt-0.5 h-5 w-5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                    />
+                                    <div>
+                                        <label htmlFor="is_consignment" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            Produk konsinyasi (titipan)
+                                        </label>
+                                        <p className="mt-0.5 text-xs text-slate-400">
+                                            Bila dicentang, penjualan produk ini otomatis membentuk hutang ke penitip
+                                            sebesar harga beli. Penitip wajib dipilih.
+                                        </p>
+                                        {errors.is_consignment && (
+                                            <p className="mt-1 text-sm text-danger-600">{errors.is_consignment}</p>
+                                        )}
+                                    </div>
                                 </div>
                                 <Input
                                     type="text"

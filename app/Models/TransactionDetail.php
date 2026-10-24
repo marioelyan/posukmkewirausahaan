@@ -17,6 +17,9 @@ class TransactionDetail extends Model
     protected $fillable = [
         'transaction_id',
         'product_id',
+        'supplier_id',
+        'is_consignment',
+        'buy_price',
         'unit_id',
         'conversion_factor',
         'qty',
@@ -34,6 +37,9 @@ class TransactionDetail extends Model
 
     protected $casts = [
         'qty' => 'integer',
+        'supplier_id' => 'integer',
+        'is_consignment' => 'boolean',
+        'buy_price' => 'integer',
         'base_unit_price' => 'integer',
         'unit_price' => 'integer',
         'price' => 'integer',
