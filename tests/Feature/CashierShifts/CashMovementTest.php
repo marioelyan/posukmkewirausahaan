@@ -54,9 +54,11 @@ class CashMovementTest extends TestCase
 
     public function test_cashier_can_record_cash_in_and_out(): void
     {
+        // Since the Expense feature, every movement must declare its kind.
         $this->actingAs($this->cashier)
             ->post(route('cashier-shifts.cash-movements.store', $this->shift), [
                 'type' => 'in',
+                'kind' => 'setoran_masuk',
                 'amount' => 50000,
                 'note' => 'Setoran tambahan',
             ])
@@ -66,6 +68,7 @@ class CashMovementTest extends TestCase
         $this->actingAs($this->cashier)
             ->post(route('cashier-shifts.cash-movements.store', $this->shift), [
                 'type' => 'out',
+                'kind' => 'lainnya',
                 'amount' => 20000,
             ])
             ->assertRedirect();
@@ -73,11 +76,13 @@ class CashMovementTest extends TestCase
         $this->assertDatabaseHas('shift_cash_movements', [
             'cashier_shift_id' => $this->shift->id,
             'type' => 'in',
+            'kind' => 'setoran_masuk',
             'amount' => 50000,
         ]);
         $this->assertDatabaseHas('shift_cash_movements', [
             'cashier_shift_id' => $this->shift->id,
             'type' => 'out',
+            'kind' => 'lainnya',
             'amount' => 20000,
         ]);
     }

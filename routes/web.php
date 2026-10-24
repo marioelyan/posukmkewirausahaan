@@ -14,6 +14,8 @@ use App\Http\Controllers\Apps\CustomerController;
 use App\Http\Controllers\Apps\CustomerSegmentController;
 use App\Http\Controllers\Apps\CustomerVoucherController;
 use App\Http\Controllers\Apps\DiscountApprovalController;
+use App\Http\Controllers\Apps\ExpenseCategoryController;
+use App\Http\Controllers\Apps\ExpenseController;
 use App\Http\Controllers\Apps\GoodsReceivingController;
 use App\Http\Controllers\Apps\ImportExportController;
 use App\Http\Controllers\Apps\MemberController;
@@ -46,6 +48,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\Reports\AdvancedSalesInsightsController;
+use App\Http\Controllers\Reports\ExpenseReportController;
 use App\Http\Controllers\Reports\ProfitReportController;
 use App\Http\Controllers\Reports\SalesReportController;
 use App\Http\Controllers\RoleController;
@@ -148,6 +151,16 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'business', 'bus
         ->middlewareFor(['create', 'store'], 'permission:categories-create')
         ->middlewareFor(['edit', 'update'], 'permission:categories-edit')
         ->middlewareFor('destroy', 'permission:categories-delete');
+    Route::resource('expenses', ExpenseController::class)
+        ->middlewareFor(['index', 'show'], 'permission:expenses-access')
+        ->middlewareFor(['create', 'store'], 'permission:expenses-create')
+        ->middlewareFor(['edit', 'update'], 'permission:expenses-edit')
+        ->middlewareFor('destroy', 'permission:expenses-delete');
+    Route::resource('expense-categories', ExpenseCategoryController::class)
+        ->middlewareFor(['index', 'show'], 'permission:expense-categories-access')
+        ->middlewareFor(['create', 'store'], 'permission:expense-categories-create')
+        ->middlewareFor(['edit', 'update'], 'permission:expense-categories-edit')
+        ->middlewareFor('destroy', 'permission:expense-categories-delete');
     Route::resource('products', ProductController::class)
         ->middlewareFor(['index', 'show'], 'permission:products-access')
         ->middlewareFor(['create', 'store'], 'permission:products-create')
@@ -432,6 +445,8 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'business', 'bus
     Route::get('/reports/profits', [ProfitReportController::class, 'index'])->middleware('permission:profits-access')->name('reports.profits.index');
     Route::get('/reports/insights', [AdvancedSalesInsightsController::class, 'index'])->middleware('permission:reports-access')->name('reports.insights.index');
     Route::get('/reports/insights/export', [AdvancedSalesInsightsController::class, 'export'])->middleware('permission:reports-access')->name('reports.insights.export');
+    Route::get('/reports/expenses', [ExpenseReportController::class, 'expenses'])->middleware('permission:expenses-access')->name('reports.expenses.index');
+    Route::get('/reports/laba-rugi', [ExpenseReportController::class, 'profitLoss'])->middleware('permission:reports-access')->name('reports.profit-loss.index');
 
     // aging & reminders
     Route::get('/aging', [AgingController::class, 'index'])->middleware('permission:receivables-access')->name('aging.index');

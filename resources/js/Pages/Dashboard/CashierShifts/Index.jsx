@@ -29,12 +29,29 @@ const formatDateTime = (value) => {
     }).format(new Date(value));
 };
 
+const kindOptions = {
+    in: [
+        { value: "modal", label: "Modal" },
+        { value: "setoran_masuk", label: "Setoran masuk" },
+        { value: "talangan_masuk", label: "Talangan masuk" },
+        { value: "lainnya", label: "Lainnya" },
+    ],
+    out: [
+        { value: "beban", label: "Beban (jadi pengeluaran)" },
+        { value: "setoran", label: "Setoran" },
+        { value: "talangan", label: "Talangan" },
+        { value: "pelunasan_hutang", label: "Pelunasan hutang" },
+        { value: "lainnya", label: "Lainnya" },
+    ],
+};
+
 export default function Index({
     shifts,
     filters,
     cashiers = [],
     activeShift = null,
     warehouses = [],
+    expenseCategories = [],
 }) {
     const { auth, errors } = usePage().props;
     const { can } = useAuthorization();
@@ -44,6 +61,14 @@ export default function Index({
     const [cashModal, setCashModal] = useState(null); // 'in' | 'out' | null
     const [cashAmount, setCashAmount] = useState("");
     const [cashNote, setCashNote] = useState("");
+    const [cashKind, setCashKind] = useState("lainnya");
+    const [cashCategoryId, setCashCategoryId] = useState("");
+
+    const openCashModal = (type) => {
+        setCashKind("lainnya");
+        setCashCategoryId("");
+        setCashModal(type);
+    };
     const canOpenShift = can("cashier-shifts-open");
 
     const currentFilters = useMemo(
@@ -87,18 +112,26 @@ export default function Index({
     const handleCashMovement = (event) => {
         event.preventDefault();
 
+        const payload = {
+            type: cashModal,
+            kind: cashKind,
+            amount: Number(cashAmount || 0),
+            note: cashNote,
+        };
+        if (cashModal === "out" && cashKind === "beban" && cashCategoryId) {
+            payload.expense_category_id = cashCategoryId;
+        }
+
         router.post(
             route("cashier-shifts.cash-movements.store", activeShift.id),
-            {
-                type: cashModal,
-                amount: Number(cashAmount || 0),
-                note: cashNote,
-            },
+            payload,
             {
                 onSuccess: () => {
                     setCashModal(null);
                     setCashAmount("");
                     setCashNote("");
+                    setCashKind("lainnya");
+                    setCashCategoryId("");
                 },
             }
         );
@@ -266,7 +299,7 @@ export default function Index({
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setCashModal("in")}
+                                onClick={() => openCashModal("in")}
                                 className="inline-flex items-center gap-2 rounded-xl border border-success-200 px-4 py-2.5 text-sm font-medium text-success-700 transition-colors hover:bg-success-50 dark:border-success-900/50 dark:text-success-300 dark:hover:bg-success-950/30"
                             >
                                 <IconCashBanknote size={18} />
@@ -274,7 +307,7 @@ export default function Index({
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setCashModal("out")}
+                                onClick={() => openCashModal("out")}
                                 className="inline-flex items-center gap-2 rounded-xl border border-danger-200 px-4 py-2.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50 dark:border-danger-900/50 dark:text-danger-300 dark:hover:bg-danger-950/30"
                             >
                                 <IconCashBanknote size={18} />
@@ -298,6 +331,52 @@ export default function Index({
                                 {cashModal === "in" ? "Catat Kas Masuk" : "Catat Kas Keluar"}
                             </h3>
                             <div className="mt-4 space-y-3">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        Jenis
+                                    </label>
+                                    <select
+                                        value={cashKind}
+                                        onChange={(event) => setCashKind(event.target.value)}
+                                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                        required
+                                    >
+                                        {kindOptions[cashModal].map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.kind && (
+                                        <p className="mt-1 text-sm text-danger-600">{errors.kind}</p>
+                                    )}
+                                </div>
+                                {cashModal === "out" && cashKind === "beban" && (
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            Kategori Beban
+                                        </label>
+                                        <select
+                                            value={cashCategoryId}
+                                            onChange={(event) => setCashCategoryId(event.target.value)}
+                                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                            required
+                                        >
+                                            <option value="">Pilih kategori beban</option>
+                                            {expenseCategories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.expense_category_id && (
+                                            <p className="mt-1 text-sm text-danger-600">{errors.expense_category_id}</p>
+                                        )}
+                                        <p className="mt-1 text-xs text-slate-400">
+                                            Beban dari laci langsung tercatat sebagai pengeluaran pada kategori ini.
+                                        </p>
+                                    </div>
+                                )}
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                                         Nominal

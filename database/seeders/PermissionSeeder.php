@@ -117,6 +117,17 @@ class PermissionSeeder extends Seeder
         $create('cashier-shifts-close');
         $create('cashier-shifts-force-close');
 
+        // expenses (beban) — open to all roles (owner, manager, staff);
+        // expense categories stay with owner/manager (see RoleSeeder).
+        $create('expenses-access');
+        $create('expenses-create');
+        $create('expenses-edit');
+        $create('expenses-delete');
+        $create('expense-categories-access');
+        $create('expense-categories-create');
+        $create('expense-categories-edit');
+        $create('expense-categories-delete');
+
         // audit logs
         $create('audit-logs-access');
 

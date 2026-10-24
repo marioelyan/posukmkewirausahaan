@@ -11,7 +11,28 @@ class ShiftCashMovement extends Model
 
     public const TYPE_OUT = 'out';
 
-    protected $fillable = ['cashier_shift_id', 'type', 'amount', 'note', 'user_id'];
+    /**
+     * Kinds for cash-out movements. Only `beban` creates an Expense row.
+     */
+    public const KIND_OUT = [
+        'beban',
+        'setoran',
+        'talangan',
+        'pelunasan_hutang',
+        'lainnya',
+    ];
+
+    /**
+     * Kinds for cash-in movements. None creates an Expense row.
+     */
+    public const KIND_IN = [
+        'modal',
+        'setoran_masuk',
+        'talangan_masuk',
+        'lainnya',
+    ];
+
+    protected $fillable = ['cashier_shift_id', 'type', 'kind', 'expense_id', 'amount', 'note', 'user_id'];
 
     protected function casts(): array
     {
@@ -28,5 +49,10 @@ class ShiftCashMovement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function expense(): BelongsTo
+    {
+        return $this->belongsTo(Expense::class);
     }
 }

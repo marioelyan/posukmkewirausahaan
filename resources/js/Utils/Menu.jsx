@@ -41,6 +41,7 @@ import {
     IconAlertCircle,
     IconListDetails,
     IconBrandWhatsapp,
+    IconCashBanknote,
 } from "@tabler/icons-react";
 import hasAnyPermission from "./Permission";
 import React from "react";
@@ -264,6 +265,34 @@ export default function Menu() {
             icon: glyph(IconChartBar),
             permissions: hasAnyPermission(["reports-access"]),
         },
+        expenses: {
+            title: t("sidebar.items.expenses"),
+            href: route("expenses.index"),
+            active: under("/dashboard/expenses"),
+            icon: glyph(IconCashBanknote),
+            permissions: hasAnyPermission(["expenses-access"]),
+        },
+        expenseCategories: {
+            title: t("sidebar.items.expenseCategories"),
+            href: route("expense-categories.index"),
+            active: under("/dashboard/expense-categories"),
+            icon: glyph(IconFolder),
+            permissions: hasAnyPermission(["expense-categories-access"]),
+        },
+        expenseReport: {
+            title: t("sidebar.items.expenseReport"),
+            href: route("reports.expenses.index"),
+            active: under("/dashboard/reports/expenses"),
+            icon: glyph(IconCashBanknote),
+            permissions: hasAnyPermission(["expenses-access"]),
+        },
+        profitLossReport: {
+            title: t("sidebar.items.profitLossReport"),
+            href: route("reports.profit-loss.index"),
+            active: under("/dashboard/reports/laba-rugi"),
+            icon: glyph(IconChartBar),
+            permissions: hasAnyPermission(["reports-access"]),
+        },
         cashierShifts: {
             title: t("sidebar.items.cashierShifts"),
             href: route("cashier-shifts.index"),
@@ -422,14 +451,14 @@ export default function Menu() {
     // `dashboard` is intentionally absent: every canonical role renders it as a
     // quick action button instead (see `actionLayouts`).
     const canonicalLayout = [
-        { section: "masterData", items: ["categories", "products", "customers", "suppliers"] },
+        { section: "masterData", items: ["categories", "products", "customers", "suppliers", "expenseCategories"] },
         { section: "sales", items: ["transactions", "transactionHistory", "salesReturns", "receivables", "aging"] },
         { section: "approval", items: ["discountApproval"] },
         { section: "inventory", items: ["stockOpname", "stockMutations", "stockTransfers"] },
         { section: "procurement", items: ["purchaseOrders", "goodsReceivings", "supplierReturns", "payables"] },
         { section: "crmPricing", items: ["members", "pricePromos", "customerVouchers", "customerSegments", "crmCampaigns", "crmReminders"] },
-        { section: "reports", items: ["salesReport", "profitReport", "advancedInsights"] },
-        { section: "operations", items: ["cashierShifts", "auditLogs"] },
+        { section: "reports", items: ["salesReport", "profitReport", "advancedInsights", "expenseReport", "profitLossReport"] },
+        { section: "operations", items: ["cashierShifts", "expenses", "auditLogs"] },
         { section: "userManagement", items: ["permissions", "roles", "businesses", "users"] },
         { section: "settings", items: ["paymentGateway", "storeProfile", "bankAccounts", "loyalty", "salesTarget", "priceLists", "warehouses", "outlets", "units", "whatsApp", "apiTokens"] },
     ];
@@ -442,7 +471,7 @@ export default function Menu() {
         owner: canonicalLayout,
         manager: canonicalLayout,
         staff: [
-            { section: "kasir", items: ["dashboard", "transactionHistory"] },
+            { section: "kasir", items: ["dashboard", "transactionHistory", "expenses"] },
             { section: "sales", items: ["receivables", "aging"] },
             { section: "procurement", items: ["suppliers", "payables"] },
             { section: "customers", items: ["customers", "members"] },

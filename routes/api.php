@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\ExpenseCategoryController;
+use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\PosApiController;
 use App\Http\Controllers\Api\ProductController;
@@ -109,6 +111,32 @@ Route::prefix('v1')->group(function () {
                     'update' => 'api.suppliers.update',
                     'destroy' => 'api.suppliers.destroy',
                 ]);
+
+            Route::apiResource('expenses', ExpenseController::class)
+                ->middlewareFor(['index', 'show'], 'abilities:expenses-access')
+                ->middlewareFor('store', 'abilities:expenses-create')
+                ->middlewareFor('update', 'abilities:expenses-edit')
+                ->middlewareFor('destroy', 'abilities:expenses-delete')
+                ->names([
+                    'index' => 'api.expenses.index',
+                    'store' => 'api.expenses.store',
+                    'show' => 'api.expenses.show',
+                    'update' => 'api.expenses.update',
+                    'destroy' => 'api.expenses.destroy',
+                ]);
+
+            Route::apiResource('expense-categories', ExpenseCategoryController::class)
+                ->middlewareFor(['index', 'show'], 'abilities:expense-categories-access')
+                ->middlewareFor('store', 'abilities:expense-categories-create')
+                ->middlewareFor('update', 'abilities:expense-categories-edit')
+                ->middlewareFor('destroy', 'abilities:expense-categories-delete')
+                ->names([
+                    'index' => 'api.expense-categories.index',
+                    'store' => 'api.expense-categories.store',
+                    'show' => 'api.expense-categories.show',
+                    'update' => 'api.expense-categories.update',
+                    'destroy' => 'api.expense-categories.destroy',
+                ]);
         });
 
         // POS (mobile kasir) — requires the pos-access ability
@@ -117,6 +145,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/shift', [PosApiController::class, 'currentShift'])->name('api.pos.shift');
             Route::post('/shift/open', [PosApiController::class, 'openShift'])->name('api.pos.shift.open');
             Route::post('/shift/close', [PosApiController::class, 'closeShift'])->name('api.pos.shift.close');
+            Route::post('/shift/cash-movements', [PosApiController::class, 'storeCashMovement'])->name('api.pos.shift.cash-movements.store');
 
             // Products & scan
             Route::get('/products', [PosApiController::class, 'products'])->name('api.pos.products');

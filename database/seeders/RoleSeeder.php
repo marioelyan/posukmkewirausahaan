@@ -77,6 +77,12 @@ class RoleSeeder extends Seeder
             'payables-access',
             'payables-pay',
             'suppliers-access',
+            // Expense feature is open to all roles (owner, manager, staff).
+            // Category master data stays with owner/manager.
+            'expenses-access',
+            'expenses-create',
+            'expenses-edit',
+            'expenses-delete',
         ])->get();
         $cashierRole->syncPermissions($cashierPermissions);
 

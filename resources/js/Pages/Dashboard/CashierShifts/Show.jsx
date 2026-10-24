@@ -29,6 +29,18 @@ const formatDateTime = (value) => {
     }).format(new Date(value));
 };
 
+// Baris lama (sebelum fitur jenis) punya kind NULL dan tampil sebagai "Lainnya".
+const kindLabels = {
+    beban: "Beban",
+    setoran: "Setoran",
+    talangan: "Talangan",
+    pelunasan_hutang: "Pelunasan hutang",
+    modal: "Modal",
+    setoran_masuk: "Setoran masuk",
+    talangan_masuk: "Talangan masuk",
+    lainnya: "Lainnya",
+};
+
 function MetricCard({ title, value, icon: Icon }) {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -302,6 +314,7 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                     <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
                                         <th className="py-3 pr-4 font-semibold">Waktu</th>
                                         <th className="py-3 pr-4 font-semibold">Tipe</th>
+                                        <th className="py-3 pr-4 font-semibold">Jenis</th>
                                         <th className="py-3 pr-4 text-right font-semibold">Nominal</th>
                                         <th className="py-3 pr-4 font-semibold">Keterangan</th>
                                         <th className="py-3 font-semibold">Dicatat Oleh</th>
@@ -327,6 +340,9 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                                     {movement.type === "in" ? "Kas Masuk" : "Kas Keluar"}
                                                 </span>
                                             </td>
+                                            <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
+                                                {kindLabels[movement.kind] || "Lainnya"}
+                                            </td>
                                             <td
                                                 className={`py-3 pr-4 text-right font-semibold ${
                                                     movement.type === "in"
@@ -339,6 +355,11 @@ export default function Show({ cashierShift, canForceClose = false }) {
                                             </td>
                                             <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
                                                 {movement.note || "-"}
+                                                {movement.expense_category && (
+                                                    <span className="block text-xs text-slate-400">
+                                                        Beban: {movement.expense_category}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="py-3 text-slate-600 dark:text-slate-300">
                                                 {movement.user || "-"}

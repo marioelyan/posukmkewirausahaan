@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\CashierShift;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Outlet;
 use App\Models\SalesReturn;
 use App\Models\ShiftCashMovement;
@@ -155,7 +157,7 @@ class CashierShiftService
         ];
     }
 
-    public function recordCashMovement(CashierShift $shift, User $actor, string $type, int $amount, ?string $note = null): ShiftCashMovement
+    public function recordCashMovement(CashierShift $shift, User $actor, string $type, int $amount, ?string $note = null, ?string $kind = null, ?int $expenseCategoryId = null): ShiftCashMovement
     {
         if (! $shift->isOpen()) {
             throw ValidationException::withMessages([
@@ -175,13 +177,63 @@ class CashierShiftService
             ]);
         }
 
-        return ShiftCashMovement::create([
-            'cashier_shift_id' => $shift->id,
-            'type' => $type,
-            'amount' => $amount,
-            'note' => $note,
-            'user_id' => $actor->id,
-        ]);
+        // Kind is optional for programmatic callers (legacy rows carry NULL and
+        // are displayed as `lainnya`), but when given it must belong to the
+        // movement type. Only `out + beban` creates an Expense row.
+        if ($kind !== null) {
+            $allowed = $type === ShiftCashMovement::TYPE_OUT
+                ? ShiftCashMovement::KIND_OUT
+                : ShiftCashMovement::KIND_IN;
+
+            if (! in_array($kind, $allowed, true)) {
+                throw ValidationException::withMessages([
+                    'kind' => 'Jenis pergerakan kas tidak valid untuk tipe ini.',
+                ]);
+            }
+        }
+
+        $category = null;
+
+        if ($type === ShiftCashMovement::TYPE_OUT && $kind === 'beban') {
+            $category = ExpenseCategory::query()->find($expenseCategoryId);
+
+            if (! $category) {
+                throw ValidationException::withMessages([
+                    'expense_category_id' => 'Kategori beban wajib diisi untuk kas keluar jenis beban.',
+                ]);
+            }
+        }
+
+        return DB::transaction(function () use ($shift, $actor, $type, $amount, $note, $kind, $category) {
+            $movement = ShiftCashMovement::create([
+                'cashier_shift_id' => $shift->id,
+                'type' => $type,
+                'kind' => $kind,
+                'amount' => $amount,
+                'note' => $note,
+                'user_id' => $actor->id,
+            ]);
+
+            // Dual-create: a drawer expense is one economic event recorded as
+            // one cash movement plus one Expense row. Other kinds never touch
+            // the expense book, so setoran/talangan/pelunasan cannot deflate profit.
+            if ($type === ShiftCashMovement::TYPE_OUT && $kind === 'beban' && $category) {
+                $expense = Expense::create([
+                    'expense_category_id' => $category->id,
+                    'warehouse_id' => $shift->warehouse_id,
+                    'cashier_shift_id' => $shift->id,
+                    'date' => now()->toDateString(),
+                    'amount' => $amount,
+                    'source' => Expense::SOURCE_DRAWER,
+                    'note' => $note,
+                    'user_id' => $actor->id,
+                ]);
+
+                $movement->update(['expense_id' => $expense->id]);
+            }
+
+            return $movement->fresh();
+        });
     }
 
     public function closeShift(

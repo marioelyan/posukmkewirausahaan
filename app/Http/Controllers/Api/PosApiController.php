@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CartResource;
 use App\Http\Resources\CashierShiftResource;
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\ShiftCashMovementResource;
 use App\Http\Resources\TransactionResource;
 use App\Http\Traits\ApiResponder;
+use App\Models\CashierShift;
 use App\Models\Cart;
 use App\Models\Customer;
 use App\Models\CustomerVoucher;
@@ -16,8 +18,10 @@ use App\Models\PaymentSetting;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
+use App\Models\ShiftCashMovement;
 use App\Models\Warehouse;
 use App\Rules\BelongsToActiveBusiness;
+use App\Services\AuditLogService;
 use App\Services\CashierShiftService;
 use App\Services\CheckoutService;
 use App\Services\LoyaltyService;
@@ -33,6 +37,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -42,6 +47,7 @@ class PosApiController extends Controller
 
     public function __construct(
         private readonly CashierShiftService $cashierShiftService,
+        private readonly AuditLogService $auditLogService,
         private readonly PricingService $pricingService,
         private readonly LoyaltyService $loyaltyService,
         private readonly UnitConversionService $unitConversionService,
@@ -1004,5 +1010,80 @@ class PosApiController extends Controller
         $transaction->load('details.product', 'customer', 'cashier', 'warehouse', 'receivable', 'bankAccount', 'tenders');
 
         return $this->ok(new TransactionResource($transaction));
+    }
+
+    /**
+     * POST /api/v1/pos/shift/cash-movements
+     * Record a drawer cash movement from the POS app. Kind is required for
+     * new movements; out + beban also creates an Expense row atomically.
+     * Without an explicit shift, the actor's active shift is used.
+     */
+    public function storeCashMovement(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'cashier_shift_id' => ['nullable', 'integer', 'exists:cashier_shifts,id'],
+            'type' => ['required', 'in:in,out'],
+            'kind' => ['required', 'string'],
+            'expense_category_id' => [
+                Rule::requiredIf($request->input('type') === 'out' && $request->input('kind') === 'beban'),
+                Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'beban'),
+                'nullable', 'integer', 'exists:expense_categories,id',
+            ],
+            'amount' => ['required', 'integer', 'min:1'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = $request->user();
+
+        if (! empty($validated['cashier_shift_id'])) {
+            $shift = CashierShift::findOrFail($validated['cashier_shift_id']);
+
+            if ($shift->user_id !== $user->id && ! ($user->isSuperAdmin() || $user->tokenCan('cashier-shifts-force-close'))) {
+                return $this->forbidden('Bukan shift Anda.');
+            }
+        } else {
+            $shift = $this->cashierShiftService->getActiveShiftForUser($user->id);
+
+            if (! $shift) {
+                return $this->error('Tidak ada shift aktif.', 422);
+            }
+        }
+
+        $movement = $this->cashierShiftService->recordCashMovement(
+            shift: $shift,
+            actor: $user,
+            type: $validated['type'],
+            amount: (int) $validated['amount'],
+            note: $validated['note'] ?? null,
+            kind: $validated['kind'],
+            expenseCategoryId: $validated['expense_category_id'] ?? null,
+        );
+
+        $this->auditLogService->log(
+            event: 'cashier_shift.cash_movement_recorded',
+            module: 'cashier_shifts',
+            auditable: $movement,
+            description: $validated['type'] === ShiftCashMovement::TYPE_IN
+                ? 'Kas masuk shift dicatat.'
+                : 'Kas keluar shift dicatat.',
+            after: [
+                'cashier_shift_id' => $shift->id,
+                'type' => $movement->type,
+                'kind' => $movement->kind,
+                'expense_id' => $movement->expense_id,
+                'amount' => $movement->amount,
+                'note' => $movement->note,
+                'user_id' => $movement->user_id,
+            ],
+            meta: [
+                'shift_id' => $shift->id,
+                'cashier_id' => $shift->user_id,
+            ],
+        );
+
+        return $this->created(
+            new ShiftCashMovementResource($movement->load('expense')),
+            'Pergerakan kas berhasil dicatat.'
+        );
     }
 }
