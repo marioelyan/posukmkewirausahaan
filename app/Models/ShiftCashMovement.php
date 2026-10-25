@@ -32,11 +32,26 @@ class ShiftCashMovement extends Model
         'lainnya',
     ];
 
-    protected $fillable = ['cashier_shift_id', 'type', 'kind', 'expense_id', 'payable_id', 'amount', 'note', 'user_id'];
+    /**
+     * Fase 1 slice 2 (spec §3.8, keputusan Q5): destination of a setoran
+     * (cash-out) movement. Bank needs bank_account_id (journal Dr 1110);
+     * owner journals Dr 3110 Prive. Null = legacy row, left unjournaled.
+     */
+    public const SETORAN_DESTINATION_BANK = 'bank';
+
+    public const SETORAN_DESTINATION_OWNER = 'owner';
+
+    public const SETORAN_DESTINATIONS = [
+        self::SETORAN_DESTINATION_BANK,
+        self::SETORAN_DESTINATION_OWNER,
+    ];
+
+    protected $fillable = ['cashier_shift_id', 'type', 'kind', 'setoran_destination', 'bank_account_id', 'expense_id', 'payable_id', 'amount', 'note', 'user_id'];
 
     protected function casts(): array
     {
         return [
+            'bank_account_id' => 'integer',
             'amount' => 'integer',
         ];
     }
@@ -59,5 +74,10 @@ class ShiftCashMovement extends Model
     public function payable(): BelongsTo
     {
         return $this->belongsTo(Payable::class);
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 }

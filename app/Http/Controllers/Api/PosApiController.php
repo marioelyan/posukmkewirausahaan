@@ -9,16 +9,16 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\ShiftCashMovementResource;
 use App\Http\Resources\TransactionResource;
 use App\Http\Traits\ApiResponder;
-use App\Models\CashierShift;
 use App\Models\Cart;
+use App\Models\CashierShift;
 use App\Models\Customer;
 use App\Models\CustomerVoucher;
 use App\Models\DiscountApprovalLog;
 use App\Models\PaymentSetting;
 use App\Models\Product;
+use App\Models\ShiftCashMovement;
 use App\Models\Transaction;
 use App\Models\TransactionTender;
-use App\Models\ShiftCashMovement;
 use App\Models\Warehouse;
 use App\Rules\BelongsToActiveBusiness;
 use App\Services\AuditLogService;
@@ -1034,6 +1034,18 @@ class PosApiController extends Controller
                 Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'pelunasan_hutang'),
                 'nullable', 'integer', 'exists:payables,id',
             ],
+            // Fase 1 slice 2 (spec §3.8, keputusan Q5): setoran keluar
+            // wajib memilih tujuan; ke bank wajib memilih rekeningnya.
+            'setoran_destination' => [
+                Rule::requiredIf($request->input('type') === 'out' && $request->input('kind') === 'setoran'),
+                Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'setoran'),
+                'nullable', 'string', Rule::in(ShiftCashMovement::SETORAN_DESTINATIONS),
+            ],
+            'bank_account_id' => [
+                Rule::requiredIf($request->input('type') === 'out' && $request->input('kind') === 'setoran' && $request->input('setoran_destination') === ShiftCashMovement::SETORAN_DESTINATION_BANK),
+                Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'setoran' || $request->input('setoran_destination') !== ShiftCashMovement::SETORAN_DESTINATION_BANK),
+                'nullable', 'integer', 'exists:bank_accounts,id',
+            ],
             'amount' => ['required', 'integer', 'min:1'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
@@ -1063,6 +1075,8 @@ class PosApiController extends Controller
             kind: $validated['kind'],
             expenseCategoryId: $validated['expense_category_id'] ?? null,
             payableId: $validated['payable_id'] ?? null,
+            setoranDestination: $validated['setoran_destination'] ?? null,
+            bankAccountId: $validated['bank_account_id'] ?? null,
         );
 
         $this->auditLogService->log(

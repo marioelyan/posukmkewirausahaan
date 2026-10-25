@@ -7,13 +7,20 @@ use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Warehouse;
 use App\Services\AuditLogService;
+use App\Services\JournalService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use InvalidArgumentException;
 
 class ExpenseController extends Controller
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly JournalService $journalService,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -84,17 +91,37 @@ class ExpenseController extends Controller
             'cashier_shift_id' => ['prohibited'],
         ]);
 
-        // create expense
-        $expense = Expense::create([
-            'expense_category_id' => $validated['expense_category_id'],
-            'warehouse_id' => $validated['warehouse_id'] ?? null,
-            'date' => $validated['date'],
-            'amount' => $validated['amount'],
-            'source' => $validated['source'],
-            'note' => $validated['note'] ?? null,
-            'proof_reference' => $validated['proof_reference'] ?? null,
-            'user_id' => $request->user()->id,
-        ]);
+        // Spec §2.2: a category without an account mapping cannot be used
+        // in an Expense — fail with a validation error, not a 500 from the
+        // journal post.
+        $category = ExpenseCategory::findOrFail($validated['expense_category_id']);
+
+        try {
+            $this->journalService->expenseAccountCode($category);
+        } catch (InvalidArgumentException $e) {
+            throw ValidationException::withMessages([
+                'expense_category_id' => $e->getMessage(),
+            ]);
+        }
+
+        // Create expense and journal it in the same transaction (spec §3.7):
+        // direct bank/other_cash creation, same as the drawer dual-create.
+        $expense = DB::transaction(function () use ($validated, $request) {
+            $expense = Expense::create([
+                'expense_category_id' => $validated['expense_category_id'],
+                'warehouse_id' => $validated['warehouse_id'] ?? null,
+                'date' => $validated['date'],
+                'amount' => $validated['amount'],
+                'source' => $validated['source'],
+                'note' => $validated['note'] ?? null,
+                'proof_reference' => $validated['proof_reference'] ?? null,
+                'user_id' => $request->user()->id,
+            ]);
+
+            $this->journalService->postExpenseJournal($expense, $expense->business_id);
+
+            return $expense;
+        });
 
         $this->auditLogService->log(
             event: 'expense.created',

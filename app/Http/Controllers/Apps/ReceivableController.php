@@ -7,6 +7,7 @@ use App\Models\BankAccount;
 use App\Models\Receivable;
 use App\Models\ReceivablePayment;
 use App\Rules\BelongsToActiveBusiness;
+use App\Services\JournalService;
 use App\Services\OutletAccessService;
 use App\Services\ReceivableService;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class ReceivableController extends Controller
     public function __construct(
         private readonly ReceivableService $receivableService,
         private readonly OutletAccessService $outletAccessService,
+        private readonly JournalService $journalService,
     ) {}
 
     public function index(Request $request)
@@ -114,7 +116,7 @@ class ReceivableController extends Controller
                 );
             }
 
-            ReceivablePayment::create([
+            $payment = ReceivablePayment::create([
                 'receivable_id' => $receivable->id,
                 'paid_at' => $validated['paid_at'],
                 'amount' => $validated['amount'],
@@ -123,6 +125,12 @@ class ReceivableController extends Controller
                 'note' => $validated['note'] ?? null,
                 'user_id' => $request->user()->id,
             ]);
+
+            // Fase 1 slice 3 (spec §3.3): settlement journal in the same
+            // transaction as the payment. The only ReceivablePayment
+            // creation site is this method (no API path), so this hook
+            // covers every settlement exactly once.
+            $this->journalService->postReceivablePaymentJournal($payment, $receivable->business_id);
 
             $receivable->paid = ($receivable->paid ?? 0) + $validated['amount'];
             $remaining = max(0, ($receivable->total ?? 0) - ($receivable->paid ?? 0));

@@ -16,6 +16,7 @@ use App\Models\TransactionDetail;
 use App\Models\Warehouse;
 use App\Services\AuditLogService;
 use App\Services\CashierShiftService;
+use App\Services\JournalService;
 use App\Services\OutletAccessService;
 use App\Services\StockMutationService;
 use Carbon\Carbon;
@@ -36,7 +37,8 @@ class SalesReturnController extends Controller
         private readonly StockMutationService $stockMutationService,
         private readonly CashierShiftService $cashierShiftService,
         private readonly AuditLogService $auditLogService,
-        private readonly OutletAccessService $outletAccessService
+        private readonly OutletAccessService $outletAccessService,
+        private readonly JournalService $journalService
     ) {}
 
     public function index(Request $request): Response
@@ -228,6 +230,11 @@ class SalesReturnController extends Controller
                 }
             }
 
+            // Fase 1 slice 3: applied consignment payable reduction, summed
+            // here so the return journal credits exactly what K2 removed
+            // (payable floored at the paid amount; see below).
+            $consignmentReduction = 0;
+
             foreach ($salesReturn->items as $item) {
                 $detail = $item->transactionDetail;
 
@@ -316,6 +323,8 @@ class SalesReturnController extends Controller
                                 'status' => $remaining <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
                                 'note' => $note,
                             ]);
+
+                            $consignmentReduction += (int) round($oldTotal - $newTotal);
                         }
                     }
                 }
@@ -338,10 +347,17 @@ class SalesReturnController extends Controller
                 'completed_at' => now(),
             ]);
 
+            // Fase 1 slice 3: pre-update receivable total caps the journal's
+            // receivable-reduction leg (a return can never reduce the
+            // receivable below what it was).
+            $receivableTotalBefore = null;
+
             if ($salesReturn->transaction->payment_method === 'pay_later' && $salesReturn->transaction->receivable) {
                 $receivable = $salesReturn->transaction->receivable()->lockForUpdate()->first();
 
                 if ($receivable) {
+                    $receivableTotalBefore = (int) $receivable->total;
+
                     $receivable->update([
                         'total' => $settlement['receivable_total_after'],
                         'status' => $this->determineReceivableStatus(
@@ -366,6 +382,50 @@ class SalesReturnController extends Controller
                     'notes' => 'Saldo toko dari retur penjualan '.$salesReturn->code,
                 ]);
             }
+
+            // Fase 1 slice 3 (spec §3.4): return journal in the same
+            // transaction as the completion. Restock value uses the frozen
+            // checkout snapshot (detail buy_price, never current master
+            // buy_price); pre-K2 details without a snapshot fall back to
+            // the product's current buy_price. The receivable leg covers
+            // the unpaid portion of a credit-sale return; the store-credit
+            // portion has no account in the phase 1 chart and is left
+            // unjournaled (see JournalService::postSalesReturnJournal).
+            $ownedRestockValue = 0;
+
+            foreach ($salesReturn->items as $item) {
+                $detail = $item->transactionDetail;
+
+                if (! $detail || ! $item->restock_to_inventory || $detail->is_consignment) {
+                    continue;
+                }
+
+                $snapshotBuy = (int) ($detail->buy_price ?? $item->product?->buy_price ?? 0);
+                $ownedRestockValue += (int) round(
+                    (int) $item->qty_return * $snapshotBuy * (float) ($detail->conversion_factor ?? 1)
+                );
+            }
+
+            $refundAmount = (int) $settlement['refund_amount'];
+            $creditedAmount = (int) $settlement['credited_amount'];
+
+            $receivableReduction = 0;
+
+            if ($receivableTotalBefore !== null) {
+                $receivableReduction = max(0, min(
+                    (int) $salesReturn->total_return_amount - $refundAmount - $creditedAmount,
+                    $receivableTotalBefore,
+                ));
+            }
+
+            $this->journalService->postSalesReturnJournal(
+                $salesReturn,
+                $activeShift->business_id,
+                $refundAmount,
+                $receivableReduction,
+                $ownedRestockValue,
+                $consignmentReduction,
+            );
         });
 
         $salesReturn->refresh();

@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CloseCashierShiftRequest;
 use App\Http\Requests\ConfirmPasswordForForceCloseRequest;
 use App\Http\Requests\StoreCashierShiftRequest;
+use App\Models\BankAccount;
 use App\Models\CashierShift;
 use App\Models\ExpenseCategory;
-use App\Models\Payable;
 use App\Models\Outlet;
+use App\Models\Payable;
 use App\Models\ShiftCashMovement;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -66,6 +67,7 @@ class CashierShiftController extends Controller
             'activeShift' => $activeShift ? $this->transformShift($activeShift) : null,
             'warehouses' => $warehouses,
             'expenseCategories' => ExpenseCategory::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'bankAccounts' => BankAccount::active()->forOutlet($this->outletAccessService->activeOutlet($request))->orderBy('bank_name')->get(['id', 'bank_name', 'account_number', 'account_name']),
             'openPayables' => Payable::with('supplier:id,name')->where('status', '!=', 'paid')->orderBy('document_number')->get(['id', 'supplier_id', 'document_number', 'total', 'paid', 'status']),
             'canForceClose' => $request->user()->isSuperAdmin() || $request->user()->can('cashier-shifts-force-close'),
         ]);
@@ -194,6 +196,18 @@ class CashierShiftController extends Controller
                 Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'pelunasan_hutang'),
                 'nullable', 'integer', 'exists:payables,id',
             ],
+            // Fase 1 slice 2 (spec §3.8, keputusan Q5): setoran keluar
+            // wajib memilih tujuan; ke bank wajib memilih rekeningnya.
+            'setoran_destination' => [
+                Rule::requiredIf($request->input('type') === 'out' && $request->input('kind') === 'setoran'),
+                Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'setoran'),
+                'nullable', 'string', Rule::in(ShiftCashMovement::SETORAN_DESTINATIONS),
+            ],
+            'bank_account_id' => [
+                Rule::requiredIf($request->input('type') === 'out' && $request->input('kind') === 'setoran' && $request->input('setoran_destination') === ShiftCashMovement::SETORAN_DESTINATION_BANK),
+                Rule::prohibitedIf($request->input('type') !== 'out' || $request->input('kind') !== 'setoran' || $request->input('setoran_destination') !== ShiftCashMovement::SETORAN_DESTINATION_BANK),
+                'nullable', 'integer', 'exists:bank_accounts,id',
+            ],
             'amount' => ['required', 'integer', 'min:1'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
@@ -207,6 +221,8 @@ class CashierShiftController extends Controller
             kind: $validated['kind'],
             expenseCategoryId: $validated['expense_category_id'] ?? null,
             payableId: $validated['payable_id'] ?? null,
+            setoranDestination: $validated['setoran_destination'] ?? null,
+            bankAccountId: $validated['bank_account_id'] ?? null,
         );
 
         $this->auditLogService->log(
@@ -220,6 +236,8 @@ class CashierShiftController extends Controller
                 'cashier_shift_id' => $cashierShift->id,
                 'type' => $movement->type,
                 'kind' => $movement->kind,
+                'setoran_destination' => $movement->setoran_destination,
+                'bank_account_id' => $movement->bank_account_id,
                 'expense_id' => $movement->expense_id,
                 'amount' => $movement->amount,
                 'note' => $movement->note,

@@ -11,6 +11,7 @@ use App\Models\Supplier;
 use App\Rules\BelongsToActiveBusiness;
 use App\Services\BusinessContext;
 use App\Services\FinancialOwnershipService;
+use App\Services\JournalService;
 use App\Services\OutletAccessService;
 use App\Support\Tenancy\TenantUnique;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ class PayableController extends Controller
 {
     public function __construct(
         private readonly OutletAccessService $outletAccessService,
+        private readonly JournalService $journalService,
     ) {}
 
     public function index(Request $request)
@@ -222,7 +224,7 @@ class PayableController extends Controller
                 );
             }
 
-            PayablePayment::create([
+            $payment = PayablePayment::create([
                 'payable_id' => $payable->id,
                 'paid_at' => $validated['paid_at'],
                 'amount' => $validated['amount'],
@@ -231,6 +233,12 @@ class PayableController extends Controller
                 'note' => $validated['note'] ?? null,
                 'user_id' => $request->user()->id,
             ]);
+
+            // Fase 1 slice 2 (spec §3.8): bank payment journals Dr 21xx /
+            // Cr 1110 in the same transaction. Drawer payments are NOT
+            // journaled here — their shift movement already carries the
+            // journal, and journaling this mirror row too would double it.
+            $this->journalService->postPayablePaymentJournal($payment, $payable->business_id);
 
             $payable->paid = ($payable->paid ?? 0) + $validated['amount'];
             $remaining = max(0, ($payable->total ?? 0) - ($payable->paid ?? 0));

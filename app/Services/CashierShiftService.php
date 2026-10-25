@@ -16,10 +16,14 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class CashierShiftService
 {
-    public function __construct(private readonly OutletAccessService $outletAccessService) {}
+    public function __construct(
+        private readonly OutletAccessService $outletAccessService,
+        private readonly JournalService $journalService,
+    ) {}
 
     public function getActiveShiftForUser(int $userId): ?CashierShift
     {
@@ -159,7 +163,7 @@ class CashierShiftService
         ];
     }
 
-    public function recordCashMovement(CashierShift $shift, User $actor, string $type, int $amount, ?string $note = null, ?string $kind = null, ?int $expenseCategoryId = null, ?int $payableId = null): ShiftCashMovement
+    public function recordCashMovement(CashierShift $shift, User $actor, string $type, int $amount, ?string $note = null, ?string $kind = null, ?int $expenseCategoryId = null, ?int $payableId = null, ?string $setoranDestination = null, ?int $bankAccountId = null): ShiftCashMovement
     {
         if (! $shift->isOpen()) {
             throw ValidationException::withMessages([
@@ -204,6 +208,17 @@ class CashierShiftService
                     'expense_category_id' => 'Kategori beban wajib diisi untuk kas keluar jenis beban.',
                 ]);
             }
+
+            // Spec §2.2: a category without an account mapping cannot be
+            // used in an Expense. Fail here (before anything is saved)
+            // with a validation error, not a 500 from the journal post.
+            try {
+                $this->journalService->expenseAccountCode($category);
+            } catch (InvalidArgumentException $e) {
+                throw ValidationException::withMessages([
+                    'expense_category_id' => $e->getMessage(),
+                ]);
+            }
         }
 
         // K3: pelunasan hutang dari laci wajib menunjuk hutangnya, dan
@@ -224,7 +239,7 @@ class CashierShiftService
             ]);
         }
 
-        return DB::transaction(function () use ($shift, $actor, $type, $amount, $note, $kind, $category, $payable) {
+        return DB::transaction(function () use ($shift, $actor, $type, $amount, $note, $kind, $category, $payable, $setoranDestination, $bankAccountId) {
             // Kunci baris hutang dulu: nominal dicek terhadap sisa TERKINI
             // (pola yang sama dengan PayableController::pay).
             if ($payable) {
@@ -241,11 +256,15 @@ class CashierShiftService
                 'cashier_shift_id' => $shift->id,
                 'type' => $type,
                 'kind' => $kind,
+                'setoran_destination' => $setoranDestination,
+                'bank_account_id' => $bankAccountId,
                 'payable_id' => $payable?->id,
                 'amount' => $amount,
                 'note' => $note,
                 'user_id' => $actor->id,
             ]);
+
+            $expense = null;
 
             // Dual-create: a drawer expense is one economic event recorded as
             // one cash movement plus one Expense row. Other kinds never touch
@@ -287,6 +306,16 @@ class CashierShiftService
                     'paid' => $newPaid,
                     'status' => $remaining <= 0 ? 'paid' : 'partial',
                 ]);
+            }
+
+            // Fase 1 slice 2: jurnal dalam transaksi yang sama dengan
+            // peristiwa sumber. Satu peristiwa ekonomi, satu jurnal: beban
+            // dijurnal sekali lewat Expense-nya (bukan lewat movement),
+            // gerakan kas lain lewat movement-nya sendiri.
+            if ($expense !== null) {
+                $this->journalService->postExpenseJournal($expense, $shift->business_id);
+            } else {
+                $this->journalService->postMovementJournal($movement->fresh(), $shift->business_id);
             }
 
             return $movement->fresh();
@@ -337,6 +366,10 @@ class CashierShiftService
                     ? CashierShift::STATUS_FORCE_CLOSED
                     : CashierShift::STATUS_CLOSED,
             ]);
+
+            // Fase 1 slice 2 (spec §3.9): selisih kas dijurnal dalam
+            // transaksi penutupan yang sama; nol berarti tanpa jurnal.
+            $this->journalService->postCashDifferenceJournal($lockedShift->fresh(), $lockedShift->business_id);
 
             return $lockedShift->fresh(['user:id,name', 'openedBy:id,name', 'closedBy:id,name']);
         });

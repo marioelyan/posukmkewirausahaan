@@ -20,7 +20,8 @@ class GoodsReceivingService
         private readonly StockMutationService $stockMutationService,
         private readonly AuditLogService $auditLogService,
         private readonly OutletAccessService $outletAccessService,
-        private readonly DocumentNumberGenerator $documentNumberGenerator
+        private readonly DocumentNumberGenerator $documentNumberGenerator,
+        private readonly JournalService $journalService
     ) {}
 
     public function generateDocumentNumber(): string
@@ -120,6 +121,15 @@ class GoodsReceivingService
 
                 if ($receiving->supplier_id) {
                     $this->createOrUpdatePayable($order, $receiving, $userId);
+
+                    // Fase 1 slice 3 (spec §3.5): receiving journal in the
+                    // same transaction, for THIS receiving's value only
+                    // (partial receivings journal their own value each).
+                    // Deliberately not the payable fallback below: a
+                    // zero-value receiving is not a full-PO purchase.
+                    $receivedValue = (int) $receiving->items()->sum(\DB::raw('qty_received * (SELECT unit_price FROM purchase_order_items WHERE id = goods_receiving_items.purchase_order_item_id)'));
+
+                    $this->journalService->postGoodsReceivingJournal($receiving, $order->business_id, $receivedValue);
                 }
 
                 $this->auditLogService->log(

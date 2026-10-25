@@ -27,6 +27,7 @@ class CheckoutService
         private readonly BatchService $batchService,
         private readonly TransactionTenderService $tenderService,
         private readonly StockMutationService $stockMutationService,
+        private readonly JournalService $journalService,
     ) {}
 
     public function execute(CheckoutContext $ctx): CheckoutResult
@@ -147,6 +148,16 @@ class CheckoutService
                     'ownership_evaluated_at' => $ownership['ownership_evaluated_at'],
                 ]);
             }
+
+            // Fase 1 slice 1: jurnal penjualan (tunai §3.1 + kredit §3.2)
+            // dalam transaksi DB yang sama dengan penjualan: checkout gagal
+            // berarti tidak ada jurnal yang tercipta. Jenis pembayaran lain
+            // (bank/QRIS/split/pending) belum dijurnal — lihat
+            // JournalService::postSalesJournal.
+            $this->journalService->postSalesJournal(
+                $transaction,
+                app(FinancialOwnershipService::class)->stampFromWarehouse((int) $activeShift->warehouse_id)['business_id'],
+            );
 
             $needsDiscountApproval = $appliedManualDiscount > 0 && $transaction->needsDiscountApproval();
 

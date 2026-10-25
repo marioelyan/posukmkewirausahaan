@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             ExpenseCategorySeeder::class,
+            AccountSeeder::class,
             PaymentSettingSeeder::class,
             IndonesiaRegionSeeder::class,
         ]);

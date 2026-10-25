@@ -17,7 +17,8 @@ class SupplierReturnService
         private readonly AuditLogService $auditLogService,
         private readonly StockMutationService $stockMutationService,
         private readonly OutletAccessService $outletAccessService,
-        private readonly DocumentNumberGenerator $documentNumberGenerator
+        private readonly DocumentNumberGenerator $documentNumberGenerator,
+        private readonly JournalService $journalService
     ) {}
 
     public function generateDocumentNumber(): string
@@ -132,9 +133,18 @@ class SupplierReturnService
                 );
             }
 
+            // Fase 1 slice 3 (spec §3.11): pre-mutation figures split the
+            // return value into the unpaid portion (reduces the payable)
+            // and the already-paid portion (a claim on the supplier).
+            $returnAmount = 0;
+            $payableTotalBefore = null;
+            $payablePaidBefore = null;
+
             if ($return->payable_id && $return->payable) {
-                $returnAmount = $return->items->sum(fn ($i) => $i->qty_returned * $i->unit_price);
+                $returnAmount = (int) $return->items->sum(fn ($i) => $i->qty_returned * $i->unit_price);
                 $payable = $return->payable;
+                $payableTotalBefore = (int) $payable->total;
+                $payablePaidBefore = (int) $payable->paid;
                 $payable->total = max(0, $payable->total - $returnAmount);
                 if ($payable->total <= 0) {
                     $payable->total = 0;
@@ -149,6 +159,23 @@ class SupplierReturnService
                 'status' => 'completed',
                 'returned_at' => now(),
             ]);
+
+            // Journal in the same transaction as the completion. A return
+            // without a linked payable has no Hutang Usaha counterparty
+            // and is left unjournaled (reported as a slice gap).
+            if ($payableTotalBefore !== null && $returnAmount > 0) {
+                $unpaidBefore = max(0, $payableTotalBefore - $payablePaidBefore);
+                $payableReduction = min($returnAmount, $unpaidBefore);
+                $paidPortion = $returnAmount - $payableReduction;
+
+                $this->journalService->postSupplierReturnJournal(
+                    $return,
+                    $return->payable->business_id ?? $return->business_id,
+                    $returnAmount,
+                    $payableReduction,
+                    $paidPortion,
+                );
+            }
 
             $this->auditLogService->log(
                 event: 'supplier_return.completed',

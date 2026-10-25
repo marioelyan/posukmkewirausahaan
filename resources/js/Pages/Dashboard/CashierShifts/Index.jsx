@@ -52,6 +52,7 @@ export default function Index({
     activeShift = null,
     warehouses = [],
     expenseCategories = [],
+    bankAccounts = [],
     openPayables = [],
 }) {
     const { auth, errors } = usePage().props;
@@ -65,11 +66,15 @@ export default function Index({
     const [cashKind, setCashKind] = useState("lainnya");
     const [cashCategoryId, setCashCategoryId] = useState("");
     const [cashPayableId, setCashPayableId] = useState("");
+    const [cashSetoranDestination, setCashSetoranDestination] = useState("");
+    const [cashBankAccountId, setCashBankAccountId] = useState("");
 
     const openCashModal = (type) => {
         setCashKind("lainnya");
         setCashCategoryId("");
         setCashPayableId("");
+        setCashSetoranDestination("");
+        setCashBankAccountId("");
         setCashModal(type);
     };
     const canOpenShift = can("cashier-shifts-open");
@@ -127,6 +132,17 @@ export default function Index({
         if (cashModal === "out" && cashKind === "pelunasan_hutang" && cashPayableId) {
             payload.payable_id = cashPayableId;
         }
+        if (cashModal === "out" && cashKind === "setoran" && cashSetoranDestination) {
+            payload.setoran_destination = cashSetoranDestination;
+        }
+        if (
+            cashModal === "out" &&
+            cashKind === "setoran" &&
+            cashSetoranDestination === "bank" &&
+            cashBankAccountId
+        ) {
+            payload.bank_account_id = cashBankAccountId;
+        }
 
         router.post(
             route("cashier-shifts.cash-movements.store", activeShift.id),
@@ -139,6 +155,8 @@ export default function Index({
                     setCashKind("lainnya");
                     setCashCategoryId("");
                     setCashPayableId("");
+                    setCashSetoranDestination("");
+                    setCashBankAccountId("");
                 },
             }
         );
@@ -383,6 +401,60 @@ export default function Index({
                                             Uang keluar dari laci sekaligus mengurangi sisa hutang ini. Bukan beban, jadi laba tidak berubah.
                                         </p>
                                     </div>
+                                )}
+                                {cashModal === "out" && cashKind === "setoran" && (
+                                    <>
+                                        <div>
+                                            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                Tujuan Setoran
+                                            </label>
+                                            <select
+                                                value={cashSetoranDestination}
+                                                onChange={(event) =>
+                                                    setCashSetoranDestination(event.target.value)
+                                                }
+                                                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                                required
+                                            >
+                                                <option value="">Pilih tujuan</option>
+                                                <option value="bank">Rekening Bank</option>
+                                                <option value="owner">Pemilik (Prive)</option>
+                                            </select>
+                                            {errors.setoran_destination && (
+                                                <p className="mt-1 text-sm text-danger-600">
+                                                    {errors.setoran_destination}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {cashSetoranDestination === "bank" && (
+                                            <div>
+                                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                    Rekening Bank
+                                                </label>
+                                                <select
+                                                    value={cashBankAccountId}
+                                                    onChange={(event) =>
+                                                        setCashBankAccountId(event.target.value)
+                                                    }
+                                                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                                    required
+                                                >
+                                                    <option value="">Pilih rekening</option>
+                                                    {bankAccounts.map((account) => (
+                                                        <option key={account.id} value={account.id}>
+                                                            {account.bank_name} — {account.account_number} (
+                                                            {account.account_name})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {errors.bank_account_id && (
+                                                    <p className="mt-1 text-sm text-danger-600">
+                                                        {errors.bank_account_id}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                                 {cashModal === "out" && cashKind === "beban" && (
                                     <div>

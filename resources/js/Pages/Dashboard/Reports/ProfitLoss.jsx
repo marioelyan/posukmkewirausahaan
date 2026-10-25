@@ -29,6 +29,15 @@ function Row({ label, value, bold = false, note = "", negative = false }) {
 export default function ProfitLoss({ summary, filters = {} }) {
     const [startDate, setStartDate] = useState(filters.start_date || "");
     const [endDate, setEndDate] = useState(filters.end_date || "");
+    const [pphMonth, setPphMonth] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    });
+
+    const postPph = () => {
+        if (!pphMonth) return;
+        router.post(route("reports.profit-loss.pph"), { month: pphMonth });
+    };
 
     const applyFilters = () => {
         router.get(
@@ -95,6 +104,32 @@ export default function ProfitLoss({ summary, filters = {} }) {
                         className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                         Reset
+                    </button>
+                </div>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:grid-cols-4">
+                <div className="md:col-span-2">
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">PPh Final UMKM 0,5% (aksi manual bulanan)</label>
+                    <input
+                        type="month"
+                        value={pphMonth}
+                        onChange={(e) => setPphMonth(e.target.value)}
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    />
+                    <p className="mt-2 text-xs text-slate-400">
+                        Membuat jurnal akrual bulan tersebut (Dr Beban Pajak / Cr Hutang Pajak). Satu jurnal per bulan; bulan
+                        yang sudah dijurnal ditolak kecuali jurnalnya sudah dibalik. Pembayaran dicatat lewat perintah
+                        accounting:pph.
+                    </p>
+                </div>
+                <div className="flex items-end gap-2 md:col-span-2">
+                    <button
+                        type="button"
+                        onClick={postPph}
+                        className="h-11 flex-1 rounded-xl bg-primary-600 px-4 text-sm font-medium text-white hover:bg-primary-700"
+                    >
+                        Hitung PPh Bulan Ini
                     </button>
                 </div>
             </div>

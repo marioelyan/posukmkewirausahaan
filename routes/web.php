@@ -50,6 +50,7 @@ use App\Http\Controllers\RegionController;
 use App\Http\Controllers\Reports\AdvancedSalesInsightsController;
 use App\Http\Controllers\Reports\ConsignmentReportController;
 use App\Http\Controllers\Reports\ExpenseReportController;
+use App\Http\Controllers\Reports\JournalReportController;
 use App\Http\Controllers\Reports\ProfitReportController;
 use App\Http\Controllers\Reports\SalesReportController;
 use App\Http\Controllers\RoleController;
@@ -448,7 +449,11 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'business', 'bus
     Route::get('/reports/insights/export', [AdvancedSalesInsightsController::class, 'export'])->middleware('permission:reports-access')->name('reports.insights.export');
     Route::get('/reports/expenses', [ExpenseReportController::class, 'expenses'])->middleware('permission:expenses-access')->name('reports.expenses.index');
     Route::get('/reports/laba-rugi', [ExpenseReportController::class, 'profitLoss'])->middleware('permission:reports-access')->name('reports.profit-loss.index');
+    Route::post('/reports/laba-rugi/pph', [ExpenseReportController::class, 'storePph'])->middleware('permission:reports-access')->name('reports.profit-loss.pph');
     Route::get('/reports/konsinyasi', [ConsignmentReportController::class, 'index'])->middleware('permission:payables-access')->name('reports.consignment.index');
+    Route::get('/reports/buku-besar', [JournalReportController::class, 'ledger'])->middleware('permission:reports-access')->name('reports.ledger.index');
+    Route::get('/reports/laba-rugi-jurnal', [JournalReportController::class, 'profitLoss'])->middleware('permission:reports-access')->name('reports.journal-profit-loss.index');
+    Route::get('/reports/neraca', [JournalReportController::class, 'balanceSheet'])->middleware('permission:reports-access')->name('reports.balance-sheet.index');
 
     // aging & reminders
     Route::get('/aging', [AgingController::class, 'index'])->middleware('permission:receivables-access')->name('aging.index');

@@ -99,6 +99,7 @@ class CashMovementKindTest extends TestCase
             [
                 'type' => 'out',
                 'kind' => 'setoran',
+                'setoran_destination' => 'owner',
                 'amount' => 30000,
                 'note' => 'Setor ke pusat',
             ]
@@ -109,9 +110,25 @@ class CashMovementKindTest extends TestCase
         $this->assertDatabaseHas('shift_cash_movements', [
             'type' => 'out',
             'kind' => 'setoran',
+            'setoran_destination' => 'owner',
             'amount' => 30000,
             'expense_id' => null,
         ]);
+    }
+
+    public function test_out_setoran_without_destination_is_rejected(): void
+    {
+        $response = $this->actingAs($this->cashier)->post(
+            route('cashier-shifts.cash-movements.store', $this->shift->id),
+            [
+                'type' => 'out',
+                'kind' => 'setoran',
+                'amount' => 30000,
+            ]
+        );
+
+        $response->assertSessionHasErrors('setoran_destination');
+        $this->assertDatabaseCount('shift_cash_movements', 0);
     }
 
     public function test_out_beban_without_category_is_rejected(): void
