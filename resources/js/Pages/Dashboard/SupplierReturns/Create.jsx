@@ -17,11 +17,12 @@ const formatCurrency = (value = 0) =>
         minimumFractionDigits: 0,
     }).format(value);
 
-export default function Create({ suppliers, goodsReceivings, products }) {
+export default function Create({ suppliers, goodsReceivings, products, warehouses = [] }) {
     const { errors } = usePage().props;
     const { data, setData, post, processing } = useForm({
         supplier_id: "",
         goods_receiving_id: "",
+        warehouse_id: warehouses?.[0]?.id ?? "",
         payable_id: "",
         notes: "",
         items: [],
@@ -137,7 +138,7 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                                 <select
                                     value={data.supplier_id}
                                     onChange={(e) => {
-                                        setData({ supplier_id: e.target.value, goods_receiving_id: "", payable_id: "", items: [] });
+                                        setData({ supplier_id: e.target.value, goods_receiving_id: "", warehouse_id: data.warehouse_id, payable_id: "", items: [] });
                                         setSelectedGrId("");
                                     }}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
@@ -157,6 +158,10 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                                     onChange={(e) => {
                                         setSelectedGrId(e.target.value);
                                         setData("goods_receiving_id", e.target.value);
+                                        const gr = goodsReceivings.find((g) => g.id === Number(e.target.value));
+                                        if (gr?.warehouse_id) {
+                                            setData("warehouse_id", gr.warehouse_id);
+                                        }
                                     }}
                                     disabled={!data.supplier_id}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 disabled:opacity-50"
@@ -165,6 +170,22 @@ export default function Create({ suppliers, goodsReceivings, products }) {
                                     {goodsReceivings.map((gr) => (
                                         <option key={gr.id} value={gr.id}>
                                             {gr.document_number} ({gr.items?.length || 0} item)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                    Gudang
+                                </label>
+                                <select
+                                    value={data.warehouse_id}
+                                    onChange={(e) => setData("warehouse_id", e.target.value)}
+                                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 disabled:opacity-50"
+                                >
+                                    {warehouses.map((w) => (
+                                        <option key={w.id} value={w.id}>
+                                            {w.code} — {w.name}
                                         </option>
                                     ))}
                                 </select>

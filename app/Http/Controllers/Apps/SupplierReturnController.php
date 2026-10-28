@@ -33,7 +33,13 @@ class SupplierReturnController extends Controller
             'supplier:id,name',
             'creator:id,name',
         ])->withCount('items as items_count')
-            ->whereIn('warehouse_id', $warehouseIds)
+            // Legacy returns saved without a warehouse (the old create form
+            // had no warehouse field) must stay visible, otherwise they
+            // become unreachable drafts that 404 on their detail page.
+            ->where(function ($q) use ($warehouseIds) {
+                $q->whereIn('warehouse_id', $warehouseIds)
+                    ->orWhereNull('warehouse_id');
+            })
             ->orderByDesc('created_at');
 
         $query->when($filters['status'], fn ($q, $s) => $q->where('status', $s))
@@ -68,11 +74,14 @@ class SupplierReturnController extends Controller
         }
 
         $products = Product::orderBy('title')->get(['id', 'title', 'sku', 'buy_price', 'stock']);
+        $warehouses = $this->outletAccessService->warehousesFor($request->user())
+            ->map(fn ($w) => $w->only(['id', 'code', 'name']))->values();
 
         return Inertia::render('Dashboard/SupplierReturns/Create', [
             'suppliers' => $suppliers,
             'goodsReceivings' => $goodsReceivings,
             'products' => $products,
+            'warehouses' => $warehouses,
         ]);
     }
 
@@ -80,6 +89,7 @@ class SupplierReturnController extends Controller
     {
         $data = $request->validate([
             'supplier_id' => ['nullable', 'exists:suppliers,id', new BelongsToActiveBusiness('suppliers')],
+            'warehouse_id' => ['nullable', 'exists:warehouses,id', new BelongsToActiveBusiness('warehouses')],
             'goods_receiving_id' => ['nullable', 'exists:goods_receivings,id', new BelongsToActiveBusiness('goods_receivings')],
             'payable_id' => ['nullable', 'exists:payables,id', new BelongsToActiveBusiness('payables')],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -155,6 +165,15 @@ class SupplierReturnController extends Controller
         $warehouse = $supplierReturn->warehouse_id
             ? $supplierReturn->warehouse()->first()
             : null;
+
+        // Legacy returns without a warehouse have no outlet to check
+        // against. The routes already require the supplier-returns
+        // permission, and business scoping applies at query level when
+        // tenancy is on — blocking them here only produced 404s on
+        // records the user legitimately owns.
+        if (! $warehouse) {
+            return;
+        }
 
         abort_unless($this->outletAccessService->canUseWarehouse($request->user(), $warehouse), 404);
     }
