@@ -33,6 +33,16 @@ class SupplierReturnService
             $warehouseId = GoodsReceiving::whereKey($data['goods_receiving_id'])->value('warehouse_id');
             $data['warehouse_id'] = $warehouseId;
         }
+        if (! $warehouseId) {
+            // Manual returns used to be saved without a warehouse (the old
+            // create form had no warehouse field), which made them invisible
+            // in the list and 404 on the detail page. Default to the user's
+            // first accessible warehouse so a warehouse is always recorded.
+            $warehouseId = $this->outletAccessService
+                ->warehousesFor(User::findOrFail($userId))
+                ->first()?->id;
+            $data['warehouse_id'] = $warehouseId;
+        }
         if ($warehouseId) {
             $this->ensureWarehouseAccess($userId, $warehouseId);
         }
